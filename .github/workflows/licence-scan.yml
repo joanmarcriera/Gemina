@@ -1,0 +1,22 @@
+name: Licence Scan
+
+on:
+  push:
+    paths:
+      - "research/upstream-manifest.yaml"
+      - "docs/legal/**"
+      - "scripts/licence-check.sh"
+      - ".github/workflows/licence-scan.yml"
+  pull_request:
+    paths:
+      - "research/upstream-manifest.yaml"
+      - "docs/legal/**"
+      - "scripts/licence-check.sh"
+      - ".github/workflows/licence-scan.yml"
+
+jobs:
+  licence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./scripts/licence-check.sh

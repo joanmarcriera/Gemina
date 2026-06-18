@@ -1,0 +1,10 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  stage-0-placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Release automation is intentionally disabled during Stage 0."

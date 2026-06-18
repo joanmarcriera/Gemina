@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+remote_host="${REMOTE_HOST:-codex-oracle}"
+remote_dir="${REMOTE_DIR:-/srv/codex/myproject}"
+compose_project="${COMPOSE_PROJECT:-myproject}"
+remote_port="${REMOTE_PORT:-8080}"
+
+if [[ "$remote_dir" != /srv/codex/* ]] ||
+    [[ "$remote_dir" == "/srv/codex/" ]]; then
+    printf 'Unsafe REMOTE_DIR: %s\n' "$remote_dir" >&2
+    exit 1
+fi
+
+run_remote() {
+    ssh "$remote_host" "$@"
+}
+
+case "${1:-}" in
+    check)
+        run_remote "
+            set -e
+            hostname
+            id
+            sudo -n id
+            sudo -n docker version
+            sudo -n docker compose version
+        "
+        ;;
+
+    initialise)
+        run_remote "
+            sudo -n install -d \
+                -o opc \
+                -g opc \
+                -m 0750 \
+                '$remote_dir'
+        "
+        ;;
+
+    sync)
+        rsync \
+            --archive \
+            --compress \
+            --delete \
+            --exclude='.git/' \
+            --exclude='.build/' \
+            --exclude='.codex/' \
+            --exclude='.env' \
+            --exclude='.research-src/' \
+            --exclude='.venv/' \
+            --exclude='apps/macos/.build/' \
+            --exclude='node_modules/' \
+            --exclude='__pycache__/' \
+            ./ "$remote_host:$remote_dir/"
+        ;;
+
+    build)
+        run_remote "
+            set -e
+            cd '$remote_dir'
+            sudo -n docker compose \
+                -p '$compose_project' \
+                build
+        "
+        ;;
+
+    up)
+        run_remote "
+            set -e
+            cd '$remote_dir'
+            sudo -n docker compose \
+                -p '$compose_project' \
+                up -d --build
+        "
+        ;;
+
+    down)
+        run_remote "
+            set -e
+            cd '$remote_dir'
+            sudo -n docker compose \
+                -p '$compose_project' \
+                down
+        "
+        ;;
+
+    status)
+        run_remote "
+            cd '$remote_dir'
+            sudo -n docker compose \
+                -p '$compose_project' \
+                ps
+        "
+        ;;
+
+    logs)
+        run_remote "
+            cd '$remote_dir'
+            sudo -n docker compose \
+                -p '$compose_project' \
+                logs --tail=200
+        "
+        ;;
+
+    test)
+        run_remote "
+            curl --fail \
+                --silent \
+                --show-error \
+                --max-time 20 \
+                'http://127.0.0.1:$remote_port/'
+        "
+        ;;
+
+    *)
+        cat >&2 <<'EOF'
+Usage: scripts/remote COMMAND
+
+Commands:
+  check       Check SSH, sudo, Docker and Compose
+  initialise Create the remote project directory
+  sync        Synchronise local code to the remote directory
+  build       Build the Compose project
+  up          Build and start the project
+  down        Stop the project
+  status      Show container status
+  logs        Show the latest container logs
+  test        Test the website from the server
+EOF
+        exit 2
+        ;;
+esac

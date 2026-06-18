@@ -1,0 +1,29 @@
+.DS_Store
+.research-src/
+.codex/
+.codex-*
+*.swp
+.*.swp
+
+# Go
+bin/
+coverage.out
+
+# Swift and Xcode
+.build/
+DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcuserstate
+
+# Terraform/OpenTofu
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Local secrets and environment
+.env
+*.pem
+*.key
+*.mobileprovision

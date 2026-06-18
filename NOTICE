@@ -1,0 +1,7 @@
+# Notices
+
+This repository currently contains original Stage 0 scaffolding and project documentation only.
+
+No third-party source files have been copied into product directories.
+
+Upstream projects listed in `research/upstream-manifest.yaml` are tracked for due diligence and research intake. Their licences, notices and provenance must be verified before any source code is copied, vendored, forked or distributed.
