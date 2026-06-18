@@ -1,0 +1,150 @@
+sources:
+  - name: wireguard-apple
+    repository: https://github.com/WireGuard/wireguard-apple
+    canonical_repository: https://git.zx2c4.com/wireguard-apple
+    branch: master
+    commit: 2fec12a6e1f6e3460b6ee483aa00ad29cddadab1
+    licence: MIT
+    licence_status: root-licence-file-reviewed
+    legal_review_required: before-import
+    permitted_use:
+      - direct-reuse-after-review
+      - modification-after-review
+      - inspiration
+    provenance_required: true
+    notes: "GitHub mirror; official repository is git.zx2c4.com."
+
+  - name: wireguard-go
+    repository: https://github.com/WireGuard/wireguard-go
+    canonical_repository: https://git.zx2c4.com/wireguard-go
+    branch: master
+    commit: ecfc5a8d54462e18e13c72173e2623d16d8e25a0
+    licence: MIT
+    licence_status: root-licence-file-reviewed
+    legal_review_required: before-import
+    permitted_use:
+      - direct-reuse-after-review
+      - modification-after-review
+      - inspiration
+    provenance_required: true
+    notes: "GitHub mirror; official repository is git.zx2c4.com."
+
+  - name: engarde
+    repository: https://github.com/porech/engarde
+    branch: master
+    commit: 3492df906049826c226996b50224f963ee37bdf3
+    licence: GPL-2.0-only-text-observed
+    licence_status: root-licence-file-reviewed
+    legal_review_required: before-study
+    permitted_use:
+      - behavioural-study
+      - architectural-inspiration
+    prohibited_use:
+      - copy-into-proprietary-core
+      - line-by-line-translation
+      - llm-rewrite-of-source-files
+    provenance_required: true
+    clean_room_notes_required: true
+
+  - name: glorytun
+    repository: https://github.com/angt/glorytun
+    branch: master
+    commit: 32267e86a6da05b285bb3bf2b136c105dc0af4bb
+    licence: BSD-2-Clause
+    licence_status: root-licence-file-reviewed
+    legal_review_required: before-import
+    permitted_use:
+      - reference
+      - selective-reuse-after-review
+    provenance_required: true
+
+  - name: mlvpn
+    repository: https://github.com/zehome/MLVPN
+    branch: master
+    commit: b934d4953d480cbbd43128d01150b829fa8839df
+    licence: BSD-2-Clause
+    licence_status: root-licence-file-reviewed
+    legal_review_required: before-import
+    permitted_use:
+      - operational-reference
+      - algorithmic-reference
+    prohibited_use:
+      - inherit-legacy-cryptographic-construction
+    provenance_required: true
+
+  - name: mptunnel
+    repository: https://github.com/greensea/mptunnel
+    branch: master
+    commit: a453614ffaa8898c03609c30bcfaf6481c801009
+    licence: BSD-2-Clause
+    licence_status: root-licence-file-reviewed
+    legal_review_required: before-import
+    permitted_use:
+      - reference
+    prohibited_use:
+      - adopt-complete-protocol-unchanged
+    provenance_required: true
+
+  - name: openmptcprouter
+    repository: https://github.com/Ysurac/openmptcprouter
+    branch: develop
+    commit: 3a3a7cfc7c20007e46fc62a7bcd51018683b1cc1
+    licence: GPL-3.0-only-text-observed
+    licence_status: root-licence-file-reviewed
+    legal_review_required: before-study
+    permitted_use:
+      - behavioural-study
+      - operational-inspiration
+    prohibited_use:
+      - copy-into-proprietary-core
+      - import-web-assets
+    provenance_required: true
+    clean_room_notes_required: true
+
+  - name: mqvpn
+    repository: https://github.com/mp0rta/mqvpn
+    branch: main
+    commit: 06b6387388da30db5dd55fdb3bda2052ca82b709
+    licence: Apache-2.0
+    licence_status: root-licence-file-reviewed
+    legal_review_required: before-study
+    permitted_use:
+      - architecture-reference
+      - future-version-study
+    prohibited_use:
+      - introduce-multipath-quic-into-continuity-mvp
+    provenance_required: true
+
+  - name: hcloud-go
+    repository: https://github.com/hetznercloud/hcloud-go
+    branch: main
+    commit: 1d33ff6747a96620bfdf686f4c7ade0c6e8efa48
+    licence: MIT
+    licence_status: root-licence-file-reviewed
+    legal_review_required: before-import
+    permitted_use:
+      - future-api-reference
+    provenance_required: true
+
+  - name: terraform-provider-hcloud
+    repository: https://github.com/hetznercloud/terraform-provider-hcloud
+    branch: main
+    commit: 74db03a65c8feb1e24a626497a329055bdc5e580
+    licence: MPL-2.0
+    licence_status: root-licence-file-reviewed
+    legal_review_required: before-import
+    permitted_use:
+      - provider-use
+      - infrastructure-reference
+    provenance_required: true
+
+  - name: hcloud-cli
+    repository: https://github.com/hetznercloud/cli
+    branch: main
+    commit: f37b5fa4c0384154d778ca5d17cc18b2f6d58696
+    licence: MIT
+    licence_status: root-licence-file-reviewed
+    legal_review_required: before-import
+    permitted_use:
+      - operational-reference
+    provenance_required: true

@@ -1,0 +1,22 @@
+name: macOS CI
+
+on:
+  push:
+    paths:
+      - "apps/macos/**"
+      - ".swiftlint.yml"
+      - ".github/workflows/macos-ci.yml"
+  pull_request:
+    paths:
+      - "apps/macos/**"
+      - ".swiftlint.yml"
+      - ".github/workflows/macos-ci.yml"
+
+jobs:
+  swift:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: swift build --package-path apps/macos
+      - run: brew install swiftlint
+      - run: swiftlint lint --strict
