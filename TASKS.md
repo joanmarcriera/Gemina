@@ -57,7 +57,9 @@ Completion criteria:
 * [ ] Run SwiftLint in an environment with `swiftlint` installed.
 * [x] Investigate GitHub Actions startup failure from run `27815677467`.
 * [x] Inspect GitHub Actions results after pushing the initial commit.
-* [ ] Review non-blocking GitHub CI annotations for future hardening.
+* [x] Review non-blocking GitHub CI annotations for future hardening.
+* [x] Update Stage 0 CI action versions and dependency inventory.
+* [ ] Decide whether to pin SwiftLint installation in macOS CI instead of relying on `brew install swiftlint`.
 * [x] Request Stage 0 review before any Stage 1 transport work.
 * [ ] Complete Stage 0 engineering review issue 1.
 * [ ] Complete Stage 0 legal/provenance review issue 2.

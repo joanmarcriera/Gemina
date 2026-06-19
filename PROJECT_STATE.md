@@ -8,6 +8,8 @@ Stage 0 repository bootstrap and source due diligence.
 
 This cycle completed a bounded Stage 0 review-request objective: create a review packet and open GitHub issues for engineering review and legal/provenance review without marking either review complete.
 
+This cycle completed a bounded Stage 0 CI annotation-hardening objective: update CI action versions, record CI action/tool dependencies and verify GitHub CI still passes.
+
 ## Completed Work
 
 * Read `PROJECT_STATE.md`, `TASKS.md`, `DECISIONS.md` and `AGENTS.md`.
@@ -22,6 +24,21 @@ This cycle completed a bounded Stage 0 review-request objective: create a review
 * Opened GitHub review issues:
   * Stage 0 engineering review: https://github.com/joanmarcriera/continuity-vpn/issues/1
   * Stage 0 legal/provenance review: https://github.com/joanmarcriera/continuity-vpn/issues/2
+* Delegated a bounded GitHub Actions hardening review to `ollama_fast`; it agreed the patch was ready, though one suggested test command was intentionally ignored because it would have created a fake commit.
+* Updated CI actions:
+  * `actions/checkout` from `v4` to `v7.0.0`.
+  * `actions/setup-go` from `v5` to `v6.4.0`.
+  * `opentofu/setup-opentofu` from `v1` to `v2.0.1`.
+* Disabled `actions/setup-go` caching while the module has no `go.sum`.
+* Recorded GitHub Actions and CI binary tools in `docs/legal/dependency-inventory.md`.
+* Confirmed the Node.js action runtime annotations and Go cache warning disappeared.
+* Confirmed the remaining macOS CI annotation is the Homebrew tap-trust transition warning from runner state while installing SwiftLint.
+* Pushed commit `4a8afd4` (`Harden Stage 0 CI action versions`) to `origin/main`.
+* Confirmed all four named project CI workflows ran and passed on GitHub for commit `4a8afd4`:
+  * Go CI run `27820615456`
+  * Infrastructure CI run `27820615438`
+  * Licence Scan run `27820615455`
+  * macOS CI run `27820615442`
 
 Prior completed Stage 0 work remains in place:
 
@@ -100,6 +117,11 @@ Initial bootstrap content:
 
 This cycle changed:
 
+* `.github/workflows/go-ci.yml`
+* `.github/workflows/infra-ci.yml`
+* `.github/workflows/licence-scan.yml`
+* `.github/workflows/macos-ci.yml`
+* `docs/legal/dependency-inventory.md`
 * `docs/reviews/stage-0-review-request.md`
 * `PROJECT_STATE.md`
 * `TASKS.md`
@@ -118,9 +140,17 @@ Passed in this cycle:
 
 * `make clean-workspace-check`
 * `scripts/docs-check.sh`
+* `make licence-check`
+* `ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "workflow yaml parsed"' .github/workflows/*.yml`
 * `git diff --check`
 * `git diff --cached --check`
 * `git push origin main`
+* `gh api repos/actions/checkout/releases/latest --jq '{tag_name,name,html_url,published_at}'`
+* `gh api repos/actions/setup-go/releases/latest --jq '{tag_name,name,html_url,published_at}'`
+* `gh api repos/opentofu/setup-opentofu/releases/latest --jq '{tag_name,name,html_url,published_at}'`
+* `rg -n "actions/checkout@v4|actions/setup-go@v5|opentofu/setup-opentofu@v1|Node.js 24" .github/workflows`
+  * Returned no matches.
+* `rg -n "actions/checkout@v7.0.0|actions/setup-go@v6.4.0|opentofu/setup-opentofu@v2.0.1|cache: false" .github/workflows`
 * `gh issue list --repo joanmarcriera/continuity-vpn --state open --limit 20`
 * `gh label list --repo joanmarcriera/continuity-vpn --limit 100`
 * `gh label create stage-0 --repo joanmarcriera/continuity-vpn --description "Stage 0 bootstrap, provenance and planning" --color 0e8a16`
@@ -128,6 +158,18 @@ Passed in this cycle:
 * `gh label create legal-review --repo joanmarcriera/continuity-vpn --description "Legal or licence provenance review required" --color b60205`
 * `gh issue create` for Stage 0 engineering review issue 1.
 * `gh issue create` for Stage 0 legal/provenance review issue 2.
+* `gh run watch 27820615456 --repo joanmarcriera/continuity-vpn --exit-status`
+* `gh run watch 27820615438 --repo joanmarcriera/continuity-vpn --exit-status`
+* `gh run watch 27820615455 --repo joanmarcriera/continuity-vpn --exit-status`
+* `gh run watch 27820615442 --repo joanmarcriera/continuity-vpn --exit-status`
+* `gh run view 27820615456 --repo joanmarcriera/continuity-vpn`
+* `gh run view 27820615438 --repo joanmarcriera/continuity-vpn`
+* `gh run view 27820615455 --repo joanmarcriera/continuity-vpn`
+* `gh run view 27820615442 --repo joanmarcriera/continuity-vpn`
+* GitHub Go CI passed on commit `4a8afd4`.
+* GitHub Infrastructure CI passed on commit `4a8afd4`.
+* GitHub Licence Scan passed on commit `4a8afd4`.
+* GitHub macOS CI passed on commit `4a8afd4`.
 
 Previously passed and still reflected in the repository state:
 
@@ -179,10 +221,7 @@ Not run:
 * Stage 0 legal/provenance review is requested in issue 2 but is not yet complete.
 * The Swift scaffold is build-only; real XCTest/UI tests need an Xcode project and full Apple test toolchain.
 * The first GitHub Actions push event produced `startup_failure` run `27815677467` with no jobs/logs. A later workflow-trigger hardening commit ran the named project CI workflows successfully, so this is no longer blocking clean-checkout validation evidence.
-* Successful GitHub CI emitted non-blocking runner annotations:
-  * `actions/checkout@v4` and `actions/setup-go@v5` are currently forced from Node.js 20 to Node.js 24 by GitHub.
-  * Go CI reported a cache-restore warning because no `go.sum` exists yet.
-  * macOS CI reported Homebrew tap-trust transition warnings while installing SwiftLint.
+* Successful macOS CI still emits a non-blocking Homebrew tap-trust transition warning while installing SwiftLint from runner state.
 * No packet captures, gateway tests or transport evidence exists because Stage 1 has not started.
 
 ## Known Blockers
