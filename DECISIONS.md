@@ -263,3 +263,27 @@ Consequences:
 Conditions for revisiting:
 
 Revisit if the live probe needs a different packet identity format, if authenticated replay protection changes the deduplication boundary, or if gateway tests show the bounded in-memory window is unsuitable even for the feasibility probe.
+
+## 2026-06-19: Classify Paths From Observed Link Kinds
+
+Decision:
+
+Model Stage 1 path candidates from typed observations with explicit link kinds, rather than deriving Wi-Fi or Android USB tethering roles from BSD interface names such as `en0`.
+
+Alternatives considered:
+
+* Match known macOS interface names directly.
+* Parse display names inside the core classifier.
+* Wait for live macOS APIs before modelling path candidates.
+
+Rationale:
+
+macOS interface names vary by hardware, adapter order and tethering state. Treating names as identifiers rather than classification rules keeps the core testable and avoids baking one machine's naming into the product. A later Darwin adapter can populate `LinkKind` from appropriate system evidence while the pure Go classifier stays fixture-driven.
+
+Consequences:
+
+`internal/paths` can select Wi-Fi and Android USB tethering candidates from injected observations and can reject missing or ambiguous candidates. It cannot yet discover live macOS paths or prove egress. Future Darwin adapter work must define the system evidence used to assign link kinds and must still collect packet captures before any dual-path success claim.
+
+Conditions for revisiting:
+
+Revisit if live macOS evidence cannot reliably distinguish Android USB tethering from other USB network devices, or if the product needs to support multiple simultaneous Wi-Fi or tethering candidates.

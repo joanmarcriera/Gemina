@@ -10,6 +10,7 @@ In scope:
 
 * `internal/protocol` packet identifiers.
 * `internal/dedup` first-copy acceptance decisions.
+* `internal/paths` fixture-driven path-candidate classification.
 * diagnostic decision values: `first-copy`, `duplicate`, `invalid`.
 
 Out of scope:
@@ -32,6 +33,7 @@ Out of scope:
 * A malformed packet ID could be accepted and pollute dedup state.
 * Duplicate observations could race and deliver more than one first copy.
 * Unbounded dedup state could become a memory-exhaustion vector.
+* Path classification could select the wrong interface role if it relies on names rather than observed link kind.
 * Diagnostic output could later be expanded to include private traffic or secrets.
 
 ## Mitigations
@@ -40,10 +42,13 @@ Out of scope:
 * `dedup.Window` rejects invalid packet IDs and empty path labels.
 * `dedup.Window` serialises access with a mutex and is covered by a race-detector test.
 * `dedup.Window` has an explicit capacity and evicts the oldest packet ID when full.
+* `paths.Classify` uses fixture-provided `LinkKind` values and rejects missing or ambiguous candidates instead of guessing from interface names.
 * Current result fields contain identifiers, path labels and decisions only; no payloads, access keys or private keys are present.
 
 ## Residual Risk
 
 The current dedup window is in-memory and local to one process. It is enough for the first probe but not for a production gateway, distributed gateway, replay defence or restart survival.
+
+The current path classifier only handles injected observations. It is not live macOS path discovery, socket binding or proof that traffic left through a specific interface.
 
 Future gateway work must revisit denial-of-service controls, replay windows, authenticated packet identity and logging redaction before any real traffic is handled.
