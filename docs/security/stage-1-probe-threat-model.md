@@ -16,6 +16,7 @@ In scope:
 * `internal/platform/darwin` fixture-backed evidence-to-link-kind derivation.
 * `internal/platform/darwin` command-backed live evidence reduction from
   `networksetup` and `ioreg` output.
+* `continuityctl darwin-evidence` redacted JSON report generation.
 * diagnostic decision values: `first-copy`, `duplicate`, `invalid`.
 
 Out of scope:
@@ -45,6 +46,8 @@ Out of scope:
 * Conflicting injected evidence could assign one interface to both required roles.
 * Command-backed live collection could accidentally persist MAC addresses,
   serial numbers, source IPs or raw IORegistry values.
+* Diagnostic report output could accidentally imply that path egress has been
+  proven when only interface evidence has been collected.
 * Diagnostic output could later be expanded to include private traffic or secrets.
 
 ## Mitigations
@@ -68,6 +71,9 @@ Out of scope:
 * Command-backed evidence sources reduce `networksetup` and `ioreg` output to
   coarse `Evidence` tokens and tests check that MAC-address and raw product-name
   fixture values are not retained.
+* `continuityctl darwin-evidence` sets the report claim to
+  `diagnostic-only-not-path-success` and reports incomplete classification
+  explicitly.
 * Current result fields contain identifiers, path labels and decisions only; no payloads, access keys or private keys are present.
 
 ## Residual Risk

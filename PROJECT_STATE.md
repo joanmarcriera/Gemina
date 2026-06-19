@@ -4,13 +4,14 @@ Last updated: 2026-06-20
 
 ## Current Objective
 
-Stage 1 command-backed Darwin evidence acquisition.
+Stage 1 redacted Darwin evidence diagnostic command.
 
 This cycle completed bounded Stage 1 path objectives: derive Wi-Fi and Android
 USB tethering link kinds from explicit injected Darwin evidence, then add a
 provisional command-backed live evidence source behind the existing
-`internal/platform/darwin` snapshot boundary. The work avoids role inference
-from names, socket binding, gateway networking, encryption or source import.
+`internal/platform/darwin` snapshot boundary, then expose it through a redacted
+`continuityctl` diagnostic command. The work avoids role inference from names,
+socket binding, gateway networking, encryption or source import.
 
 ## Completed Work
 
@@ -179,6 +180,28 @@ from names, socket binding, gateway networking, encryption or source import.
 * Delegated a bounded parser/privacy review for the command-backed collector to
   `ollama_deep`; it did not return before local validation completed and was
   closed without usable output.
+* Added `internal/diagnostics.BuildDarwinEvidenceReport`.
+* Added `continuityctl darwin-evidence`.
+* The diagnostic JSON report includes:
+  * report type and Stage 1 marker;
+  * `claim: diagnostic-only-not-path-success`;
+  * complete/incomplete classification status;
+  * redacted interface state and coarse evidence tokens;
+  * candidates and missing/ambiguous classification issues.
+* Added diagnostic tests proving:
+  * complete classification is marked complete;
+  * incomplete classification is marked incomplete;
+  * display names and raw hardware fixture values are omitted from JSON output.
+* Ran `go run ./cmd/continuityctl`.
+  * Output remained `continuityctl:stage-1-probe`.
+* Ran `go run ./cmd/continuityctl darwin-evidence` on the local host.
+  * The command succeeded.
+  * It reported `classification_status: incomplete`.
+  * It found one usable Wi-Fi candidate.
+  * It reported a missing Android USB tethering candidate, which is expected
+    while Android USB tethering is not connected.
+  * No source IP addresses, MAC addresses, serial numbers, access keys or raw
+    IORegistry product strings were emitted.
 
 Prior completed Stage 0 work remains in place:
 
@@ -244,10 +267,11 @@ boundary, a conservative live collector for BSD interface flags and IPv4
 presence, and fixture-backed Darwin evidence rules for Wi-Fi and Android USB
 tethering link kinds. It also has a provisional command-backed live evidence
 collector that reduces `networksetup` and `ioreg` output to coarse evidence
-tokens. It does not yet expose a user-facing diagnostic command, prove direct
-SystemConfiguration/Network framework/IORegistry API use, per-interface UDP
-egress, gateway reachability, packet capture evidence, path loss survival,
-encryption or VPN behaviour.
+tokens, plus a `continuityctl darwin-evidence` diagnostic command for manual
+redacted evidence capture. It does not yet prove complete Wi-Fi plus Android USB
+tethering classification on this host, direct SystemConfiguration/Network
+framework/IORegistry API use, per-interface UDP egress, gateway reachability,
+packet capture evidence, path loss survival, encryption or VPN behaviour.
 
 Git remote:
 
@@ -273,9 +297,12 @@ This cycle changed:
 * `DECISIONS.md`
 * `PROJECT_STATE.md`
 * `TASKS.md`
+* `cmd/continuityctl/main.go`
 * `docs/architecture/stage-1-probe.md`
 * `docs/security/stage-1-probe-threat-model.md`
 * `docs/testing/stage-1-probe-evidence.md`
+* `internal/diagnostics/darwin_evidence.go`
+* `internal/diagnostics/darwin_evidence_test.go`
 * `internal/platform/darwin/collector.go`
 * `internal/platform/darwin/collector_test.go`
 * `internal/platform/darwin/evidence.go`
@@ -300,10 +327,13 @@ Ignored local artefacts:
 Passed in this cycle:
 
 * `go test ./internal/platform/darwin ./internal/paths`
+* `go test ./cmd/continuityctl ./internal/diagnostics ./internal/platform/darwin ./internal/paths`
 * `go test ./...`
-* `go test -race ./internal/platform/darwin ./internal/paths`
+* `go test -race ./internal/diagnostics ./internal/platform/darwin ./internal/paths`
 * `scripts/docs-check.sh`
 * `git diff --check`
+* `go run ./cmd/continuityctl`
+* `go run ./cmd/continuityctl darwin-evidence`
 * `make test`
   * Go tests passed for all packages.
   * SwiftPM build passed for the macOS scaffold.
@@ -386,9 +416,6 @@ Previously passed and still reflected in the repository state:
 
 Not run:
 
-* `LiveEvidenceInterfaceSnapshots` against the real host, because this slice
-  adds the library boundary and redacted fixture tests. The next diagnostic
-  command should provide the controlled live capture path.
 * Local OpenTofu validation, because neither `tofu` nor `terraform` is installed locally.
 * Local SwiftLint, because `swiftlint` is not installed locally.
 
@@ -409,6 +436,8 @@ Not run:
   evidence and provisional command-backed live sources, but direct
   SystemConfiguration, Network framework and IORegistry API collection is not
   implemented yet.
+* The current local diagnostic run is incomplete because no Android USB tethering
+  candidate was present.
 * No packet captures, gateway tests or transport evidence exists yet.
 
 ## Known Blockers
@@ -418,11 +447,11 @@ Not run:
 
 ## Next Recommended Action
 
-Begin the next Stage 1 slice: add a redacted `continuityctl` diagnostic command
-that prints `LiveEvidenceInterfaceSnapshots` as JSON for manual evidence
-capture. The command must report incomplete classification explicitly and must
-not include source IP addresses, MAC addresses, serial numbers, raw access keys
-or raw IORegistry product strings. Keep socket binding, gateway networking and
-packet capture out of that diagnostic slice.
+Connect Android USB tethering on the target Mac, then run
+`go run ./cmd/continuityctl darwin-evidence`. Confirm the JSON reports one usable
+Wi-Fi candidate and one usable Android USB tethering candidate without source IP
+addresses, MAC addresses, serial numbers, raw access keys or raw IORegistry
+product strings. If classification remains incomplete, refine evidence
+acquisition before socket binding.
 
 Do not claim dual-path success until later work proves that UDP socket A explicitly leaves through Wi-Fi, UDP socket B explicitly leaves through Android USB tethering, both reach the same gateway process, one logical packet is delivered once, and either path can disappear without ending the logical session.

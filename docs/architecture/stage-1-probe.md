@@ -96,6 +96,11 @@ combines the conservative BSD interface state with command-backed evidence:
 This command-backed collector is still a Stage 1 probe boundary. It does not
 prove that packets leave over the selected interfaces.
 
+`continuityctl darwin-evidence` exposes the same snapshot boundary as redacted
+JSON for manual evidence capture. The report includes classification candidates
+and missing/ambiguous issues, and sets `claim` to
+`diagnostic-only-not-path-success`.
+
 ## Planned macOS Evidence Sources
 
 The future Darwin adapter should replace or harden the command-backed Wi-Fi
