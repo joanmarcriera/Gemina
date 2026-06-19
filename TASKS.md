@@ -47,7 +47,7 @@ Completion criteria:
 * [x] Push the initial bootstrap commit to the chosen remote.
 * [x] Run GitHub CI or equivalent clean-checkout validation.
 * [x] Update `PROJECT_STATE.md` with CI or clean-checkout validation results.
-* [ ] Request Stage 0 review before Stage 1 work starts.
+* [x] Request Stage 0 review before Stage 1 work starts.
 
 ## Remaining Stage 0 Hardening
 
@@ -58,7 +58,9 @@ Completion criteria:
 * [x] Investigate GitHub Actions startup failure from run `27815677467`.
 * [x] Inspect GitHub Actions results after pushing the initial commit.
 * [ ] Review non-blocking GitHub CI annotations for future hardening.
-* [ ] Request Stage 0 review before any Stage 1 transport work.
+* [x] Request Stage 0 review before any Stage 1 transport work.
+* [ ] Complete Stage 0 engineering review issue 1.
+* [ ] Complete Stage 0 legal/provenance review issue 2.
 
 ## Stage 1 Candidate, Not Yet Started
 
