@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-06-19
+Last updated: 2026-06-20
 
 ## Current Objective: Stage 1 Dual-Path UDP Probe
 
@@ -37,14 +37,15 @@ Completion criteria for Stage 0 exit:
 
 ## Next Exact Action
 
-Add explicit Wi-Fi and Android USB tethering evidence sources behind the Darwin
-snapshot boundary.
+Add live macOS evidence acquisition behind the Darwin snapshot boundary for the
+redacted evidence shapes now covered by fixtures.
 
 Completion criteria:
 
-* [ ] Capture redacted fixture evidence for Wi-Fi and Android USB tethering from macOS.
-* [ ] Keep BSD interface names as data only; do not classify by names such as `en0`.
-* [ ] Verify the evidence source that distinguishes Android USB tethering from generic USB network adapters.
+* [ ] Collect Wi-Fi interface-type evidence from SystemConfiguration or Network framework without hard-coded BSD names.
+* [ ] Collect Android USB tethering association evidence from IORegistry or an equivalent macOS source without treating generic USB Ethernet as Android tethering.
+* [ ] Preserve redaction: do not store source IP addresses, MAC addresses, serial numbers or user-specific hardware identifiers in fixtures or logs.
+* [ ] Keep socket binding out of this slice unless live evidence collection is complete and separately reviewed.
 * [ ] Update `PROJECT_STATE.md`, `TASKS.md` and `DECISIONS.md` with the Stage 1 implementation result.
 
 ## Completed Stage 1 Work
@@ -66,6 +67,10 @@ Completion criteria:
 * [x] Document planned macOS evidence sources for distinguishing Wi-Fi from Android USB tethering.
 * [x] Add conservative Darwin live interface-state collection using BSD interface flags and IPv4 presence.
 * [x] Test that the live collector boundary does not infer Wi-Fi or Android USB tethering from BSD names or display names.
+* [x] Add redacted Darwin fixture evidence for Wi-Fi, Android USB tethering and a generic USB network adapter.
+* [x] Derive Wi-Fi only from explicit Network framework or SystemConfiguration interface-type evidence.
+* [x] Derive Android USB tethering only from explicit Android USB IORegistry evidence.
+* [x] Keep generic USB network adapters and conflicting Wi-Fi/Android evidence unknown.
 * [x] Update root stage markers from Stage 0 bootstrap to Stage 1 probe.
 * [x] Remove stale first-party Stage 0 placeholder wording from active stubs and package docs.
 

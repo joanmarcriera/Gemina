@@ -1,8 +1,10 @@
 package darwin
 
 import (
+	"encoding/json"
 	"errors"
 	"net"
+	"os"
 	"testing"
 
 	"continuity-vpn/internal/paths"
@@ -90,6 +92,92 @@ func TestCollectInterfaceSnapshotsDoesNotInferKindFromNames(t *testing.T) {
 	}
 }
 
+func TestCollectInterfaceSnapshotsDerivesKindFromExplicitEvidence(t *testing.T) {
+	got, err := CollectInterfaceSnapshots(fakeInterfaceSource{
+		records: []InterfaceRecord{
+			loadInterfaceRecordFixture(t, "testdata/wifi-network-framework.json"),
+			loadInterfaceRecordFixture(t, "testdata/android-usb-ioregistry.json"),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CollectInterfaceSnapshots returned error: %v", err)
+	}
+	if got[0].Kind != paths.LinkKindWiFi {
+		t.Fatalf("Wi-Fi snapshot kind = %s", got[0].Kind)
+	}
+	if got[1].Kind != paths.LinkKindAndroidUSBTether {
+		t.Fatalf("Android USB snapshot kind = %s", got[1].Kind)
+	}
+
+	classification := paths.Classify(ObservationsFromSnapshots(got))
+	if !classification.Complete() {
+		t.Fatalf("classification incomplete from evidence-derived kinds: %+v", classification)
+	}
+}
+
+func TestCollectInterfaceSnapshotsDerivesWiFiFromSystemConfigurationEvidence(t *testing.T) {
+	got, err := CollectInterfaceSnapshots(fakeInterfaceSource{
+		records: []InterfaceRecord{
+			{
+				BSDName:      "wireless-system-config",
+				Flags:        net.FlagUp | net.FlagRunning,
+				AddressCIDRs: []string{"192.0.2.55/24"},
+				Evidence: []Evidence{
+					{Source: EvidenceSourceSystemConfiguration, Key: "interface-type", Value: "IEEE80211"},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("CollectInterfaceSnapshots returned error: %v", err)
+	}
+	if got[0].Kind != paths.LinkKindWiFi {
+		t.Fatalf("snapshot kind = %s", got[0].Kind)
+	}
+}
+
+func TestCollectInterfaceSnapshotsLeavesGenericUSBNetworkUnknown(t *testing.T) {
+	got, err := CollectInterfaceSnapshots(fakeInterfaceSource{
+		records: []InterfaceRecord{
+			loadInterfaceRecordFixture(t, "testdata/generic-usb-network-ioregistry.json"),
+		},
+	})
+	if err != nil {
+		t.Fatalf("CollectInterfaceSnapshots returned error: %v", err)
+	}
+	if got[0].Kind != paths.LinkKindUnknown {
+		t.Fatalf("generic USB network kind = %s", got[0].Kind)
+	}
+
+	classification := paths.Classify(ObservationsFromSnapshots(got))
+	if classification.Candidate(paths.RoleAndroidUSBTether) != nil {
+		t.Fatalf("generic USB network produced Android candidate: %+v", classification)
+	}
+	assertPathIssue(t, classification, paths.RoleAndroidUSBTether, paths.IssueMissingCandidate)
+}
+
+func TestCollectInterfaceSnapshotsLeavesConflictingEvidenceUnknown(t *testing.T) {
+	got, err := CollectInterfaceSnapshots(fakeInterfaceSource{
+		records: []InterfaceRecord{
+			{
+				BSDName:      "conflicting",
+				Flags:        net.FlagUp | net.FlagRunning,
+				AddressCIDRs: []string{"198.51.100.44/24"},
+				Evidence: []Evidence{
+					{Source: EvidenceSourceNetworkFramework, Key: "interface-type", Value: "wifi"},
+					{Source: EvidenceSourceIORegistry, Key: "usb-transport", Value: "android-rndis"},
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("CollectInterfaceSnapshots returned error: %v", err)
+	}
+	if got[0].Kind != paths.LinkKindUnknown {
+		t.Fatalf("conflicting evidence kind = %s", got[0].Kind)
+	}
+}
+
 func TestCollectInterfaceSnapshotsTreatsIPv6OnlyAsNoIPv4(t *testing.T) {
 	got, err := CollectInterfaceSnapshots(fakeInterfaceSource{
 		records: []InterfaceRecord{
@@ -152,4 +240,96 @@ func assertEvidenceValue(t *testing.T, snapshot InterfaceSnapshot, source Eviden
 		}
 	}
 	t.Fatalf("missing evidence key %q in %+v", key, snapshot.EvidenceBySource(source))
+}
+
+func assertPathIssue(t *testing.T, classification paths.Classification, role paths.Role, code paths.IssueCode) {
+	t.Helper()
+	for _, issue := range classification.Issues {
+		if issue.Role == role && issue.Code == code {
+			return
+		}
+	}
+	t.Fatalf("missing path issue role=%s code=%s in %+v", role, code, classification.Issues)
+}
+
+type interfaceRecordFixture struct {
+	BSDName      string            `json:"bsd_name"`
+	DisplayName  string            `json:"display_name"`
+	Flags        []string          `json:"flags"`
+	AddressCIDRs []string          `json:"address_cidrs"`
+	Evidence     []evidenceFixture `json:"evidence"`
+}
+
+type evidenceFixture struct {
+	Source string `json:"source"`
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+}
+
+func loadInterfaceRecordFixture(t *testing.T, path string) InterfaceRecord {
+	t.Helper()
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read fixture %s: %v", path, err)
+	}
+
+	var fixture interfaceRecordFixture
+	if err := json.Unmarshal(data, &fixture); err != nil {
+		t.Fatalf("parse fixture %s: %v", path, err)
+	}
+
+	evidence := make([]Evidence, 0, len(fixture.Evidence))
+	for _, item := range fixture.Evidence {
+		evidence = append(evidence, Evidence{
+			Source: evidenceSourceFromFixture(t, item.Source),
+			Key:    item.Key,
+			Value:  item.Value,
+		})
+	}
+
+	return InterfaceRecord{
+		BSDName:      fixture.BSDName,
+		DisplayName:  fixture.DisplayName,
+		Flags:        flagsFromFixture(t, fixture.Flags),
+		AddressCIDRs: fixture.AddressCIDRs,
+		Evidence:     evidence,
+	}
+}
+
+func flagsFromFixture(t *testing.T, values []string) net.Flags {
+	t.Helper()
+
+	var flags net.Flags
+	for _, value := range values {
+		switch value {
+		case "up":
+			flags |= net.FlagUp
+		case "running":
+			flags |= net.FlagRunning
+		case "loopback":
+			flags |= net.FlagLoopback
+		default:
+			t.Fatalf("unknown fixture flag %q", value)
+		}
+	}
+	return flags
+}
+
+func evidenceSourceFromFixture(t *testing.T, value string) EvidenceSource {
+	t.Helper()
+
+	switch value {
+	case EvidenceSourceBSDNetworkState.String():
+		return EvidenceSourceBSDNetworkState
+	case EvidenceSourceSystemConfiguration.String():
+		return EvidenceSourceSystemConfiguration
+	case EvidenceSourceNetworkFramework.String():
+		return EvidenceSourceNetworkFramework
+	case EvidenceSourceIORegistry.String():
+		return EvidenceSourceIORegistry
+	default:
+		t.Fatalf("unknown fixture evidence source %q", value)
+		return EvidenceSourceUnknown
+	}
 }

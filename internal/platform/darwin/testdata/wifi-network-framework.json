@@ -1,0 +1,13 @@
+{
+  "bsd_name": "redacted-wifi",
+  "display_name": "Wi-Fi",
+  "flags": ["up", "running"],
+  "address_cidrs": ["192.0.2.10/24"],
+  "evidence": [
+    {
+      "source": "network-framework",
+      "key": "interface-type",
+      "value": "wifi"
+    }
+  ]
+}

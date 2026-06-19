@@ -1,0 +1,13 @@
+{
+  "bsd_name": "redacted-android-usb",
+  "display_name": "USB network service",
+  "flags": ["up", "running"],
+  "address_cidrs": ["203.0.113.20/24"],
+  "evidence": [
+    {
+      "source": "io-registry",
+      "key": "usb-transport",
+      "value": "android-rndis"
+    }
+  ]
+}

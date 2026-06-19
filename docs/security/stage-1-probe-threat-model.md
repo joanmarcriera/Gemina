@@ -13,6 +13,7 @@ In scope:
 * `internal/paths` fixture-driven path-candidate classification.
 * `internal/platform/darwin` injected interface snapshots and conservative
   BSD interface-state collection.
+* `internal/platform/darwin` fixture-backed evidence-to-link-kind derivation.
 * diagnostic decision values: `first-copy`, `duplicate`, `invalid`.
 
 Out of scope:
@@ -39,6 +40,7 @@ Out of scope:
 * Live interface-state collection could accidentally expose source IP addresses
   or other local network details in evidence records.
 * Darwin observation evidence could misclassify a generic USB network adapter as Android USB tethering.
+* Conflicting injected evidence could assign one interface to both required roles.
 * Diagnostic output could later be expanded to include private traffic or secrets.
 
 ## Mitigations
@@ -51,8 +53,14 @@ Out of scope:
 * `platform/darwin` tests verify BSD names and display names are preserved as data but do not assign link kind by themselves.
 * `platform/darwin` live collector records only flags and IPv4 presence from
   BSD interface state, not source IP addresses.
-* `platform/darwin.NetInterfaceSource` sets `LinkKindUnknown`; later macOS
-  evidence sources must explicitly assign Wi-Fi or Android USB tethering kinds.
+* `platform/darwin.NetInterfaceSource` sets `LinkKindUnknown`; richer evidence
+  still has to be injected by a future macOS collector.
+* `platform/darwin.LinkKindFromEvidence` accepts only explicit Wi-Fi evidence
+  from Network framework or SystemConfiguration and explicit Android USB
+  tethering evidence from IORegistry.
+* Generic USB network evidence and conflicting Wi-Fi/Android evidence remain
+  unknown, leaving `internal/paths` to report a missing candidate rather than
+  guess.
 * Current result fields contain identifiers, path labels and decisions only; no payloads, access keys or private keys are present.
 
 ## Residual Risk
@@ -61,9 +69,10 @@ The current dedup window is in-memory and local to one process. It is enough for
 
 The current path classifier only handles injected observations. It is not live macOS path discovery, socket binding or proof that traffic left through a specific interface.
 
-The current Darwin live collector only records BSD interface state. It cannot
-identify Wi-Fi or Android USB tethering by itself. Future live observation code
-must treat Android USB tethering as untrusted until USB association evidence and
-packet captures confirm the path.
+The current Darwin live collector only records BSD interface state. The
+evidence-to-link-kind rules are fixture-driven and do not yet collect live
+SystemConfiguration, Network framework or IORegistry data. Future live
+observation code must treat Android USB tethering as untrusted until USB
+association evidence and packet captures confirm the path.
 
 Future gateway work must revisit denial-of-service controls, replay windows, authenticated packet identity and logging redaction before any real traffic is handled.

@@ -1,15 +1,16 @@
 # Project State
 
-Last updated: 2026-06-19
+Last updated: 2026-06-20
 
 ## Current Objective
 
-Stage 1 conservative Darwin interface-state collector.
+Stage 1 Darwin evidence-derived link classification.
 
-This cycle completed a bounded Stage 1 path objective: add conservative Darwin
-interface-state collection behind the existing `internal/platform/darwin`
-snapshot boundary, without role inference from names, socket binding, gateway
-networking, encryption or source import.
+This cycle completed a bounded Stage 1 path objective: derive Wi-Fi and Android
+USB tethering link kinds from explicit injected Darwin evidence behind the
+existing `internal/platform/darwin` snapshot boundary, without role inference
+from names, live SystemConfiguration/Network framework/IORegistry calls, socket
+binding, gateway networking, encryption or source import.
 
 ## Completed Work
 
@@ -130,6 +131,27 @@ networking, encryption or source import.
   * macOS CI run `27836988568`
 * Confirmed the only macOS CI annotation remains the non-blocking Homebrew
   tap-trust transition warning while installing SwiftLint.
+* Read all tracked project Markdown files before editing, per the current
+  execution instruction.
+* Added `internal/platform/darwin.LinkKindFromEvidence`.
+* Added redacted Darwin fixture files for:
+  * Wi-Fi Network framework evidence;
+  * Android USB IORegistry evidence;
+  * generic USB network IORegistry evidence.
+* Updated `CollectInterfaceSnapshots` so records with unknown kind can derive
+  kind from explicit evidence while explicit injected kinds remain preserved.
+* Added collector tests proving:
+  * Network framework Wi-Fi evidence derives `LinkKindWiFi`;
+  * SystemConfiguration `IEEE80211` evidence derives `LinkKindWiFi`;
+  * Android USB IORegistry evidence derives `LinkKindAndroidUSBTether`;
+  * generic USB Ethernet evidence remains `LinkKindUnknown`;
+  * conflicting Wi-Fi and Android USB evidence remains `LinkKindUnknown`;
+  * BSD names and display names still do not classify roles.
+* Updated Stage 1 architecture, test evidence and threat-model docs for
+  evidence-derived link classification.
+* Delegated a bounded Darwin evidence-classification review to `ollama_fast`;
+  it returned only a tool-call JSON fragment and was closed without usable
+  review output.
 
 Prior completed Stage 0 work remains in place:
 
@@ -191,10 +213,12 @@ The initial Stage 0 bootstrap is committed and pushed to GitHub. Stage 0 GitHub 
 
 Stage 1 now has a unit-tested Go core for packet identity, first-copy duplicate
 suppression, fixture-driven path-candidate classification, a Darwin snapshot
-boundary and a conservative live collector for BSD interface flags and IPv4
-presence. It does not yet prove Wi-Fi or Android USB tethering classification
-from live macOS evidence, per-interface UDP egress, gateway reachability, packet
-capture evidence, path loss survival, encryption or VPN behaviour.
+boundary, a conservative live collector for BSD interface flags and IPv4
+presence, and fixture-backed Darwin evidence rules for Wi-Fi and Android USB
+tethering link kinds. It does not yet prove live SystemConfiguration, Network
+framework or IORegistry collection, per-interface UDP egress, gateway
+reachability, packet capture evidence, path loss survival, encryption or VPN
+behaviour.
 
 Git remote:
 
@@ -220,51 +244,15 @@ This cycle changed:
 * `DECISIONS.md`
 * `PROJECT_STATE.md`
 * `TASKS.md`
-* `AGENTS.md`
-* `CONTRIBUTING.md`
-* `NOTICE`
-* `README.md`
-* `SECURITY.md`
-* `CODEOWNERS`
-* `api/openapi.yaml`
-* `api/protocol/framing.md`
-* `api/protocol/messages.md`
-* `apps/macos/README.md`
-* `apps/macos/Shared/ProductStage.swift`
-* `apps/macos/UnitTests/README.md`
-* `bridge/README.md`
-* `bridge/darwin/README.md`
-* `deploy/ansible/README.md`
-* `deploy/tofu/environments/dev/main.tf`
-* `deploy/tofu/environments/production/main.tf`
-* `deploy/tofu/modules/README.md`
-* `docs/architecture/overview.md`
 * `docs/architecture/stage-1-probe.md`
 * `docs/security/stage-1-probe-threat-model.md`
 * `docs/testing/stage-1-probe-evidence.md`
-* `internal/bootstrap/stage.go`
-* `internal/bootstrap/stage_test.go`
-* `internal/entitlement/doc.go`
-* `internal/framing/doc.go`
-* `internal/gateway/doc.go`
-* `internal/logging/doc.go`
-* `internal/metrics/doc.go`
 * `internal/platform/darwin/collector.go`
 * `internal/platform/darwin/collector_test.go`
-* `internal/platform/darwin/observations.go`
-* `internal/platform/darwin/observations_test.go`
-* `internal/platform/linux/doc.go`
-* `internal/replay/doc.go`
-* `internal/sessions/doc.go`
-* `internal/transport/doc.go`
-* `pkg/clientcore/doc.go`
-* `pkg/protocoltypes/doc.go`
-* `pkg/testkit/doc.go`
-* `research/experiments/README.md`
-* `scripts/build-apple-bridge.sh`
-* `scripts/collect-diagnostics.sh`
-* `scripts/deploy-dev-gateway.sh`
-* `scripts/run-network-tests.sh`
+* `internal/platform/darwin/evidence.go`
+* `internal/platform/darwin/testdata/android-usb-ioregistry.json`
+* `internal/platform/darwin/testdata/generic-usb-network-ioregistry.json`
+* `internal/platform/darwin/testdata/wifi-network-framework.json`
 
 Ignored local artefacts:
 
@@ -279,11 +267,10 @@ Ignored local artefacts:
 Passed in this cycle:
 
 * `go test ./internal/platform/darwin ./internal/paths`
-* `go test ./internal/platform/darwin ./internal/paths ./internal/bootstrap`
+* `go test ./...`
 * `go test -race ./internal/platform/darwin ./internal/paths`
 * `scripts/docs-check.sh`
-* `go test ./...`
-* `go test -race ./...`
+* `git diff --check`
 * `make test`
   * Go tests passed for all packages.
   * SwiftPM build passed for the macOS scaffold.
@@ -293,28 +280,14 @@ Passed in this cycle:
   * Documentation structure check passed.
   * SwiftLint was not installed locally, so the local SwiftLint run was skipped.
 * `make licence-check`
-* `make infra-check`
-  * OpenTofu/Terraform was not installed locally, so local infra validation was
-    skipped.
-* `git diff --check`
 * `make clean-workspace-check`
   * Passed from a temporary copy; included docs checks, licence/provenance
     checks, Go tests, SwiftPM build and local lint checks. SwiftLint was not
     installed locally, so local SwiftLint was skipped.
-* `git push origin main`
-  * Pushed implementation commit `a0aa2b4` (`Add Darwin interface state collector`).
-* `gh run watch 27836988541 --repo joanmarcriera/continuity-vpn --exit-status`
-  * GitHub Go CI passed on commit `a0aa2b4`.
-* `gh run watch 27836988540 --repo joanmarcriera/continuity-vpn --exit-status`
-  * GitHub Infrastructure CI passed on commit `a0aa2b4`.
-* `gh run watch 27836988568 --repo joanmarcriera/continuity-vpn --exit-status`
-  * GitHub macOS CI passed on commit `a0aa2b4` with the known non-blocking
-    Homebrew tap-trust annotation.
 * Fuzz testing considered.
-  * Not added or run in this slice because the collector maps typed interface
-    records and CIDR strings from the standard library rather than parsing a
-    custom packet or token format. Revisit when live command output, protocol
-    framing or entitlement parsing exists.
+  * Not added or run in this slice because the evidence classifier normalises
+    a small set of typed keys and values from fixture records. Revisit when
+    live command output, protocol framing or entitlement parsing exists.
 * Integration testing considered.
   * Not applicable to this slice because no socket binding, gateway receive loop
     or macOS path egress exists yet.
@@ -396,9 +369,9 @@ Not run:
 * Successful macOS CI still emits a non-blocking Homebrew tap-trust transition warning while installing SwiftLint from runner state.
 * The Stage 1 dedup window is in-memory and process-local; it is not production replay protection and does not survive gateway restart.
 * The Stage 1 path classifier depends on platform-provided link kinds; the
-  conservative Darwin collector now records BSD interface state but does not yet
-  populate Wi-Fi or Android USB tethering link kinds from SystemConfiguration,
-  Network framework or IORegistry evidence.
+  Darwin boundary can now derive those link kinds from explicit injected
+  evidence, but live SystemConfiguration, Network framework and IORegistry
+  collection is not implemented yet.
 * No packet captures, gateway tests or transport evidence exists yet.
 
 ## Known Blockers
@@ -408,10 +381,11 @@ Not run:
 
 ## Next Recommended Action
 
-Begin the next Stage 1 slice: add explicit Wi-Fi and Android USB tethering
-evidence sources behind the Darwin snapshot boundary. Prefer redacted fixtures
-or fixture-driven adapters for SystemConfiguration/Network framework Wi-Fi
-evidence and IORegistry USB association evidence before attempting socket
-binding.
+Begin the next Stage 1 slice: add live macOS evidence acquisition behind the
+Darwin snapshot boundary for the redacted fixture shapes now covered by tests.
+Collect SystemConfiguration or Network framework Wi-Fi interface-type evidence
+and IORegistry Android USB association evidence without storing source IP
+addresses, MAC addresses, serial numbers or user-specific hardware identifiers.
+Keep socket binding out of scope until live evidence collection is validated.
 
 Do not claim dual-path success until later work proves that UDP socket A explicitly leaves through Wi-Fi, UDP socket B explicitly leaves through Android USB tethering, both reach the same gateway process, one logical packet is delivered once, and either path can disappear without ending the logical session.

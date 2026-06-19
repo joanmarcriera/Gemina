@@ -1,0 +1,18 @@
+{
+  "bsd_name": "redacted-usb-network",
+  "display_name": "Generic USB network adapter",
+  "flags": ["up", "running"],
+  "address_cidrs": ["203.0.113.30/24"],
+  "evidence": [
+    {
+      "source": "system-configuration",
+      "key": "interface-type",
+      "value": "ethernet"
+    },
+    {
+      "source": "io-registry",
+      "key": "usb-transport",
+      "value": "generic-usb-ethernet"
+    }
+  ]
+}
