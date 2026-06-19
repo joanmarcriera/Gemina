@@ -389,3 +389,40 @@ Revisit if live macOS evidence uses different stable source keys, if Android USB
 tethering cannot be distinguished from generic USB adapters without additional
 signals, or if packet captures show that evidence-derived roles do not match the
 actual egress path.
+
+## 2026-06-20: Use Command-Backed Darwin Evidence Acquisition For The Probe
+
+Decision:
+
+Add a provisional Stage 1 evidence source that combines conservative BSD
+interface state with redacted evidence reduced from `networksetup
+-listallhardwareports` and `ioreg -r -c IOEthernetInterface -l` output.
+
+Alternatives considered:
+
+* Block live evidence acquisition until direct SystemConfiguration, Network
+  framework and IORegistry API bindings are implemented.
+* Parse full command output into diagnostics and redact later.
+* Move directly to socket binding and packet captures.
+
+Rationale:
+
+The next Stage 1 risk is whether the project can connect real macOS interface
+state to the fixture-backed evidence rules without leaking private hardware
+metadata. Command-backed collection is a small, reversible probe step. It lets
+tests verify the redaction contract before any socket binding or gateway work.
+
+Consequences:
+
+`internal/platform/darwin.LiveEvidenceInterfaceSnapshots` can now merge BSD
+interface state with coarse Wi-Fi and Android USB evidence. The implementation
+does not store MAC addresses, serial numbers, source IP addresses or raw
+IORegistry product strings in `Evidence`. This is not a production API boundary
+and does not prove packet egress. A later slice should expose a redacted
+diagnostic command, then packet-capture work must still prove actual paths.
+
+Conditions for revisiting:
+
+Revisit when direct macOS API bindings are available, if command output differs
+on the target macOS version, if Android tethering evidence is ambiguous, or if
+privacy review requires a stricter diagnostic-data model.
