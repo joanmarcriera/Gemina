@@ -202,6 +202,12 @@ socket binding, gateway networking, encryption or source import.
     while Android USB tethering is not connected.
   * No source IP addresses, MAC addresses, serial numbers, access keys or raw
     IORegistry product strings were emitted.
+* Created and pushed Stage 1 implementation commits:
+  * `929d814` (`Add Darwin evidence link classification`);
+  * `071600d` (`Add Darwin command evidence source`);
+  * `ab2f99d` (`Add Darwin evidence diagnostic command`).
+* Confirmed GitHub Go CI passed on commit `ab2f99d`:
+  * Go CI run `27853668927`.
 
 Prior completed Stage 0 work remains in place:
 
@@ -347,6 +353,10 @@ Passed in this cycle:
   * Passed from a temporary copy; included docs checks, licence/provenance
     checks, Go tests, SwiftPM build and local lint checks. SwiftLint was not
     installed locally, so local SwiftLint was skipped.
+* `git push origin main`
+  * Pushed commits through `ab2f99d` (`Add Darwin evidence diagnostic command`).
+* `gh run watch 27853668927 --repo joanmarcriera/continuity-vpn --exit-status`
+  * GitHub Go CI passed on commit `ab2f99d`.
 * Fuzz testing considered.
   * Not added or run in this slice because the evidence classifier normalises
     a small set of typed keys and values from fixture records. Revisit when
