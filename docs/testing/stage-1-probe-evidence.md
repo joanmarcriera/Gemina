@@ -49,6 +49,9 @@ The Darwin observation-boundary tests must cover:
 * fixture-backed derivation of Android USB tethering from IORegistry evidence;
 * generic USB network adapters remaining unknown rather than Android USB tethering;
 * conflicting Wi-Fi and Android USB evidence remaining unknown;
+* command-backed live evidence merging with conservative BSD interface state;
+* `networksetup` hardware-port output reduced to Wi-Fi evidence without storing MAC addresses;
+* `ioreg` Ethernet-interface output reduced to Android USB evidence without storing raw product names or serial-like values;
 * IPv6-only interfaces remaining unusable for the IPv4-only Stage 1 probe;
 * source and nil-source error handling;
 * evidence-source string values.
@@ -61,6 +64,8 @@ Before Stage 1 can claim dual-path success, collect:
 * live macOS observation evidence showing how Wi-Fi and Android USB tethering link kinds were assigned;
 * live SystemConfiguration, Network framework and IORegistry collection evidence
   matching the redacted fixture shape under `internal/platform/darwin/testdata/`;
+* a redacted diagnostic command output from `LiveEvidenceInterfaceSnapshots` on
+  the target Mac with Wi-Fi and Android USB tethering both connected;
 * packet captures from the Mac and gateway for the same probe session;
 * gateway logs showing both copies of the same `PacketID`;
 * loss tests where Wi-Fi disappears and the logical probe continues over USB tethering;

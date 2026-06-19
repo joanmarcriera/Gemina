@@ -4,13 +4,13 @@ Last updated: 2026-06-20
 
 ## Current Objective
 
-Stage 1 Darwin evidence-derived link classification.
+Stage 1 command-backed Darwin evidence acquisition.
 
-This cycle completed a bounded Stage 1 path objective: derive Wi-Fi and Android
-USB tethering link kinds from explicit injected Darwin evidence behind the
-existing `internal/platform/darwin` snapshot boundary, without role inference
-from names, live SystemConfiguration/Network framework/IORegistry calls, socket
-binding, gateway networking, encryption or source import.
+This cycle completed bounded Stage 1 path objectives: derive Wi-Fi and Android
+USB tethering link kinds from explicit injected Darwin evidence, then add a
+provisional command-backed live evidence source behind the existing
+`internal/platform/darwin` snapshot boundary. The work avoids role inference
+from names, socket binding, gateway networking, encryption or source import.
 
 ## Completed Work
 
@@ -152,6 +152,33 @@ binding, gateway networking, encryption or source import.
 * Delegated a bounded Darwin evidence-classification review to `ollama_fast`;
   it returned only a tool-call JSON fragment and was closed without usable
   review output.
+* Created commit `929d814` (`Add Darwin evidence link classification`) as a
+  stable checkpoint for the fixture-backed evidence-classification slice.
+* Added `internal/platform/darwin` command-backed live evidence acquisition:
+  * `CommandRunner`
+  * `OSCommandRunner`
+  * `InterfaceEvidenceRecord`
+  * `InterfaceEvidenceSource`
+  * `CombinedInterfaceSource`
+  * `SystemConfigurationCommandSource`
+  * `IORegistryCommandSource`
+  * `LiveEvidenceInterfaceSnapshots`
+* Added redacted command-output fixtures for:
+  * `networksetup -listallhardwareports`;
+  * `ioreg -r -c IOEthernetInterface -l`.
+* Added tests proving:
+  * command-backed evidence merges with conservative BSD interface state;
+  * Wi-Fi evidence is reduced from `networksetup` hardware-port output;
+  * Android USB evidence is reduced from IORegistry Ethernet-interface output;
+  * generic USB Ethernet output does not produce Android USB tethering evidence;
+  * MAC-address fixture values, raw product names and serial-like values are not
+    retained in `Evidence`;
+  * command and source errors are propagated.
+* Updated Stage 1 architecture, test evidence and threat-model docs for the
+  provisional command-backed live evidence collector.
+* Delegated a bounded parser/privacy review for the command-backed collector to
+  `ollama_deep`; it did not return before local validation completed and was
+  closed without usable output.
 
 Prior completed Stage 0 work remains in place:
 
@@ -215,10 +242,12 @@ Stage 1 now has a unit-tested Go core for packet identity, first-copy duplicate
 suppression, fixture-driven path-candidate classification, a Darwin snapshot
 boundary, a conservative live collector for BSD interface flags and IPv4
 presence, and fixture-backed Darwin evidence rules for Wi-Fi and Android USB
-tethering link kinds. It does not yet prove live SystemConfiguration, Network
-framework or IORegistry collection, per-interface UDP egress, gateway
-reachability, packet capture evidence, path loss survival, encryption or VPN
-behaviour.
+tethering link kinds. It also has a provisional command-backed live evidence
+collector that reduces `networksetup` and `ioreg` output to coarse evidence
+tokens. It does not yet expose a user-facing diagnostic command, prove direct
+SystemConfiguration/Network framework/IORegistry API use, per-interface UDP
+egress, gateway reachability, packet capture evidence, path loss survival,
+encryption or VPN behaviour.
 
 Git remote:
 
@@ -250,8 +279,12 @@ This cycle changed:
 * `internal/platform/darwin/collector.go`
 * `internal/platform/darwin/collector_test.go`
 * `internal/platform/darwin/evidence.go`
+* `internal/platform/darwin/live_evidence.go`
+* `internal/platform/darwin/live_evidence_test.go`
 * `internal/platform/darwin/testdata/android-usb-ioregistry.json`
 * `internal/platform/darwin/testdata/generic-usb-network-ioregistry.json`
+* `internal/platform/darwin/testdata/ioreg-ioethernet-redacted.txt`
+* `internal/platform/darwin/testdata/networksetup-listallhardwareports.txt`
 * `internal/platform/darwin/testdata/wifi-network-framework.json`
 
 Ignored local artefacts:
@@ -353,6 +386,9 @@ Previously passed and still reflected in the repository state:
 
 Not run:
 
+* `LiveEvidenceInterfaceSnapshots` against the real host, because this slice
+  adds the library boundary and redacted fixture tests. The next diagnostic
+  command should provide the controlled live capture path.
 * Local OpenTofu validation, because neither `tofu` nor `terraform` is installed locally.
 * Local SwiftLint, because `swiftlint` is not installed locally.
 
@@ -370,8 +406,9 @@ Not run:
 * The Stage 1 dedup window is in-memory and process-local; it is not production replay protection and does not survive gateway restart.
 * The Stage 1 path classifier depends on platform-provided link kinds; the
   Darwin boundary can now derive those link kinds from explicit injected
-  evidence, but live SystemConfiguration, Network framework and IORegistry
-  collection is not implemented yet.
+  evidence and provisional command-backed live sources, but direct
+  SystemConfiguration, Network framework and IORegistry API collection is not
+  implemented yet.
 * No packet captures, gateway tests or transport evidence exists yet.
 
 ## Known Blockers
@@ -381,11 +418,11 @@ Not run:
 
 ## Next Recommended Action
 
-Begin the next Stage 1 slice: add live macOS evidence acquisition behind the
-Darwin snapshot boundary for the redacted fixture shapes now covered by tests.
-Collect SystemConfiguration or Network framework Wi-Fi interface-type evidence
-and IORegistry Android USB association evidence without storing source IP
-addresses, MAC addresses, serial numbers or user-specific hardware identifiers.
-Keep socket binding out of scope until live evidence collection is validated.
+Begin the next Stage 1 slice: add a redacted `continuityctl` diagnostic command
+that prints `LiveEvidenceInterfaceSnapshots` as JSON for manual evidence
+capture. The command must report incomplete classification explicitly and must
+not include source IP addresses, MAC addresses, serial numbers, raw access keys
+or raw IORegistry product strings. Keep socket binding, gateway networking and
+packet capture out of that diagnostic slice.
 
 Do not claim dual-path success until later work proves that UDP socket A explicitly leaves through Wi-Fi, UDP socket B explicitly leaves through Android USB tethering, both reach the same gateway process, one logical packet is delivered once, and either path can disappear without ending the logical session.

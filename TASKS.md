@@ -37,15 +37,14 @@ Completion criteria for Stage 0 exit:
 
 ## Next Exact Action
 
-Add live macOS evidence acquisition behind the Darwin snapshot boundary for the
-redacted evidence shapes now covered by fixtures.
+Add a redacted diagnostic command for the Darwin evidence snapshot.
 
 Completion criteria:
 
-* [ ] Collect Wi-Fi interface-type evidence from SystemConfiguration or Network framework without hard-coded BSD names.
-* [ ] Collect Android USB tethering association evidence from IORegistry or an equivalent macOS source without treating generic USB Ethernet as Android tethering.
-* [ ] Preserve redaction: do not store source IP addresses, MAC addresses, serial numbers or user-specific hardware identifiers in fixtures or logs.
-* [ ] Keep socket binding out of this slice unless live evidence collection is complete and separately reviewed.
+* [ ] Add a `continuityctl` subcommand that prints `LiveEvidenceInterfaceSnapshots` as redacted JSON for manual Stage 1 evidence capture.
+* [ ] Include no source IP addresses, MAC addresses, serial numbers, raw access keys or raw IORegistry product strings in diagnostic output.
+* [ ] Report incomplete classification explicitly rather than claiming path success.
+* [ ] Keep socket binding, gateway networking and packet capture out of this diagnostic slice.
 * [ ] Update `PROJECT_STATE.md`, `TASKS.md` and `DECISIONS.md` with the Stage 1 implementation result.
 
 ## Completed Stage 1 Work
@@ -71,6 +70,9 @@ Completion criteria:
 * [x] Derive Wi-Fi only from explicit Network framework or SystemConfiguration interface-type evidence.
 * [x] Derive Android USB tethering only from explicit Android USB IORegistry evidence.
 * [x] Keep generic USB network adapters and conflicting Wi-Fi/Android evidence unknown.
+* [x] Add provisional command-backed live evidence acquisition using `networksetup` and `ioreg` output reduced to redacted evidence tokens.
+* [x] Merge live evidence with conservative BSD interface state without hard-coded BSD names.
+* [x] Test that command-backed evidence does not retain MAC addresses, raw product names or serial-like values from fixtures.
 * [x] Update root stage markers from Stage 0 bootstrap to Stage 1 probe.
 * [x] Remove stale first-party Stage 0 placeholder wording from active stubs and package docs.
 

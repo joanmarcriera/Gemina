@@ -32,6 +32,7 @@ This repository currently implements only a unit-testable core below the live ne
   * `ObservationsFromSnapshots`
   * `LiveInterfaceSnapshots`
   * `LinkKindFromEvidence`
+  * `LiveEvidenceInterfaceSnapshots`
 
 The window records path labels such as `wifi` and `usb-tether`, but those labels are not proof of macOS interface binding. They are placeholders for future observations from real sockets and packet captures.
 
@@ -41,7 +42,7 @@ The path classifier consumes enum-like link kinds from an injected observation s
 
 This slice does not implement:
 
-* SystemConfiguration, Network framework or IORegistry live API calls;
+* SystemConfiguration or Network framework API calls;
 * source-address or socket binding;
 * gateway networking;
 * packet serialisation;
@@ -81,9 +82,26 @@ The checked-in fixtures under `internal/platform/darwin/testdata/` are redacted
 examples of the evidence shape expected from future macOS collectors. They are
 not packet captures and do not prove live path selection.
 
+`LiveEvidenceInterfaceSnapshots` is a provisional live evidence collector that
+combines the conservative BSD interface state with command-backed evidence:
+
+* `networksetup -listallhardwareports` is reduced to SystemConfiguration-style
+  Wi-Fi `interface-type` evidence keyed by BSD name.
+* `ioreg -r -c IOEthernetInterface -l` is reduced to IORegistry Android USB
+  tethering evidence keyed by BSD name when the redacted block contains Android
+  tethering or RNDIS signals.
+* MAC addresses, serial numbers, source IPs and raw command values are not stored
+  in `Evidence`.
+
+This command-backed collector is still a Stage 1 probe boundary. It does not
+prove that packets leave over the selected interfaces.
+
 ## Planned macOS Evidence Sources
 
-The future Darwin adapter should collect Wi-Fi evidence using macOS APIs such as Network framework interface type `wifi` or SystemConfiguration wireless interface type evidence.
+The future Darwin adapter should replace or harden the command-backed Wi-Fi
+evidence with direct macOS APIs such as Network framework interface type `wifi`
+or SystemConfiguration wireless interface type evidence when the product moves
+beyond the probe.
 
 Android USB tethering should require stronger evidence than a display name. The adapter should combine a usable IPv4 network interface with USB parent/device evidence from IORegistry or equivalent system APIs showing that the network interface is associated with an Android USB tethering device. If that evidence is missing or ambiguous, the adapter should return `LinkKindUnknown` and let `internal/paths` report a missing candidate rather than guess.
 

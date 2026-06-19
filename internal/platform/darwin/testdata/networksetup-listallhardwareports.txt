@@ -1,0 +1,7 @@
+Hardware Port: Wi-Fi
+Device: redacted-wifi
+Ethernet Address: 00:00:00:00:00:00
+
+Hardware Port: USB 10/100/1000 LAN
+Device: redacted-usb-network
+Ethernet Address: 00:00:00:00:00:00

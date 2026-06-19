@@ -1,0 +1,11 @@
++-o IOEthernetInterface@0  <class IOEthernetInterface, id 0x100000001>
+  "BSD Name" = "redacted-android-usb"
+  "IOProviderClass" = "IOEthernetInterface"
+  "USB Product Name" = "Android RNDIS"
+  "USB Vendor Name" = "Android"
+
++-o IOEthernetInterface@1  <class IOEthernetInterface, id 0x100000002>
+  "BSD Name" = "redacted-usb-network"
+  "IOProviderClass" = "IOEthernetInterface"
+  "USB Product Name" = "USB 10/100/1000 LAN"
+  "USB Vendor Name" = "Generic"
