@@ -37,14 +37,14 @@ Completion criteria for Stage 0 exit:
 
 ## Next Exact Action
 
-Add a Darwin observation adapter boundary for path observations.
+Add live Darwin observation evidence or collector behind the fixture boundary.
 
 Completion criteria:
 
-* [ ] Define an adapter boundary that returns `internal/paths.Observation` values.
-* [ ] Add fixture-driven tests for Darwin observation data without live socket binding.
+* [ ] Capture redacted fixture evidence for Wi-Fi and Android USB tethering from macOS.
+* [ ] Define or implement a live collector behind the existing `internal/platform/darwin.InterfaceSnapshot` boundary.
 * [ ] Keep BSD interface names as data only; do not classify by names such as `en0`.
-* [ ] Document which macOS evidence source will distinguish Wi-Fi from Android USB tethering.
+* [ ] Verify the evidence source that distinguishes Android USB tethering from generic USB network adapters.
 * [ ] Update `PROJECT_STATE.md`, `TASKS.md` and `DECISIONS.md` with the Stage 1 implementation result.
 
 ## Completed Stage 1 Work
@@ -60,6 +60,10 @@ Completion criteria:
 * [x] Identify Wi-Fi and Android USB tethering candidates from injected fixture data without hard-coded interface names.
 * [x] Add unit tests for ambiguous, missing and multiple-candidate path observations.
 * [x] Keep socket binding and live macOS API calls out of the path-candidate classification slice.
+* [x] Define a Darwin adapter boundary that returns `internal/paths.Observation` values from injected `InterfaceSnapshot` fixtures.
+* [x] Add fixture-driven tests for Darwin observation data without live socket binding.
+* [x] Keep BSD interface names as data only in the Darwin fixture boundary; do not classify by names such as `en0`.
+* [x] Document planned macOS evidence sources for distinguishing Wi-Fi from Android USB tethering.
 
 ## Remaining Stage 0 Hardening
 

@@ -8,8 +8,10 @@ Required local checks for the current slice:
 
 * `go test ./internal/protocol ./internal/dedup`
 * `go test ./internal/paths`
+* `go test ./internal/platform/darwin`
 * `go test -race ./internal/dedup ./internal/protocol`
 * `go test -race ./internal/paths`
+* `go test -race ./internal/platform/darwin`
 
 The dedup tests must cover:
 
@@ -30,11 +32,21 @@ The path-classification tests must cover:
 * ambiguous candidates reported;
 * unknown link kinds ignored.
 
+The Darwin observation-boundary tests must cover:
+
+* snapshot fields preserved into `paths.Observation`;
+* fixture snapshots feeding the path classifier;
+* BSD names and display names not assigning link kind by themselves;
+* missing BSD names remaining unusable;
+* evidence metadata filtered by source;
+* evidence-source string values.
+
 ## Integration Evidence Not Yet Available
 
 Before Stage 1 can claim dual-path success, collect:
 
 * local socket-binding evidence showing one UDP path leaves through Wi-Fi and one through Android USB tethering;
+* live macOS observation evidence showing how Wi-Fi and Android USB tethering link kinds were assigned;
 * packet captures from the Mac and gateway for the same probe session;
 * gateway logs showing both copies of the same `PacketID`;
 * loss tests where Wi-Fi disappears and the logical probe continues over USB tethering;
