@@ -4,9 +4,9 @@ Last updated: 2026-06-19
 
 ## Current Objective
 
-Stage 1 probe core: packet identity and first-copy duplicate suppression.
+Stage 1 path candidate model.
 
-This cycle completed a bounded Stage 1 core objective: add unit-tested probe packet identity and in-memory first-copy duplicate suppression below the network layer, without implementing interface binding, gateway networking, encryption or source import.
+This cycle completed a bounded Stage 1 path objective: add fixture-driven path observation and candidate classification in `internal/paths`, without live macOS APIs, socket binding, gateway networking, encryption or source import.
 
 ## Completed Work
 
@@ -60,6 +60,24 @@ This cycle completed a bounded Stage 1 core objective: add unit-tested probe pac
   * `docs/testing/stage-1-probe-evidence.md`
   * `docs/security/stage-1-probe-threat-model.md`
 * Delegated a bounded test-matrix request to `ollama_fast`; it returned unusable tool-call JSON, so source inspection and local tests remained authoritative.
+* Added `internal/paths` observation and classification primitives:
+  * `LinkKind`
+  * `Role`
+  * `Observation`
+  * `Candidate`
+  * `Issue`
+  * `Classification`
+* Added fixture-driven path classification for usable Wi-Fi and Android USB tethering observations.
+* Added unit tests for:
+  * successful Wi-Fi and Android USB tethering candidate selection;
+  * non-standard fake interface identifiers to guard against BSD-name assumptions;
+  * unusable observations;
+  * missing candidates;
+  * ambiguous Wi-Fi candidates;
+  * ambiguous Android USB tethering candidates;
+  * unknown link kinds.
+* Updated Stage 1 architecture, test evidence and threat-model docs to cover path-candidate classification.
+* Delegated a bounded path-model review to `ollama_deep`; it did not return before local work and validation completed, so it was closed without usable output.
 
 Prior completed Stage 0 work remains in place:
 
@@ -117,7 +135,7 @@ The repository has a validating Stage 0 skeleton. The upstream manifest is fully
 
 The initial Stage 0 bootstrap is committed and pushed to GitHub. Stage 0 GitHub CI now passes on `origin/main`. The Stage 0 engineering and legal/provenance review gates are complete for starting Stage 1 probe work, subject to the recorded follow-ups and standing import-time conditions.
 
-Stage 1 now has a unit-tested Go core for packet identity and first-copy duplicate suppression. It does not yet prove macOS interface discovery, per-interface UDP egress, gateway reachability, packet capture evidence, path loss survival, encryption or VPN behaviour.
+Stage 1 now has a unit-tested Go core for packet identity, first-copy duplicate suppression and fixture-driven path-candidate classification. It does not yet prove live macOS interface discovery, per-interface UDP egress, gateway reachability, packet capture evidence, path loss survival, encryption or VPN behaviour.
 
 Git remote:
 
@@ -146,12 +164,9 @@ This cycle changed:
 * `docs/security/stage-1-probe-threat-model.md`
 * `docs/testing/README.md`
 * `docs/testing/stage-1-probe-evidence.md`
-* `internal/dedup/doc.go`
-* `internal/dedup/window.go`
-* `internal/dedup/window_test.go`
-* `internal/protocol/doc.go`
-* `internal/protocol/identity.go`
-* `internal/protocol/identity_test.go`
+* `internal/paths/doc.go`
+* `internal/paths/classifier.go`
+* `internal/paths/classifier_test.go`
 * `PROJECT_STATE.md`
 * `TASKS.md`
 
@@ -167,9 +182,9 @@ Ignored local artefacts:
 
 Passed in this cycle:
 
-* `go test ./internal/protocol ./internal/dedup`
+* `go test ./internal/paths`
 * `go test ./...`
-* `go test -race ./internal/dedup ./internal/protocol`
+* `go test -race ./internal/paths`
 * `make test`
   * Go tests passed for all packages.
   * SwiftPM build passed for the macOS scaffold.
@@ -183,14 +198,10 @@ Passed in this cycle:
 * `git diff --check`
 * `make clean-workspace-check`
   * Passed from a temporary copy; included docs checks, licence/provenance checks, Go tests and SwiftPM build.
-* `git push origin main`
-  * Pushed implementation commit `9081915` (`Add Stage 1 probe dedup core`).
-* `gh run watch 27823267136 --repo joanmarcriera/continuity-vpn --exit-status`
-  * GitHub Go CI passed on commit `9081915`.
 * Fuzz testing considered.
-  * Not added or run in this slice because no packet parser, serialiser or network input boundary exists yet; revisit when framing or gateway receive code exists.
+  * Not added or run in this slice because the path classifier consumes typed observations rather than parsing untrusted bytes; revisit when live macOS observation parsing exists.
 * Integration testing considered.
-  * Not applicable to this slice because no sockets, gateway receive loop or macOS path binding exists yet.
+  * Not applicable to this slice because no live macOS observation adapter, sockets, gateway receive loop or macOS path binding exists yet.
 
 Previously passed and still reflected in the repository state:
 
@@ -246,6 +257,7 @@ Not run:
 * The first GitHub Actions push event produced `startup_failure` run `27815677467` with no jobs/logs. A later workflow-trigger hardening commit ran the named project CI workflows successfully, so this is no longer blocking clean-checkout validation evidence.
 * Successful macOS CI still emits a non-blocking Homebrew tap-trust transition warning while installing SwiftLint from runner state.
 * The Stage 1 dedup window is in-memory and process-local; it is not production replay protection and does not survive gateway restart.
+* The Stage 1 path classifier depends on platform-provided link kinds; the Darwin adapter that populates those observations does not exist yet.
 * No packet captures, gateway tests or transport evidence exists yet.
 
 ## Known Blockers
@@ -255,6 +267,6 @@ Not run:
 
 ## Next Recommended Action
 
-Begin the next Stage 1 slice: model macOS path candidates in `internal/paths` without hard-coded interface names, using fixture-driven tests before opening sockets.
+Begin the next Stage 1 slice: add a Darwin observation adapter boundary that can populate `internal/paths.Observation` values from injected fixtures, still without opening sockets or hard-coding BSD interface names.
 
 Do not claim dual-path success until later work proves that UDP socket A explicitly leaves through Wi-Fi, UDP socket B explicitly leaves through Android USB tethering, both reach the same gateway process, one logical packet is delivered once, and either path can disappear without ending the logical session.

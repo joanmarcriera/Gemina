@@ -4,7 +4,7 @@
 
 Stage 1 dual-path UDP probe.
 
-Only the initial Go packet identity and first-copy duplicate-suppression core exists. No production transport, packet framing, NetworkExtension packet handling, gateway networking, entitlement service, payment flow or real infrastructure resource exists yet.
+Only the initial Go packet identity, first-copy duplicate-suppression core and fixture-driven path-candidate classifier exist. No production transport, packet framing, live macOS path binding, NetworkExtension packet handling, gateway networking, entitlement service, payment flow or real infrastructure resource exists yet.
 
 ## Product Shape
 

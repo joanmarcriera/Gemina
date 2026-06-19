@@ -37,14 +37,14 @@ Completion criteria for Stage 0 exit:
 
 ## Next Exact Action
 
-Model macOS path candidates without hard-coded interface names.
+Add a Darwin observation adapter boundary for path observations.
 
 Completion criteria:
 
-* [ ] Add `internal/paths` types for observed interfaces and path-candidate classification.
-* [ ] Identify Wi-Fi and Android USB tethering candidates from injected fixture data without hard-coded interface names.
-* [ ] Add unit tests for ambiguous, missing and multiple-candidate path observations.
-* [ ] Keep socket binding and live macOS API calls out of this slice unless fixtures prove the classification rules.
+* [ ] Define an adapter boundary that returns `internal/paths.Observation` values.
+* [ ] Add fixture-driven tests for Darwin observation data without live socket binding.
+* [ ] Keep BSD interface names as data only; do not classify by names such as `en0`.
+* [ ] Document which macOS evidence source will distinguish Wi-Fi from Android USB tethering.
 * [ ] Update `PROJECT_STATE.md`, `TASKS.md` and `DECISIONS.md` with the Stage 1 implementation result.
 
 ## Completed Stage 1 Work
@@ -56,6 +56,10 @@ Completion criteria:
 * [x] Run race detector for the dedup/protocol slice.
 * [x] Define packet-capture and loss/recovery evidence required before claiming path success.
 * [x] Update the Stage 1 threat model for packet identity and duplicate suppression.
+* [x] Add `internal/paths` types for observed interfaces and path-candidate classification.
+* [x] Identify Wi-Fi and Android USB tethering candidates from injected fixture data without hard-coded interface names.
+* [x] Add unit tests for ambiguous, missing and multiple-candidate path observations.
+* [x] Keep socket binding and live macOS API calls out of the path-candidate classification slice.
 
 ## Remaining Stage 0 Hardening
 
