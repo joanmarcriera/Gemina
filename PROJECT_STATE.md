@@ -220,9 +220,9 @@ Passed in this cycle:
 * `make clean-workspace-check`
   * Passed from a temporary copy; included docs checks, licence/provenance checks, Go tests and SwiftPM build.
 * `git push origin main`
-  * Pushed implementation commit `814c211` (`Add Stage 1 path candidate model`).
-* `gh run watch 27835266468 --repo joanmarcriera/continuity-vpn --exit-status`
-  * GitHub Go CI passed on commit `814c211`.
+  * Pushed implementation commit `63bd192` (`Add Darwin path observation boundary`).
+* `gh run watch 27836030241 --repo joanmarcriera/continuity-vpn --exit-status`
+  * GitHub Go CI passed on commit `63bd192`.
 * Fuzz testing considered.
   * Not added or run in this slice because the path classifier consumes typed observations rather than parsing untrusted bytes; revisit when live macOS observation parsing exists.
 * Integration testing considered.
