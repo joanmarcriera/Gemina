@@ -4,9 +4,9 @@ Last updated: 2026-06-19
 
 ## Current Objective
 
-Stage 0 review outcome recording and Stage 1 handoff.
+Stage 1 probe core: packet identity and first-copy duplicate suppression.
 
-This cycle completed a bounded Stage 0 review-outcome objective: record independent reviewer approval for the engineering and legal/provenance Stage 0 gates, correct the review evidence trail and close the review issues.
+This cycle completed a bounded Stage 1 core objective: add unit-tested probe packet identity and in-memory first-copy duplicate suppression below the network layer, without implementing interface binding, gateway networking, encryption or source import.
 
 ## Completed Work
 
@@ -44,6 +44,22 @@ This cycle completed a bounded Stage 0 review-outcome objective: record independ
 * Stage 0 legal/provenance review issue 2 approved the Stage 0 records with standing import-time conditions. This is not legal advice and does not approve any source import.
 * Posted the Stage 0 engineering review outcome to issue 1 and closed it: https://github.com/joanmarcriera/continuity-vpn/issues/1
 * Posted the Stage 0 legal/provenance review outcome to issue 2 and closed it: https://github.com/joanmarcriera/continuity-vpn/issues/2
+* Added `internal/protocol` packet identity primitives:
+  * `SessionID`
+  * `PacketNumber`
+  * `PacketID`
+* Added `internal/dedup` first-copy duplicate suppression:
+  * invalid packet ID or empty path label -> `invalid`
+  * first valid observation -> `first-copy`
+  * later observation with the same `PacketID` -> `duplicate`
+  * bounded in-memory eviction of oldest packet IDs
+* Added unit tests for packet identity validation, first-copy acceptance, duplicate rejection, invalid observations, bounded eviction and concurrent duplicate calls.
+* Ran the race detector for the new dedup/protocol packages.
+* Documented the Stage 1 probe package boundary and evidence requirements in:
+  * `docs/architecture/stage-1-probe.md`
+  * `docs/testing/stage-1-probe-evidence.md`
+  * `docs/security/stage-1-probe-threat-model.md`
+* Delegated a bounded test-matrix request to `ollama_fast`; it returned unusable tool-call JSON, so source inspection and local tests remained authoritative.
 
 Prior completed Stage 0 work remains in place:
 
@@ -95,11 +111,13 @@ Prior completed Stage 0 work remains in place:
 
 ## Current Implementation State
 
-No VPN transport, packet framing, deduplication, NetworkExtension packet handling, gateway runtime, entitlement service, payment flow or real infrastructure resource exists.
+No VPN transport, packet framing, production duplicate-suppression integration, NetworkExtension packet handling, gateway runtime, entitlement service, payment flow or real infrastructure resource exists.
 
 The repository has a validating Stage 0 skeleton. The upstream manifest is fully pinned by shell-verified commits. Research sources are present only in `.research-src/`, which is ignored by Git.
 
-The initial Stage 0 bootstrap is committed and pushed to GitHub. Stage 0 GitHub CI now passes on `origin/main`. The Stage 0 engineering and legal/provenance review gates are complete for starting Stage 1 probe work, subject to the recorded follow-ups and standing import-time conditions. No Stage 1 implementation exists.
+The initial Stage 0 bootstrap is committed and pushed to GitHub. Stage 0 GitHub CI now passes on `origin/main`. The Stage 0 engineering and legal/provenance review gates are complete for starting Stage 1 probe work, subject to the recorded follow-ups and standing import-time conditions.
+
+Stage 1 now has a unit-tested Go core for packet identity and first-copy duplicate suppression. It does not yet prove macOS interface discovery, per-interface UDP egress, gateway reachability, packet capture evidence, path loss survival, encryption or VPN behaviour.
 
 Git remote:
 
@@ -123,8 +141,17 @@ Initial bootstrap content:
 This cycle changed:
 
 * `DECISIONS.md`
-* `docs/reviews/stage-0-review-comments.md`
-* `docs/reviews/stage-0-review-request.md`
+* `docs/architecture/overview.md`
+* `docs/architecture/stage-1-probe.md`
+* `docs/security/stage-1-probe-threat-model.md`
+* `docs/testing/README.md`
+* `docs/testing/stage-1-probe-evidence.md`
+* `internal/dedup/doc.go`
+* `internal/dedup/window.go`
+* `internal/dedup/window_test.go`
+* `internal/protocol/doc.go`
+* `internal/protocol/identity.go`
+* `internal/protocol/identity_test.go`
 * `PROJECT_STATE.md`
 * `TASKS.md`
 
@@ -140,52 +167,26 @@ Ignored local artefacts:
 
 Passed in this cycle:
 
-* `make clean-workspace-check`
-* `scripts/docs-check.sh`
-* `make licence-check`
-* `ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "workflow yaml parsed"' .github/workflows/*.yml`
-* `git diff --check`
-* `git diff --cached --check`
-* `git push origin main`
-* `gh api repos/actions/checkout/releases/latest --jq '{tag_name,name,html_url,published_at}'`
-* `gh api repos/actions/setup-go/releases/latest --jq '{tag_name,name,html_url,published_at}'`
-* `gh api repos/opentofu/setup-opentofu/releases/latest --jq '{tag_name,name,html_url,published_at}'`
-* `rg -n "actions/checkout@v4|actions/setup-go@v5|opentofu/setup-opentofu@v1|Node.js 24" .github/workflows`
-  * Returned no matches.
-* `rg -n "actions/checkout@v7.0.0|actions/setup-go@v6.4.0|opentofu/setup-opentofu@v2.0.1|cache: false" .github/workflows`
-* `gh issue list --repo joanmarcriera/continuity-vpn --state open --limit 20`
-* `gh label list --repo joanmarcriera/continuity-vpn --limit 100`
-* `gh label create stage-0 --repo joanmarcriera/continuity-vpn --description "Stage 0 bootstrap, provenance and planning" --color 0e8a16`
-* `gh label create stage-review --repo joanmarcriera/continuity-vpn --description "Stage gate review required" --color 5319e7`
-* `gh label create legal-review --repo joanmarcriera/continuity-vpn --description "Legal or licence provenance review required" --color b60205`
-* `gh issue create` for Stage 0 engineering review issue 1.
-* `gh issue create` for Stage 0 legal/provenance review issue 2.
-* `gh run watch 27820615456 --repo joanmarcriera/continuity-vpn --exit-status`
-* `gh run watch 27820615438 --repo joanmarcriera/continuity-vpn --exit-status`
-* `gh run watch 27820615455 --repo joanmarcriera/continuity-vpn --exit-status`
-* `gh run watch 27820615442 --repo joanmarcriera/continuity-vpn --exit-status`
-* `gh run view 27820615456 --repo joanmarcriera/continuity-vpn`
-* `gh run view 27820615438 --repo joanmarcriera/continuity-vpn`
-* `gh run view 27820615455 --repo joanmarcriera/continuity-vpn`
-* `gh run view 27820615442 --repo joanmarcriera/continuity-vpn`
-* GitHub Go CI passed on commit `4a8afd4`.
-* GitHub Infrastructure CI passed on commit `4a8afd4`.
-* GitHub Licence Scan passed on commit `4a8afd4`.
-* GitHub macOS CI passed on commit `4a8afd4`.
-* `gh run list --repo joanmarcriera/continuity-vpn --limit 12`
+* `go test ./internal/protocol ./internal/dedup`
+* `go test ./...`
+* `go test -race ./internal/dedup ./internal/protocol`
+* `make test`
+  * Go tests passed for all packages.
+  * SwiftPM build passed for the macOS scaffold.
+  * Documentation structure check passed.
+* `make lint`
+  * Go formatting check passed.
+  * Documentation structure check passed.
+  * SwiftLint was not installed locally, so the local SwiftLint run was skipped.
 * `scripts/docs-check.sh`
 * `make licence-check`
 * `git diff --check`
-* Searched the state and review documents for stale manual-only CI or incomplete-review wording.
-  * Returned no matches.
 * `make clean-workspace-check`
   * Passed from a temporary copy; included docs checks, licence/provenance checks, Go tests and SwiftPM build.
-* `gh issue close 1 --repo joanmarcriera/continuity-vpn --comment ...`
-* `gh issue close 2 --repo joanmarcriera/continuity-vpn --comment ...`
-* `gh issue view 1 --repo joanmarcriera/continuity-vpn --json number,state,url,comments`
-  * Confirmed issue 1 is closed.
-* `gh issue view 2 --repo joanmarcriera/continuity-vpn --json number,state,url,comments`
-  * Confirmed issue 2 is closed.
+* Fuzz testing considered.
+  * Not added or run in this slice because no packet parser, serialiser or network input boundary exists yet; revisit when framing or gateway receive code exists.
+* Integration testing considered.
+  * Not applicable to this slice because no sockets, gateway receive loop or macOS path binding exists yet.
 
 Previously passed and still reflected in the repository state:
 
@@ -240,7 +241,8 @@ Not run:
 * The Swift scaffold is build-only; real XCTest/UI tests need an Xcode project and full Apple test toolchain.
 * The first GitHub Actions push event produced `startup_failure` run `27815677467` with no jobs/logs. A later workflow-trigger hardening commit ran the named project CI workflows successfully, so this is no longer blocking clean-checkout validation evidence.
 * Successful macOS CI still emits a non-blocking Homebrew tap-trust transition warning while installing SwiftLint from runner state.
-* No packet captures, gateway tests or transport evidence exists because Stage 1 has not started.
+* The Stage 1 dedup window is in-memory and process-local; it is not production replay protection and does not survive gateway restart.
+* No packet captures, gateway tests or transport evidence exists yet.
 
 ## Known Blockers
 
@@ -249,6 +251,6 @@ Not run:
 
 ## Next Recommended Action
 
-Begin the first Stage 1 dual-path UDP probe task without importing upstream source.
+Begin the next Stage 1 slice: model macOS path candidates in `internal/paths` without hard-coded interface names, using fixture-driven tests before opening sockets.
 
-The next implementation objective should prove that UDP socket A explicitly leaves through Wi-Fi, UDP socket B explicitly leaves through Android USB tethering, both reach the same Hetzner process, one logical packet is delivered once, and either path can disappear without ending the logical session.
+Do not claim dual-path success until later work proves that UDP socket A explicitly leaves through Wi-Fi, UDP socket B explicitly leaves through Android USB tethering, both reach the same gateway process, one logical packet is delivered once, and either path can disappear without ending the logical session.
