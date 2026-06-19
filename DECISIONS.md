@@ -215,3 +215,27 @@ Maintainers can run each Stage 0 CI workflow on demand from GitHub or `gh workfl
 Conditions for revisiting:
 
 Revisit if Stage 0 adopts a single required CI gate, if branch protection requires different status checks, or if the workflows become expensive enough to need stricter manual controls.
+
+## 2026-06-19: Open Stage 1 Probe After Stage 0 Reviews
+
+Decision:
+
+Treat the independent Stage 0 engineering review and legal/provenance records review as sufficient to start the Stage 1 dual-path UDP probe, while keeping all source-import and legal-review restrictions in force.
+
+Alternatives considered:
+
+* Block all Stage 1 work until full legal sign-off for future imports.
+* Start only after branch protection and PR-trigger checks are configured.
+* Start Stage 1 with no reviewer follow-up record.
+
+Rationale:
+
+The reviews confirmed that no upstream implementation source has been imported, the Stage 0 repository controls and CI evidence are adequate, and the Stage 1 backlog is scoped to an evidence-producing probe rather than VPN product behaviour. The legal/provenance approval is explicitly limited to Stage 0 records and does not authorise source import.
+
+Consequences:
+
+Stage 1 may begin with the dual-path UDP probe. Any source import remains blocked until the per-file/subtree licence review, provenance updates and standing conditions in `TASKS.md` are satisfied. PR-trigger confirmation, branch protection and SwiftLint pinning remain hardening follow-ups before Stage 1 merges.
+
+Conditions for revisiting:
+
+Revisit if a reviewer reopens either Stage 0 gate, if Stage 1 needs upstream source import, if CI evidence regresses, or if legal counsel imposes stricter conditions before implementation.

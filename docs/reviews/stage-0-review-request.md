@@ -6,7 +6,10 @@ Repository: `joanmarcriera/continuity-vpn`
 
 Review evidence baseline commit: `1e3b461`
 
-CI evidence commit: `fcd6238`
+CI evidence commits:
+
+* `fcd6238` — first passing push-triggered Stage 0 CI after `workflow_dispatch` was added.
+* `4a8afd4` — latest passing push-triggered Stage 0 CI at review time after action-version hardening.
 
 Review tracking:
 
@@ -47,23 +50,30 @@ Out of scope:
 | All upstream projects are pinned | Complete | `research/upstream-manifest.yaml` contains exact commits for all listed upstreams. |
 | Licence classifications are documented | Engineering record complete, legal review pending | `docs/legal/upstream-licences.md` and `docs/legal/dependency-inventory.md`. |
 | No GPL source copied into product directories | Complete by repository inspection and provenance records | `.research-src/` is ignored; `docs/legal/code-provenance.md` records no imports. |
-| CI runs on empty skeleton | Complete | GitHub CI passed on commit `fcd6238`. |
+| CI runs on empty skeleton | Complete | GitHub CI passed on commits `fcd6238` and `4a8afd4`. |
 | ADR-0001 records continuity-first decision | Complete | `docs/adr/0001-continuity-first.md`. |
 
 ## GitHub CI Evidence
 
-GitHub CI passed for commit `fcd6238`:
+GitHub CI passed for push-triggered commit `fcd6238`:
 
 * Go CI: `27816489936`
 * Infrastructure CI: `27816489953`
 * Licence Scan: `27816489977`
 * macOS CI: `27816489933`
 
+GitHub CI passed again for push-triggered commit `4a8afd4` after CI action-version hardening:
+
+* Go CI: `27820615456`
+* Infrastructure CI: `27820615438`
+* Licence Scan: `27820615455`
+* macOS CI: `27820615442`
+
 Notes:
 
 * The first repository push produced GitHub Actions run `27815677467` with `startup_failure`, no jobs and no logs.
-* The workflows were later made manually dispatchable and re-triggered by commit `fcd6238`.
-* The successful runs emitted non-blocking runner annotations about GitHub's Node.js runtime transition, missing `go.sum` cache input and Homebrew tap-trust warnings.
+* The workflows were later made manually dispatchable; subsequent push commits `fcd6238` and `4a8afd4` triggered the path-filtered workflows successfully.
+* The `4a8afd4` hardening removed the non-blocking GitHub Node.js runtime and missing `go.sum` cache annotations. A Homebrew tap-trust warning remains while installing SwiftLint from runner state.
 
 ## Licence And Provenance Review Request
 
@@ -103,7 +113,11 @@ Engineering records:
 * `docs/architecture/overview.md`
 * `docs/adr/`
 * `docs/backlog/stage-1.md`
-* `.github/workflows/`
+* `.github/workflows/go-ci.yml`
+* `.github/workflows/infra-ci.yml`
+* `.github/workflows/licence-scan.yml`
+* `.github/workflows/macos-ci.yml`
+* `.github/workflows/release.yml` (disabled Stage 0 placeholder)
 
 ## Known Non-Blocking Hardening
 

@@ -4,11 +4,9 @@ Last updated: 2026-06-19
 
 ## Current Objective
 
-Stage 0 repository bootstrap and source due diligence.
+Stage 0 review outcome recording and Stage 1 handoff.
 
-This cycle completed a bounded Stage 0 review-request objective: create a review packet and open GitHub issues for engineering review and legal/provenance review without marking either review complete.
-
-This cycle completed a bounded Stage 0 CI annotation-hardening objective: update CI action versions, record CI action/tool dependencies and verify GitHub CI still passes.
+This cycle completed a bounded Stage 0 review-outcome objective: record independent reviewer approval for the engineering and legal/provenance Stage 0 gates, correct the review evidence trail and close the review issues.
 
 ## Completed Work
 
@@ -39,6 +37,13 @@ This cycle completed a bounded Stage 0 CI annotation-hardening objective: update
   * Infrastructure CI run `27820615438`
   * Licence Scan run `27820615455`
   * macOS CI run `27820615442`
+* Recorded independent Stage 0 reviewer comments in `docs/reviews/stage-0-review-comments.md`.
+* Corrected the review packet so CI evidence points at push-triggered green runs on `fcd6238` and `4a8afd4`.
+* Recorded non-blocking engineering follow-ups and legal/provenance standing conditions in `TASKS.md`.
+* Stage 0 engineering review issue 1 approved Stage 1 engineering start with follow-ups.
+* Stage 0 legal/provenance review issue 2 approved the Stage 0 records with standing import-time conditions. This is not legal advice and does not approve any source import.
+* Posted the Stage 0 engineering review outcome to issue 1 and closed it: https://github.com/joanmarcriera/continuity-vpn/issues/1
+* Posted the Stage 0 legal/provenance review outcome to issue 2 and closed it: https://github.com/joanmarcriera/continuity-vpn/issues/2
 
 Prior completed Stage 0 work remains in place:
 
@@ -94,7 +99,7 @@ No VPN transport, packet framing, deduplication, NetworkExtension packet handlin
 
 The repository has a validating Stage 0 skeleton. The upstream manifest is fully pinned by shell-verified commits. Research sources are present only in `.research-src/`, which is ignored by Git.
 
-The initial Stage 0 bootstrap is committed and pushed to GitHub. Stage 0 GitHub CI now passes on `origin/main`. No Stage 1 implementation exists.
+The initial Stage 0 bootstrap is committed and pushed to GitHub. Stage 0 GitHub CI now passes on `origin/main`. The Stage 0 engineering and legal/provenance review gates are complete for starting Stage 1 probe work, subject to the recorded follow-ups and standing import-time conditions. No Stage 1 implementation exists.
 
 Git remote:
 
@@ -117,11 +122,8 @@ Initial bootstrap content:
 
 This cycle changed:
 
-* `.github/workflows/go-ci.yml`
-* `.github/workflows/infra-ci.yml`
-* `.github/workflows/licence-scan.yml`
-* `.github/workflows/macos-ci.yml`
-* `docs/legal/dependency-inventory.md`
+* `DECISIONS.md`
+* `docs/reviews/stage-0-review-comments.md`
 * `docs/reviews/stage-0-review-request.md`
 * `PROJECT_STATE.md`
 * `TASKS.md`
@@ -170,6 +172,20 @@ Passed in this cycle:
 * GitHub Infrastructure CI passed on commit `4a8afd4`.
 * GitHub Licence Scan passed on commit `4a8afd4`.
 * GitHub macOS CI passed on commit `4a8afd4`.
+* `gh run list --repo joanmarcriera/continuity-vpn --limit 12`
+* `scripts/docs-check.sh`
+* `make licence-check`
+* `git diff --check`
+* Searched the state and review documents for stale manual-only CI or incomplete-review wording.
+  * Returned no matches.
+* `make clean-workspace-check`
+  * Passed from a temporary copy; included docs checks, licence/provenance checks, Go tests and SwiftPM build.
+* `gh issue close 1 --repo joanmarcriera/continuity-vpn --comment ...`
+* `gh issue close 2 --repo joanmarcriera/continuity-vpn --comment ...`
+* `gh issue view 1 --repo joanmarcriera/continuity-vpn --json number,state,url,comments`
+  * Confirmed issue 1 is closed.
+* `gh issue view 2 --repo joanmarcriera/continuity-vpn --json number,state,url,comments`
+  * Confirmed issue 2 is closed.
 
 Previously passed and still reflected in the repository state:
 
@@ -217,8 +233,10 @@ Not run:
 
 * Licence classifications are documented as Stage 0 due-diligence records, not legal advice.
 * No upstream source has been approved for import into product directories yet.
-* Stage 0 engineering review is requested in issue 1 but is not yet complete.
-* Stage 0 legal/provenance review is requested in issue 2 but is not yet complete.
+* Full legal review is still required before any source import or distribution decision that depends on third-party source reuse.
+* PR-triggered CI still needs to be confirmed before Stage 1 merges; push-triggered path-filtered CI has passed on `fcd6238` and `4a8afd4`.
+* Branch protection and required status checks on `main` still need to be configured before Stage 1 merges.
+* SwiftLint installation is still unpinned in macOS CI and should be pinned before lint is treated as a release-quality gate.
 * The Swift scaffold is build-only; real XCTest/UI tests need an Xcode project and full Apple test toolchain.
 * The first GitHub Actions push event produced `startup_failure` run `27815677467` with no jobs/logs. A later workflow-trigger hardening commit ran the named project CI workflows successfully, so this is no longer blocking clean-checkout validation evidence.
 * Successful macOS CI still emits a non-blocking Homebrew tap-trust transition warning while installing SwiftLint from runner state.
@@ -231,6 +249,6 @@ Not run:
 
 ## Next Recommended Action
 
-Wait for Stage 0 engineering review issue 1 and legal/provenance review issue 2 to be completed, then record the outcome and any follow-up tasks before beginning Stage 1 transport work or source import.
+Begin the first Stage 1 dual-path UDP probe task without importing upstream source.
 
-Do not begin Stage 1 dual-path probe implementation until Stage 0 exit criteria are complete and reviewed.
+The next implementation objective should prove that UDP socket A explicitly leaves through Wi-Fi, UDP socket B explicitly leaves through Android USB tethering, both reach the same Hetzner process, one logical packet is delivered once, and either path can disappear without ending the logical session.

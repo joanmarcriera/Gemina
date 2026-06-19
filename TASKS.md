@@ -2,7 +2,7 @@
 
 Last updated: 2026-06-19
 
-## Current Objective: Stage 0 Repository Bootstrap and Source Due Diligence
+## Current Objective: Stage 1 Dual-Path UDP Probe (Not Yet Started)
 
 Completion criteria for Stage 0 exit:
 
@@ -30,24 +30,22 @@ Completion criteria for Stage 0 exit:
 * [x] `make fetch-research` has been run successfully with network access.
 * [x] Root upstream licence files have been inspected and recorded.
 * [x] `make clean-workspace-check` has passed from a temporary copy.
-* [ ] Full legal review is complete before any import.
+* [x] Stage 0 legal/provenance records review is complete for the no-import Stage 0 scope.
 * [x] CI has run on a clean checkout.
 * [x] Atomic Stage 0 bootstrap commit has been created.
-* [ ] Stage 0 exit criteria have been reviewed.
+* [x] Stage 0 exit criteria have been reviewed.
 
 ## Next Exact Action
 
+Start the Stage 1 dual-path UDP probe without importing upstream source.
+
 Completion criteria:
 
-* [x] Stage all outstanding Stage 0 files.
-* [x] Run `git diff --cached --check`.
-* [x] Create the atomic initial bootstrap commit.
-* [x] Confirm ignored artefacts remain untracked: `.research-src/`, `.build/`, `.codex/` and `apps/macos/.build/`.
-* [x] Configure or confirm the chosen Git remote.
-* [x] Push the initial bootstrap commit to the chosen remote.
-* [x] Run GitHub CI or equivalent clean-checkout validation.
-* [x] Update `PROJECT_STATE.md` with CI or clean-checkout validation results.
-* [x] Request Stage 0 review before Stage 1 work starts.
+* [ ] Define the smallest probe command/package boundary for per-interface UDP send and gateway receive.
+* [ ] Avoid hard-coded macOS interface names; discover and select Wi-Fi and Android USB tethering paths explicitly.
+* [ ] Add unit-testable packet identity/dedup behaviour for one logical packet delivered once from duplicate path copies.
+* [ ] Define the packet-capture and loss/recovery evidence required before claiming the probe works.
+* [ ] Update `PROJECT_STATE.md`, `TASKS.md` and `DECISIONS.md` with the Stage 1 implementation result.
 
 ## Remaining Stage 0 Hardening
 
@@ -61,8 +59,26 @@ Completion criteria:
 * [x] Update Stage 0 CI action versions and dependency inventory.
 * [ ] Decide whether to pin SwiftLint installation in macOS CI instead of relying on `brew install swiftlint`.
 * [x] Request Stage 0 review before any Stage 1 transport work.
-* [ ] Complete Stage 0 engineering review issue 1.
-* [ ] Complete Stage 0 legal/provenance review issue 2.
+* [x] Complete Stage 0 engineering review issue 1.
+* [x] Complete Stage 0 legal/provenance review issue 2.
+
+## Review Follow-ups (from Stage 0 reviewer comments, 2026-06-19)
+
+Source: `docs/reviews/stage-0-review-comments.md`. Non-blocking; recorded as a condition of approving Stage 1 start.
+
+* [ ] Confirm PR path-filtered CI triggers run before Stage 1 merges. Push-triggered path-filtered CI has passed on `fcd6238` and `4a8afd4` after the initial `startup_failure` run `27815677467`.
+* [ ] Add branch protection / required status checks on `main` before Stage 1 merges.
+* [x] Reconcile commit-reference drift: `docs/reviews/stage-0-review-request.md` now cites both the original review baseline and the latest passing push-triggered CI on `4a8afd4`.
+* [x] Add `release.yml` (disabled Stage 0 placeholder) to the engineering records/inventory for completeness.
+* [ ] Pin SwiftLint install in macOS CI instead of unpinned `brew install swiftlint` (duplicate of hardening item above; close together).
+
+## Legal/Provenance Standing Conditions (carry into Stage 1, from reviewer comments)
+
+* [ ] Before importing ANY upstream file, run a per-file/subtree licence scan of the specific path (root-file inspection is not import clearance).
+* [ ] Complete full legal review before any source import or distribution decision that depends on third-party source reuse.
+* [ ] Enforce behavioural clean-room rule: whoever reads Engarde/OpenMPTCProuter (GPL) source must not author the corresponding dedup/transport core; produce clean-room notes before code is written.
+* [ ] At WireGuard reuse time, capture wireguard-go/wireguard-apple copyright notices in `NOTICE` and `code-provenance.md`.
+* [ ] If any MPL-2.0 file (terraform-provider-hcloud) is ever modified/vendored, honour per-file source-disclosure obligations.
 
 ## Stage 1 Candidate, Not Yet Started
 
