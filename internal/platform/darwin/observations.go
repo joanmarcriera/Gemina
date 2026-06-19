@@ -6,6 +6,7 @@ type EvidenceSource uint8
 
 const (
 	EvidenceSourceUnknown EvidenceSource = iota
+	EvidenceSourceBSDNetworkState
 	EvidenceSourceSystemConfiguration
 	EvidenceSourceNetworkFramework
 	EvidenceSourceIORegistry
@@ -13,6 +14,8 @@ const (
 
 func (source EvidenceSource) String() string {
 	switch source {
+	case EvidenceSourceBSDNetworkState:
+		return "bsd-network-state"
 	case EvidenceSourceSystemConfiguration:
 		return "system-configuration"
 	case EvidenceSourceNetworkFramework:

@@ -306,8 +306,48 @@ The project needs a place to preserve macOS-specific evidence without letting th
 
 Consequences:
 
-`internal/platform/darwin` now owns fixture snapshots and evidence metadata. It still performs no live SystemConfiguration, Network framework, IORegistry, command or socket calls. Future live collection must populate the same boundary and continue to treat Android USB tethering as unknown when USB evidence is missing or ambiguous.
+`internal/platform/darwin` owns fixture snapshots and evidence metadata. This
+decision established the boundary before live collection. The later conservative
+BSD interface-state collector is recorded in the decision below; richer
+SystemConfiguration, Network framework and IORegistry collection still remains
+future work.
 
 Conditions for revisiting:
 
 Revisit if live macOS collection requires a materially different observation shape, if Android USB tethering cannot be distinguished from generic USB network devices, or if packet-capture evidence shows the selected interface role is wrong.
+
+## 2026-06-19: Collect BSD Interface State Conservatively
+
+Decision:
+
+Add a conservative Darwin live collector using Go's standard `net.Interfaces`
+API to populate BSD interface names, interface flags and IPv4 presence behind the
+existing `InterfaceSnapshot` boundary.
+
+Alternatives considered:
+
+* Wait until SystemConfiguration, Network framework and IORegistry collection can
+  be implemented together.
+* Infer Wi-Fi and Android USB tethering from BSD names or display names.
+* Start socket binding before live state collection exists.
+
+Rationale:
+
+The Stage 1 probe needs live interface state, but BSD names and display names are
+not reliable role evidence. Collecting only flags and IPv4 presence creates a
+useful live boundary while keeping role assignment dependent on stronger future
+macOS evidence sources.
+
+Consequences:
+
+`internal/platform/darwin` can now list conservative interface snapshots from the
+host, but `NetInterfaceSource` sets `LinkKindUnknown`. The collector records
+state evidence rather than source IP addresses and still cannot prove Wi-Fi,
+Android USB tethering, egress, packet capture evidence or path-loss survival.
+
+Conditions for revisiting:
+
+Revisit if standard-library interface state is insufficient for socket binding,
+if live macOS evidence requires source-address metadata in a redacted form, or if
+SystemConfiguration/Network framework/IORegistry integration changes the snapshot
+shape.

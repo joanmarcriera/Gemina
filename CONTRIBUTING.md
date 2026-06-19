@@ -1,12 +1,12 @@
 # Contributing
 
-This repository is in Stage 0 bootstrap.
+This repository is in Stage 1 dual-path UDP probe work.
 
 Before making changes:
 
 1. Read `AGENTS.md`, `PROJECT_STATE.md`, `TASKS.md`, `DECISIONS.md` and `docs/product/project-specification.md`.
-2. Pick one bounded Stage 0 objective.
-3. Avoid transport, packet, gateway, payment and entitlement implementation unless the project has explicitly moved beyond Stage 0.
+2. Pick one bounded objective from the current stage in `TASKS.md`.
+3. Avoid production VPN transport, NetworkExtension packet handling, payment and entitlement implementation unless the relevant later-stage gate has explicitly opened.
 4. Record material architectural choices in `DECISIONS.md` and, where required, under `docs/adr/`.
 5. Run focused tests and update the project-state files before handing over.
 

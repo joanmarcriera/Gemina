@@ -1,2 +1,3 @@
-// Package linux will contain Linux-specific platform integration after Stage 0.
+// Package linux will contain Linux-specific platform integration when gateway or
+// Linux tunnel work begins.
 package linux

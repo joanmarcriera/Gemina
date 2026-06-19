@@ -1,2 +1,3 @@
-// Package replay will contain replay protection integration after Stage 0.
+// Package replay will contain replay protection integration when authenticated
+// packet handling begins.
 package replay

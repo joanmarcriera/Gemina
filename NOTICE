@@ -1,6 +1,8 @@
 # Notices
 
-This repository currently contains original Stage 0 scaffolding and project documentation only.
+This repository currently contains original project code and documentation for
+the Stage 1 dual-path UDP probe. No production VPN transport or released
+product exists yet.
 
 No third-party source files have been copied into product directories.
 

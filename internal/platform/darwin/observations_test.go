@@ -160,6 +160,7 @@ func TestMissingBSDNameRemainsUnusable(t *testing.T) {
 func TestEvidenceSourceStrings(t *testing.T) {
 	tests := map[EvidenceSource]string{
 		EvidenceSourceUnknown:             "unknown",
+		EvidenceSourceBSDNetworkState:     "bsd-network-state",
 		EvidenceSourceSystemConfiguration: "system-configuration",
 		EvidenceSourceNetworkFramework:    "network-framework",
 		EvidenceSourceIORegistry:          "io-registry",

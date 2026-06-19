@@ -1,6 +1,6 @@
 # Continuity VPN
 
-Stage 0 repository bootstrap for a commercial macOS continuity VPN.
+Stage 1 dual-path UDP probe repository for a commercial macOS continuity VPN.
 
 The first release is a reliability product, not an aggregate-bandwidth product. It will duplicate protected traffic over public Wi-Fi and Android USB tethering, send both copies to one Hetzner gateway, accept the first valid packet and discard duplicates.
 
@@ -14,9 +14,14 @@ Authoritative product and engineering scope lives in:
 
 ## Current Stage
 
-Stage 0 only: repository bootstrap and source due diligence.
+Stage 1: dual-path UDP probe.
 
-Do not begin transport, packet framing, deduplication, NetworkExtension packet handling, gateway implementation, payment flows or entitlement implementation until Stage 0 exit criteria are complete and reviewed.
+Stage 0 repository bootstrap and source due diligence are complete and reviewed.
+Current Stage 1 work is limited to proving the smallest useful probe: explicit
+Wi-Fi and Android USB tethering path evidence, duplicated UDP probes, gateway
+deduplication and path-loss survival. Do not begin production VPN transport,
+NetworkExtension packet handling, payment flows or entitlement implementation
+until later gates are explicitly opened.
 
 ## Bootstrap
 

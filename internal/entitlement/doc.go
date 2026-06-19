@@ -1,2 +1,3 @@
-// Package entitlement will contain access-key lease control after Stage 0.
+// Package entitlement will contain access-key lease control when commercial key
+// work begins.
 package entitlement

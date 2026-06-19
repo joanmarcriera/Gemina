@@ -1,2 +1,3 @@
-// Package protocoltypes will expose stable protocol data types after Stage 0.
+// Package protocoltypes will expose stable protocol data types when external
+// consumers need them.
 package protocoltypes

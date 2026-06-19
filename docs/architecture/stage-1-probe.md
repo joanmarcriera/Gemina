@@ -30,6 +30,7 @@ This repository currently implements only a unit-testable core below the live ne
   * `InterfaceSnapshot`
   * `Evidence`
   * `ObservationsFromSnapshots`
+  * `LiveInterfaceSnapshots`
 
 The window records path labels such as `wifi` and `usb-tether`, but those labels are not proof of macOS interface binding. They are placeholders for future observations from real sockets and packet captures.
 
@@ -39,7 +40,7 @@ The path classifier consumes enum-like link kinds from an injected observation s
 
 This slice does not implement:
 
-* live macOS interface enumeration;
+* SystemConfiguration, Network framework or IORegistry live collection;
 * source-address or socket binding;
 * gateway networking;
 * packet serialisation;
@@ -59,7 +60,12 @@ This slice does not implement:
 
 The current `internal/paths` implementation only classifies fixture data. A future platform adapter must populate observations from macOS APIs and still prove egress with packet captures.
 
-`internal/platform/darwin` currently maps injected `InterfaceSnapshot` fixtures into `paths.Observation` values. It does not call SystemConfiguration, Network framework, IORegistry, `networksetup`, `ifconfig` or any socket API.
+`internal/platform/darwin` maps injected `InterfaceSnapshot` fixtures into
+`paths.Observation` values and now has a conservative live state collector backed
+by Go's standard `net.Interfaces` API. The live collector records BSD interface
+names, flags and whether an IPv4 address is present. It does not record source
+IP addresses, infer roles from names, call SystemConfiguration, Network
+framework, IORegistry, `networksetup`, `ifconfig` or any socket API.
 
 ## Planned macOS Evidence Sources
 

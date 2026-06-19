@@ -14,7 +14,13 @@ Authoritative specification:
 
 Current stage:
 
-Stage 0, repository bootstrap and source due diligence. Do not begin Stage 1 transport implementation until Stage 0 exit criteria have been met and reviewed.
+Stage 1, dual-path UDP probe.
+
+Stage 0 exit criteria have been met and reviewed. Stage 1 work must stay within
+the evidence-producing probe scope until the UDP path, gateway deduplication and
+path-loss survival evidence is recorded. Do not begin production VPN transport,
+NetworkExtension packet handling, payment, entitlement or release work from
+later stages until their gates are explicitly opened.
 
 ## Available Local Inference Resources
 

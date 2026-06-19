@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 set -eu
 
-echo "Network tests are not implemented in Stage 0."
+echo "Network tests are not implemented yet."

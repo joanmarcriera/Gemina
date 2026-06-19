@@ -1,3 +1,3 @@
 # OpenTofu Modules
 
-No infrastructure modules are implemented in Stage 0.
+No infrastructure modules are implemented yet.

@@ -1,6 +1,10 @@
 # Stage 1 Probe Evidence
 
-The first Stage 1 implementation slices have unit tests for packet identity, duplicate suppression and path-candidate classification only. These tests prove local classification and first-copy semantics inside the Go process; they do not prove path binding, gateway reachability or VPN behaviour.
+The first Stage 1 implementation slices have unit tests for packet identity,
+duplicate suppression, path-candidate classification and conservative Darwin
+interface-state collection. These tests prove local classification, first-copy
+semantics and state mapping inside the Go process; they do not prove path
+binding, gateway reachability or VPN behaviour.
 
 ## Unit Evidence
 
@@ -39,6 +43,10 @@ The Darwin observation-boundary tests must cover:
 * BSD names and display names not assigning link kind by themselves;
 * missing BSD names remaining unusable;
 * evidence metadata filtered by source;
+* conservative live-collector mapping from injected interface records to snapshots;
+* collector preservation of explicit link kind evidence without inferring roles from names;
+* IPv6-only interfaces remaining unusable for the IPv4-only Stage 1 probe;
+* source and nil-source error handling;
 * evidence-source string values.
 
 ## Integration Evidence Not Yet Available
