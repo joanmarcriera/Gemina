@@ -2,9 +2,9 @@
 
 ## Stage
 
-Stage 0 repository bootstrap and source due diligence.
+Stage 1 dual-path UDP probe.
 
-No production transport, packet framing, deduplication, NetworkExtension packet handling, gateway logic, entitlement service or payment flow exists yet.
+Only the initial Go packet identity and first-copy duplicate-suppression core exists. No production transport, packet framing, NetworkExtension packet handling, gateway networking, entitlement service, payment flow or real infrastructure resource exists yet.
 
 ## Product Shape
 
@@ -22,6 +22,8 @@ The product is not an aggregate-bandwidth or multi-client-platform product in it
 * `api/`: API and protocol documents.
 * `deploy/`: OpenTofu, cloud-init, Ansible, systemd, nftables and container artefacts.
 * `research/`: upstream manifest and clean-room research notes.
+
+Stage 1 probe boundaries are recorded in `docs/architecture/stage-1-probe.md`.
 
 ## Security Posture
 

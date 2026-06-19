@@ -1,2 +1,2 @@
-// Package dedup will contain duplicate suppression after Stage 0.
+// Package dedup implements Stage 1 first-copy acceptance for probe packets.
 package dedup

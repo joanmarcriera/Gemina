@@ -239,3 +239,27 @@ Stage 1 may begin with the dual-path UDP probe. Any source import remains blocke
 Conditions for revisiting:
 
 Revisit if a reviewer reopens either Stage 0 gate, if Stage 1 needs upstream source import, if CI evidence regresses, or if legal counsel imposes stricter conditions before implementation.
+
+## 2026-06-19: Start Stage 1 Below The Network Layer
+
+Decision:
+
+Implement the first Stage 1 slice as pure Go packet identity and first-copy duplicate suppression before adding macOS interface discovery, UDP socket binding or gateway networking.
+
+Alternatives considered:
+
+* Begin with live macOS interface enumeration and socket binding.
+* Begin with a gateway UDP server.
+* Combine identity, deduplication, path binding and gateway receipt in one larger probe.
+
+Rationale:
+
+The Stage 1 proof ultimately depends on packet captures and live path evidence, but the deduplication rule is a smaller invariant that can be unit-tested and race-tested without special network conditions. Building it first creates a stable core for later gateway receive loops while avoiding premature claims about Wi-Fi, Android USB tethering or VPN continuity.
+
+Consequences:
+
+`internal/protocol` owns probe packet identity. `internal/dedup` owns bounded in-memory first-copy acceptance. The current code can prove duplicate-suppression semantics only; it does not prove interface binding, gateway reachability, failover or encryption. Later Stage 1 work must connect real path observations to these types and collect packet-capture evidence before claiming success.
+
+Conditions for revisiting:
+
+Revisit if the live probe needs a different packet identity format, if authenticated replay protection changes the deduplication boundary, or if gateway tests show the bounded in-memory window is unsuitable even for the feasibility probe.

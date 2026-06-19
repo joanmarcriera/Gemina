@@ -2,7 +2,7 @@
 
 Last updated: 2026-06-19
 
-## Current Objective: Stage 1 Dual-Path UDP Probe (Not Yet Started)
+## Current Objective: Stage 1 Dual-Path UDP Probe
 
 Completion criteria for Stage 0 exit:
 
@@ -37,15 +37,25 @@ Completion criteria for Stage 0 exit:
 
 ## Next Exact Action
 
-Start the Stage 1 dual-path UDP probe without importing upstream source.
+Model macOS path candidates without hard-coded interface names.
 
 Completion criteria:
 
-* [ ] Define the smallest probe command/package boundary for per-interface UDP send and gateway receive.
-* [ ] Avoid hard-coded macOS interface names; discover and select Wi-Fi and Android USB tethering paths explicitly.
-* [ ] Add unit-testable packet identity/dedup behaviour for one logical packet delivered once from duplicate path copies.
-* [ ] Define the packet-capture and loss/recovery evidence required before claiming the probe works.
+* [ ] Add `internal/paths` types for observed interfaces and path-candidate classification.
+* [ ] Identify Wi-Fi and Android USB tethering candidates from injected fixture data without hard-coded interface names.
+* [ ] Add unit tests for ambiguous, missing and multiple-candidate path observations.
+* [ ] Keep socket binding and live macOS API calls out of this slice unless fixtures prove the classification rules.
 * [ ] Update `PROJECT_STATE.md`, `TASKS.md` and `DECISIONS.md` with the Stage 1 implementation result.
+
+## Completed Stage 1 Work
+
+* [x] Define the initial probe package boundary below the network layer.
+* [x] Add `internal/protocol` packet identity primitives.
+* [x] Add `internal/dedup` first-copy duplicate suppression for one logical packet delivered once from duplicate path copies.
+* [x] Add unit tests for identity validation, first-copy acceptance, duplicate rejection, invalid observations, bounded eviction and concurrent duplicate observations.
+* [x] Run race detector for the dedup/protocol slice.
+* [x] Define packet-capture and loss/recovery evidence required before claiming path success.
+* [x] Update the Stage 1 threat model for packet identity and duplicate suppression.
 
 ## Remaining Stage 0 Hardening
 
@@ -80,10 +90,10 @@ Source: `docs/reviews/stage-0-review-comments.md`. Non-blocking; recorded as a c
 * [ ] At WireGuard reuse time, capture wireguard-go/wireguard-apple copyright notices in `NOTICE` and `code-provenance.md`.
 * [ ] If any MPL-2.0 file (terraform-provider-hcloud) is ever modified/vendored, honour per-file source-disclosure obligations.
 
-## Stage 1 Candidate, Not Yet Started
+## Stage 1 Overall Objective
 
-First engineering issue after Stage 0 review:
+Overall engineering proof:
 
 * [ ] Prove that UDP socket A explicitly leaves through Wi-Fi, UDP socket B explicitly leaves through Android USB tethering, both reach the same Hetzner process, one logical packet is delivered once, and either path can disappear without ending the logical session.
 
-Do not start this task until Stage 0 is complete and reviewed.
+Do not mark this complete until packet captures, gateway logs and path-loss evidence exist.

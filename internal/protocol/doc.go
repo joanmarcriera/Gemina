@@ -1,2 +1,2 @@
-// Package protocol will contain protocol coordination after Stage 0.
+// Package protocol defines Stage 1 probe identifiers and coordination types.
 package protocol
