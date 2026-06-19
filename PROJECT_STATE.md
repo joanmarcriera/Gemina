@@ -1,18 +1,33 @@
 # Project State
 
-Last updated: 2026-06-18
+Last updated: 2026-06-19
 
 ## Current Objective
 
 Stage 0 repository bootstrap and source due diligence.
 
-This cycle completed a bounded Stage 0 commit objective: verify the bootstrap handover, stage all outstanding Stage 0 files, rerun local and clean-workspace validation, and create the atomic initial bootstrap commit.
-
-The previous `.git` write blocker did not reproduce during this cycle.
+This cycle completed a bounded GitHub remote objective: create the private GitHub repository, configure `origin`, push `main`, and inspect the first GitHub automation results.
 
 ## Completed Work
 
 * Read `PROJECT_STATE.md`, `TASKS.md`, `DECISIONS.md` and `AGENTS.md`.
+* Inspected Git status, recent commit and configured remotes.
+* Confirmed `gh` is authenticated as `joanmarcriera`.
+* Created the private GitHub repository `joanmarcriera/continuity-vpn`.
+* Configured `origin` as `git@github.com:joanmarcriera/continuity-vpn.git`.
+* Pushed `main` to `origin/main`.
+* Confirmed GitHub workflows are present and active:
+  * Go CI
+  * Infrastructure CI
+  * Licence Scan
+  * macOS CI
+  * Release
+* Confirmed GitHub Dependency Graph completed successfully for the initial push.
+* Inspected a GitHub Actions `startup_failure` run for the initial push; it had no jobs and no logs, so the repository CI workflows have not yet produced clean-checkout validation evidence.
+
+Prior completed Stage 0 work remains in place:
+
+* Created the atomic initial Stage 0 bootstrap commit.
 * Inspected Git status, staged state and ignored artefacts.
 * Delegated a bounded handover-file review to `ollama_fast`; the response made unsupported generic claims, so local source inspection and tests remained authoritative.
 * Staged the outstanding Stage 0 files that were previously blocked by `.git` write errors.
@@ -38,10 +53,7 @@ The previous `.git` write blocker did not reproduce during this cycle.
 * Hardened `scripts/validate-clean-workspace.sh` so it refuses to create the temporary validation copy inside the source tree.
 * Ran `make clean-workspace-check`; it passed from a temporary copy under `/private/tmp`.
 * Re-ran local validation before commit.
-* Created the atomic initial Stage 0 bootstrap commit.
 * Kept Stage 1 transport work deferred.
-
-Prior completed Stage 0 work remains in place:
 
 * Monorepo skeleton, root project controls, GitHub templates and CI stubs.
 * ADR framework and ADR-0001 through ADR-0004.
@@ -58,9 +70,12 @@ No VPN transport, packet framing, deduplication, NetworkExtension packet handlin
 
 The repository has a validating Stage 0 skeleton. The upstream manifest is fully pinned by shell-verified commits. Research sources are present only in `.research-src/`, which is ignored by Git.
 
-The initial Stage 0 bootstrap is committed. No Stage 1 implementation exists.
+The initial Stage 0 bootstrap is committed and pushed to GitHub. No Stage 1 implementation exists.
 
-No Git remote is configured in this checkout yet.
+Git remote:
+
+* `origin`: `git@github.com:joanmarcriera/continuity-vpn.git`
+* GitHub URL: `https://github.com/joanmarcriera/continuity-vpn`
 
 Root upstream licence files have been inspected and recorded as Stage 0 engineering evidence, not legal advice or import approval.
 
@@ -88,6 +103,21 @@ Ignored local artefacts:
 
 Passed in this cycle:
 
+* `gh auth status`
+* `gh repo create continuity-vpn --private --source . --remote origin --push`
+* `gh run list --repo joanmarcriera/continuity-vpn --limit 20`
+* `gh workflow list --repo joanmarcriera/continuity-vpn --all`
+* `gh api repos/joanmarcriera/continuity-vpn/actions/runs/27815677467`
+* `gh api repos/joanmarcriera/continuity-vpn/actions/runs/27815677467/jobs`
+* `gh api repos/joanmarcriera/continuity-vpn/actions/workflows`
+* `gh api repos/joanmarcriera/continuity-vpn/commits/ceb783cd777f3b6825622889d7243b19ab389c09/check-runs`
+* `git remote -v`
+* `git status --short --branch --ignored`
+* `git diff --check`
+* `scripts/docs-check.sh`
+
+Previously passed and still reflected in the repository state:
+
 * `make clean-workspace-check`
 * `make test`
 * `make lint`
@@ -97,9 +127,6 @@ Passed in this cycle:
 * `git diff --check`
 * `git diff --cached --check`
 * `git status --short --ignored`
-
-Previously passed and still reflected in the repository state:
-
 * `make bootstrap`
 * `make infra-check`
   * OpenTofu/Terraform was not installed locally, so local infra validation was skipped.
@@ -110,7 +137,7 @@ Not run:
 
 * Real OpenTofu validation, because neither `tofu` nor `terraform` is installed locally.
 * SwiftLint, because `swiftlint` is not installed locally.
-* GitHub CI, because this repository has not yet been pushed.
+* GitHub clean-checkout CI validation, because the initial push produced a GitHub Actions `startup_failure` run with no jobs/logs and the named project CI workflows did not run.
 
 ## Unresolved Defects or Risks
 
@@ -118,6 +145,7 @@ Not run:
 * No upstream source has been approved for import into product directories yet.
 * The Swift scaffold is build-only; real XCTest/UI tests need an Xcode project and full Apple test toolchain.
 * CI workflows are stubs and have not run on GitHub.
+* The first GitHub Actions push event produced `startup_failure` run `27815677467` with no jobs/logs. The active project workflows may need a follow-up trigger or workflow hardening before Stage 0 review.
 * No packet captures, gateway tests or transport evidence exists because Stage 1 has not started.
 
 ## Known Blockers
@@ -127,8 +155,6 @@ Not run:
 
 ## Next Recommended Action
 
-Push the initial Stage 0 bootstrap commit to the chosen remote, run GitHub CI or equivalent clean-checkout validation, record those results here, then request Stage 0 review.
-
-If no remote has been chosen, configure the remote first and then push `main`.
+Investigate why the initial GitHub push produced `startup_failure` without running the named project CI workflows, then obtain clean-checkout validation evidence from GitHub CI or an equivalent clean checkout before requesting Stage 0 review.
 
 Do not begin Stage 1 dual-path probe implementation until Stage 0 exit criteria are complete and reviewed.

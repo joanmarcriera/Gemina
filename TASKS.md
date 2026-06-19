@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-06-18
+Last updated: 2026-06-19
 
 ## Current Objective: Stage 0 Repository Bootstrap and Source Due Diligence
 
@@ -43,8 +43,8 @@ Completion criteria:
 * [x] Run `git diff --cached --check`.
 * [x] Create the atomic initial bootstrap commit.
 * [x] Confirm ignored artefacts remain untracked: `.research-src/`, `.build/`, `.codex/` and `apps/macos/.build/`.
-* [ ] Configure or confirm the chosen Git remote.
-* [ ] Push the initial bootstrap commit to the chosen remote.
+* [x] Configure or confirm the chosen Git remote.
+* [x] Push the initial bootstrap commit to the chosen remote.
 * [ ] Run GitHub CI or equivalent clean-checkout validation.
 * [ ] Update `PROJECT_STATE.md` with CI or clean-checkout validation results.
 * [ ] Request Stage 0 review before Stage 1 work starts.
@@ -55,6 +55,7 @@ Completion criteria:
 * [ ] Add real Swift XCTest/UI tests after the Xcode project and full Apple test toolchain are configured.
 * [ ] Run OpenTofu validation in an environment with `tofu` installed.
 * [ ] Run SwiftLint in an environment with `swiftlint` installed.
+* [ ] Investigate GitHub Actions startup failure from run `27815677467`.
 * [ ] Inspect GitHub Actions results after pushing the initial commit.
 * [ ] Request Stage 0 review before any Stage 1 transport work.
 
