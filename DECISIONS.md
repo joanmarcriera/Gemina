@@ -351,3 +351,41 @@ Revisit if standard-library interface state is insufficient for socket binding,
 if live macOS evidence requires source-address metadata in a redacted form, or if
 SystemConfiguration/Network framework/IORegistry integration changes the snapshot
 shape.
+
+## 2026-06-20: Derive Darwin Link Kinds Only From Explicit Evidence
+
+Decision:
+
+Add fixture-driven Darwin evidence rules that derive Wi-Fi from explicit Network
+framework or SystemConfiguration interface-type evidence and Android USB
+tethering from explicit Android USB IORegistry evidence.
+
+Alternatives considered:
+
+* Infer Wi-Fi or Android USB tethering from BSD interface names or display names.
+* Treat any USB network adapter as Android USB tethering.
+* Wait for live macOS collectors before defining evidence-to-kind rules.
+
+Rationale:
+
+The Stage 1 classifier needs a tested contract for the evidence that can assign
+path roles, but live collection and socket binding are still separate risks.
+Explicit evidence rules let the Darwin boundary accept redacted fixtures and
+reject generic or conflicting evidence without depending on one machine's
+interface names.
+
+Consequences:
+
+`internal/platform/darwin.LinkKindFromEvidence` can classify injected evidence
+from future macOS collectors. Generic USB Ethernet, missing evidence and
+conflicting Wi-Fi/Android evidence remain unknown, so `internal/paths` reports a
+missing candidate instead of guessing. This still does not prove live
+SystemConfiguration, Network framework or IORegistry collection, per-interface
+UDP egress, gateway reachability or path-loss survival.
+
+Conditions for revisiting:
+
+Revisit if live macOS evidence uses different stable source keys, if Android USB
+tethering cannot be distinguished from generic USB adapters without additional
+signals, or if packet captures show that evidence-derived roles do not match the
+actual egress path.

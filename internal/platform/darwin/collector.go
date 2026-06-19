@@ -91,11 +91,15 @@ func CollectInterfaceSnapshots(source InterfaceSource) ([]InterfaceSnapshot, err
 
 func snapshotFromInterfaceRecord(record InterfaceRecord) InterfaceSnapshot {
 	hasIPv4 := hasIPv4CIDR(record.AddressCIDRs)
+	kind := record.Kind
+	if kind == paths.LinkKindUnknown {
+		kind = LinkKindFromEvidence(record.Evidence)
+	}
 
 	return InterfaceSnapshot{
 		BSDName:     record.BSDName,
 		DisplayName: record.DisplayName,
-		Kind:        record.Kind,
+		Kind:        kind,
 		Up:          record.Flags&net.FlagUp != 0,
 		Running:     record.Flags&net.FlagRunning != 0,
 		Loopback:    record.Flags&net.FlagLoopback != 0,
