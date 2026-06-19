@@ -1,2 +1,2 @@
-// Package darwin will contain macOS-specific platform integration after Stage 0.
+// Package darwin contains macOS-specific observation boundaries.
 package darwin

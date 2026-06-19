@@ -26,10 +26,14 @@ This repository currently implements only a unit-testable core below the live ne
   * usable Wi-Fi observation -> Wi-Fi candidate
   * usable Android USB tethering observation -> Android USB tethering candidate
   * missing or multiple usable observations -> structured issue
+* `internal/platform/darwin` defines the fixture boundary for future macOS observations:
+  * `InterfaceSnapshot`
+  * `Evidence`
+  * `ObservationsFromSnapshots`
 
 The window records path labels such as `wifi` and `usb-tether`, but those labels are not proof of macOS interface binding. They are placeholders for future observations from real sockets and packet captures.
 
-The path classifier consumes enum-like link kinds from an injected observation source. It does not infer roles from BSD interface names such as `en0`.
+The path classifier consumes enum-like link kinds from an injected observation source. It does not infer roles from BSD interface names such as `en0`. The Darwin boundary preserves those names as identifiers only.
 
 ## Explicitly Out Of Scope For This Slice
 
@@ -54,6 +58,14 @@ This slice does not implement:
 `internal/paths` will later own macOS path discovery and interface selection. It must avoid hard-coded interface names.
 
 The current `internal/paths` implementation only classifies fixture data. A future platform adapter must populate observations from macOS APIs and still prove egress with packet captures.
+
+`internal/platform/darwin` currently maps injected `InterfaceSnapshot` fixtures into `paths.Observation` values. It does not call SystemConfiguration, Network framework, IORegistry, `networksetup`, `ifconfig` or any socket API.
+
+## Planned macOS Evidence Sources
+
+The future Darwin adapter should classify Wi-Fi using macOS interface evidence such as Network framework interface type `wifi` or SystemConfiguration wireless interface type evidence.
+
+Android USB tethering should require stronger evidence than a display name. The adapter should combine a usable IPv4 network interface with USB parent/device evidence from IORegistry or equivalent system APIs showing that the network interface is associated with an Android USB tethering device. If that evidence is missing or ambiguous, the adapter should return `LinkKindUnknown` and let `internal/paths` report a missing candidate rather than guess.
 
 `internal/gateway` will later connect UDP receive loops to the dedup window and evidence logs.
 

@@ -78,6 +78,22 @@ This cycle completed a bounded Stage 1 path objective: add fixture-driven path o
   * unknown link kinds.
 * Updated Stage 1 architecture, test evidence and threat-model docs to cover path-candidate classification.
 * Delegated a bounded path-model review to `ollama_deep`; it did not return before local work and validation completed, so it was closed without usable output.
+* Added `internal/platform/darwin` fixture-boundary primitives:
+  * `EvidenceSource`
+  * `Evidence`
+  * `InterfaceSnapshot`
+  * `ObservationsFromSnapshots`
+  * `EvidenceBySource`
+* Added fixture-driven Darwin tests proving:
+  * snapshot fields map to `paths.Observation`;
+  * snapshots can feed `paths.Classify`;
+  * conventional BSD names such as `en0` and `en7` still require explicit `LinkKind`;
+  * BSD names and display names alone do not assign link kind;
+  * missing BSD names remain unusable;
+  * evidence metadata can be filtered by source.
+* Updated Stage 1 architecture, test evidence and threat-model docs to cover the Darwin observation boundary and planned macOS evidence sources.
+* Touched `session-timestamp.log` as requested and read `SESSION-CONTEXT.md`.
+* Delegated a bounded Darwin adapter boundary review to `ollama_fast`; it returned a useful test/doc checklist and the relevant items were incorporated.
 
 Prior completed Stage 0 work remains in place:
 
@@ -135,7 +151,7 @@ The repository has a validating Stage 0 skeleton. The upstream manifest is fully
 
 The initial Stage 0 bootstrap is committed and pushed to GitHub. Stage 0 GitHub CI now passes on `origin/main`. The Stage 0 engineering and legal/provenance review gates are complete for starting Stage 1 probe work, subject to the recorded follow-ups and standing import-time conditions.
 
-Stage 1 now has a unit-tested Go core for packet identity, first-copy duplicate suppression and fixture-driven path-candidate classification. It does not yet prove live macOS interface discovery, per-interface UDP egress, gateway reachability, packet capture evidence, path loss survival, encryption or VPN behaviour.
+Stage 1 now has a unit-tested Go core for packet identity, first-copy duplicate suppression, fixture-driven path-candidate classification and a Darwin fixture boundary for future macOS observations. It does not yet prove live macOS interface discovery, per-interface UDP egress, gateway reachability, packet capture evidence, path loss survival, encryption or VPN behaviour.
 
 Git remote:
 
@@ -167,8 +183,13 @@ This cycle changed:
 * `internal/paths/doc.go`
 * `internal/paths/classifier.go`
 * `internal/paths/classifier_test.go`
+* `internal/platform/darwin/doc.go`
+* `internal/platform/darwin/observations.go`
+* `internal/platform/darwin/observations_test.go`
 * `PROJECT_STATE.md`
+* `SESSION-CONTEXT.md`
 * `TASKS.md`
+* `session-timestamp.log`
 
 Ignored local artefacts:
 
@@ -182,9 +203,9 @@ Ignored local artefacts:
 
 Passed in this cycle:
 
-* `go test ./internal/paths`
+* `go test ./internal/platform/darwin ./internal/paths`
 * `go test ./...`
-* `go test -race ./internal/paths`
+* `go test -race ./internal/platform/darwin ./internal/paths`
 * `make test`
   * Go tests passed for all packages.
   * SwiftPM build passed for the macOS scaffold.
@@ -261,7 +282,7 @@ Not run:
 * The first GitHub Actions push event produced `startup_failure` run `27815677467` with no jobs/logs. A later workflow-trigger hardening commit ran the named project CI workflows successfully, so this is no longer blocking clean-checkout validation evidence.
 * Successful macOS CI still emits a non-blocking Homebrew tap-trust transition warning while installing SwiftLint from runner state.
 * The Stage 1 dedup window is in-memory and process-local; it is not production replay protection and does not survive gateway restart.
-* The Stage 1 path classifier depends on platform-provided link kinds; the Darwin adapter that populates those observations does not exist yet.
+* The Stage 1 path classifier depends on platform-provided link kinds; the live Darwin adapter that populates those observations does not exist yet.
 * No packet captures, gateway tests or transport evidence exists yet.
 
 ## Known Blockers
@@ -271,6 +292,6 @@ Not run:
 
 ## Next Recommended Action
 
-Begin the next Stage 1 slice: add a Darwin observation adapter boundary that can populate `internal/paths.Observation` values from injected fixtures, still without opening sockets or hard-coding BSD interface names.
+Begin the next Stage 1 slice: implement a live Darwin observation collector behind the existing fixture boundary, or first capture and commit redacted fixtures from `networksetup`, SystemConfiguration/Network framework evidence and IORegistry evidence if live collection remains uncertain.
 
 Do not claim dual-path success until later work proves that UDP socket A explicitly leaves through Wi-Fi, UDP socket B explicitly leaves through Android USB tethering, both reach the same gateway process, one logical packet is delivered once, and either path can disappear without ending the logical session.

@@ -287,3 +287,27 @@ Consequences:
 Conditions for revisiting:
 
 Revisit if live macOS evidence cannot reliably distinguish Android USB tethering from other USB network devices, or if the product needs to support multiple simultaneous Wi-Fi or tethering candidates.
+
+## 2026-06-19: Use A Darwin Evidence Boundary Before Live Collection
+
+Decision:
+
+Add a Darwin-specific fixture boundary that maps injected `InterfaceSnapshot` records into `internal/paths.Observation` values before implementing live macOS collection.
+
+Alternatives considered:
+
+* Call live macOS APIs immediately.
+* Parse command output directly inside `internal/paths`.
+* Classify Android USB tethering from BSD interface names or display names.
+
+Rationale:
+
+The project needs a place to preserve macOS-specific evidence without letting the core classifier depend on one machine's interface names. The fixture boundary lets tests prove that BSD names are data only, that link kind must be explicit, and that Android USB tethering should require USB association evidence before a live collector claims it.
+
+Consequences:
+
+`internal/platform/darwin` now owns fixture snapshots and evidence metadata. It still performs no live SystemConfiguration, Network framework, IORegistry, command or socket calls. Future live collection must populate the same boundary and continue to treat Android USB tethering as unknown when USB evidence is missing or ambiguous.
+
+Conditions for revisiting:
+
+Revisit if live macOS collection requires a materially different observation shape, if Android USB tethering cannot be distinguished from generic USB network devices, or if packet-capture evidence shows the selected interface role is wrong.
