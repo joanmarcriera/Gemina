@@ -1,6 +1,7 @@
 name: Licence Scan
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - "research/upstream-manifest.yaml"
