@@ -123,6 +123,13 @@ networking, encryption or source import.
 * Cleaned up remaining first-party Stage 0 placeholder wording outside
   historical review/spec/state records so future sessions see Stage 1 as the
   active stage.
+* Created and pushed commit `a0aa2b4` (`Add Darwin interface state collector`).
+* Confirmed GitHub CI passed on commit `a0aa2b4`:
+  * Go CI run `27836988541`
+  * Infrastructure CI run `27836988540`
+  * macOS CI run `27836988568`
+* Confirmed the only macOS CI annotation remains the non-blocking Homebrew
+  tap-trust transition warning while installing SwiftLint.
 
 Prior completed Stage 0 work remains in place:
 
@@ -294,6 +301,15 @@ Passed in this cycle:
   * Passed from a temporary copy; included docs checks, licence/provenance
     checks, Go tests, SwiftPM build and local lint checks. SwiftLint was not
     installed locally, so local SwiftLint was skipped.
+* `git push origin main`
+  * Pushed implementation commit `a0aa2b4` (`Add Darwin interface state collector`).
+* `gh run watch 27836988541 --repo joanmarcriera/continuity-vpn --exit-status`
+  * GitHub Go CI passed on commit `a0aa2b4`.
+* `gh run watch 27836988540 --repo joanmarcriera/continuity-vpn --exit-status`
+  * GitHub Infrastructure CI passed on commit `a0aa2b4`.
+* `gh run watch 27836988568 --repo joanmarcriera/continuity-vpn --exit-status`
+  * GitHub macOS CI passed on commit `a0aa2b4` with the known non-blocking
+    Homebrew tap-trust annotation.
 * Fuzz testing considered.
   * Not added or run in this slice because the collector maps typed interface
     records and CIDR strings from the standard library rather than parsing a
