@@ -37,12 +37,12 @@ Completion criteria for Stage 0 exit:
 
 ## Next Exact Action
 
-Add live Darwin observation evidence or collector behind the fixture boundary.
+Add explicit Wi-Fi and Android USB tethering evidence sources behind the Darwin
+snapshot boundary.
 
 Completion criteria:
 
 * [ ] Capture redacted fixture evidence for Wi-Fi and Android USB tethering from macOS.
-* [ ] Define or implement a live collector behind the existing `internal/platform/darwin.InterfaceSnapshot` boundary.
 * [ ] Keep BSD interface names as data only; do not classify by names such as `en0`.
 * [ ] Verify the evidence source that distinguishes Android USB tethering from generic USB network adapters.
 * [ ] Update `PROJECT_STATE.md`, `TASKS.md` and `DECISIONS.md` with the Stage 1 implementation result.
@@ -64,6 +64,10 @@ Completion criteria:
 * [x] Add fixture-driven tests for Darwin observation data without live socket binding.
 * [x] Keep BSD interface names as data only in the Darwin fixture boundary; do not classify by names such as `en0`.
 * [x] Document planned macOS evidence sources for distinguishing Wi-Fi from Android USB tethering.
+* [x] Add conservative Darwin live interface-state collection using BSD interface flags and IPv4 presence.
+* [x] Test that the live collector boundary does not infer Wi-Fi or Android USB tethering from BSD names or display names.
+* [x] Update root stage markers from Stage 0 bootstrap to Stage 1 probe.
+* [x] Remove stale first-party Stage 0 placeholder wording from active stubs and package docs.
 
 ## Remaining Stage 0 Hardening
 

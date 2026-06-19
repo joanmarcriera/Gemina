@@ -10,8 +10,11 @@ Report security concerns directly to the repository owner until a public securit
 
 Do not include secrets, raw access keys, customer identifiers or packet captures containing private traffic in issue trackers, logs or support attachments.
 
-## Stage 0 Security Boundaries
+## Current Security Boundaries
 
-Stage 0 contains no production VPN transport, cryptographic tunnel, entitlement service or gateway implementation.
+The current repository contains Stage 1 probe code below production VPN
+transport. It has no cryptographic tunnel, entitlement service, payment flow,
+gateway runtime or released client.
 
-Future work must update `docs/security/threat-model-template.md` and create concrete threat models before implementing security-sensitive behaviour.
+Future work must update concrete threat models before implementing
+security-sensitive behaviour.

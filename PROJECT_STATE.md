@@ -4,9 +4,12 @@ Last updated: 2026-06-19
 
 ## Current Objective
 
-Stage 1 path candidate model.
+Stage 1 conservative Darwin interface-state collector.
 
-This cycle completed a bounded Stage 1 path objective: add fixture-driven path observation and candidate classification in `internal/paths`, without live macOS APIs, socket binding, gateway networking, encryption or source import.
+This cycle completed a bounded Stage 1 path objective: add conservative Darwin
+interface-state collection behind the existing `internal/platform/darwin`
+snapshot boundary, without role inference from names, socket binding, gateway
+networking, encryption or source import.
 
 ## Completed Work
 
@@ -94,6 +97,32 @@ This cycle completed a bounded Stage 1 path objective: add fixture-driven path o
 * Updated Stage 1 architecture, test evidence and threat-model docs to cover the Darwin observation boundary and planned macOS evidence sources.
 * Touched `session-timestamp.log` as requested and read `SESSION-CONTEXT.md`.
 * Delegated a bounded Darwin adapter boundary review to `ollama_fast`; it returned a useful test/doc checklist and the relevant items were incorporated.
+* Read the tracked first-party Markdown corpus, the project-local Go/Bash skill
+  Markdown files and the current project state files before editing.
+* Added `internal/platform/darwin` conservative live collection primitives:
+  * `InterfaceSource`
+  * `InterfaceRecord`
+  * `NetInterfaceSource`
+  * `LiveInterfaceSnapshots`
+  * `CollectInterfaceSnapshots`
+  * `EvidenceSourceBSDNetworkState`
+* Added collector tests proving:
+  * BSD flags and IPv4 presence map to `InterfaceSnapshot`;
+  * explicit link kind evidence is preserved when injected;
+  * BSD names and display names still do not classify Wi-Fi or Android USB tethering;
+  * IPv6-only interfaces remain unusable for the IPv4-only Stage 1 probe;
+  * nil sources and source errors are handled explicitly.
+* Updated root stage documentation from Stage 0 bootstrap to Stage 1 probe while
+  preserving the later-stage gates.
+* Updated the Go and Swift stage markers from `stage-0-bootstrap` to
+  `stage-1-probe`.
+* Updated architecture, testing and threat-model docs for the conservative
+  Darwin collector.
+* Delegated a bounded collector review to `ollama_fast`; it returned generic Go
+  testing guidance rather than patch findings, so it was not used as evidence.
+* Cleaned up remaining first-party Stage 0 placeholder wording outside
+  historical review/spec/state records so future sessions see Stage 1 as the
+  active stage.
 
 Prior completed Stage 0 work remains in place:
 
@@ -147,11 +176,18 @@ Prior completed Stage 0 work remains in place:
 
 No VPN transport, packet framing, production duplicate-suppression integration, NetworkExtension packet handling, gateway runtime, entitlement service, payment flow or real infrastructure resource exists.
 
-The repository has a validating Stage 0 skeleton. The upstream manifest is fully pinned by shell-verified commits. Research sources are present only in `.research-src/`, which is ignored by Git.
+The repository has a completed validating Stage 0 baseline plus bounded Stage 1
+probe packages. The upstream manifest is fully pinned by shell-verified commits.
+Research sources are present only in `.research-src/`, which is ignored by Git.
 
 The initial Stage 0 bootstrap is committed and pushed to GitHub. Stage 0 GitHub CI now passes on `origin/main`. The Stage 0 engineering and legal/provenance review gates are complete for starting Stage 1 probe work, subject to the recorded follow-ups and standing import-time conditions.
 
-Stage 1 now has a unit-tested Go core for packet identity, first-copy duplicate suppression, fixture-driven path-candidate classification and a Darwin fixture boundary for future macOS observations. It does not yet prove live macOS interface discovery, per-interface UDP egress, gateway reachability, packet capture evidence, path loss survival, encryption or VPN behaviour.
+Stage 1 now has a unit-tested Go core for packet identity, first-copy duplicate
+suppression, fixture-driven path-candidate classification, a Darwin snapshot
+boundary and a conservative live collector for BSD interface flags and IPv4
+presence. It does not yet prove Wi-Fi or Android USB tethering classification
+from live macOS evidence, per-interface UDP egress, gateway reachability, packet
+capture evidence, path loss survival, encryption or VPN behaviour.
 
 Git remote:
 
@@ -175,21 +211,53 @@ Initial bootstrap content:
 This cycle changed:
 
 * `DECISIONS.md`
+* `PROJECT_STATE.md`
+* `TASKS.md`
+* `AGENTS.md`
+* `CONTRIBUTING.md`
+* `NOTICE`
+* `README.md`
+* `SECURITY.md`
+* `CODEOWNERS`
+* `api/openapi.yaml`
+* `api/protocol/framing.md`
+* `api/protocol/messages.md`
+* `apps/macos/README.md`
+* `apps/macos/Shared/ProductStage.swift`
+* `apps/macos/UnitTests/README.md`
+* `bridge/README.md`
+* `bridge/darwin/README.md`
+* `deploy/ansible/README.md`
+* `deploy/tofu/environments/dev/main.tf`
+* `deploy/tofu/environments/production/main.tf`
+* `deploy/tofu/modules/README.md`
 * `docs/architecture/overview.md`
 * `docs/architecture/stage-1-probe.md`
 * `docs/security/stage-1-probe-threat-model.md`
-* `docs/testing/README.md`
 * `docs/testing/stage-1-probe-evidence.md`
-* `internal/paths/doc.go`
-* `internal/paths/classifier.go`
-* `internal/paths/classifier_test.go`
-* `internal/platform/darwin/doc.go`
+* `internal/bootstrap/stage.go`
+* `internal/bootstrap/stage_test.go`
+* `internal/entitlement/doc.go`
+* `internal/framing/doc.go`
+* `internal/gateway/doc.go`
+* `internal/logging/doc.go`
+* `internal/metrics/doc.go`
+* `internal/platform/darwin/collector.go`
+* `internal/platform/darwin/collector_test.go`
 * `internal/platform/darwin/observations.go`
 * `internal/platform/darwin/observations_test.go`
-* `PROJECT_STATE.md`
-* `SESSION-CONTEXT.md`
-* `TASKS.md`
-* `session-timestamp.log`
+* `internal/platform/linux/doc.go`
+* `internal/replay/doc.go`
+* `internal/sessions/doc.go`
+* `internal/transport/doc.go`
+* `pkg/clientcore/doc.go`
+* `pkg/protocoltypes/doc.go`
+* `pkg/testkit/doc.go`
+* `research/experiments/README.md`
+* `scripts/build-apple-bridge.sh`
+* `scripts/collect-diagnostics.sh`
+* `scripts/deploy-dev-gateway.sh`
+* `scripts/run-network-tests.sh`
 
 Ignored local artefacts:
 
@@ -202,6 +270,40 @@ Ignored local artefacts:
 ## Tests Run and Results
 
 Passed in this cycle:
+
+* `go test ./internal/platform/darwin ./internal/paths`
+* `go test ./internal/platform/darwin ./internal/paths ./internal/bootstrap`
+* `go test -race ./internal/platform/darwin ./internal/paths`
+* `scripts/docs-check.sh`
+* `go test ./...`
+* `go test -race ./...`
+* `make test`
+  * Go tests passed for all packages.
+  * SwiftPM build passed for the macOS scaffold.
+  * Documentation structure check passed.
+* `make lint`
+  * Go formatting check passed.
+  * Documentation structure check passed.
+  * SwiftLint was not installed locally, so the local SwiftLint run was skipped.
+* `make licence-check`
+* `make infra-check`
+  * OpenTofu/Terraform was not installed locally, so local infra validation was
+    skipped.
+* `git diff --check`
+* `make clean-workspace-check`
+  * Passed from a temporary copy; included docs checks, licence/provenance
+    checks, Go tests, SwiftPM build and local lint checks. SwiftLint was not
+    installed locally, so local SwiftLint was skipped.
+* Fuzz testing considered.
+  * Not added or run in this slice because the collector maps typed interface
+    records and CIDR strings from the standard library rather than parsing a
+    custom packet or token format. Revisit when live command output, protocol
+    framing or entitlement parsing exists.
+* Integration testing considered.
+  * Not applicable to this slice because no socket binding, gateway receive loop
+    or macOS path egress exists yet.
+
+Previously passed in the prior cycle:
 
 * `go test ./internal/platform/darwin ./internal/paths`
 * `go test ./...`
@@ -223,11 +325,6 @@ Passed in this cycle:
   * Pushed implementation commit `63bd192` (`Add Darwin path observation boundary`).
 * `gh run watch 27836030241 --repo joanmarcriera/continuity-vpn --exit-status`
   * GitHub Go CI passed on commit `63bd192`.
-* Fuzz testing considered.
-  * Not added or run in this slice because the path classifier consumes typed observations rather than parsing untrusted bytes; revisit when live macOS observation parsing exists.
-* Integration testing considered.
-  * Not applicable to this slice because no live macOS observation adapter, sockets, gateway receive loop or macOS path binding exists yet.
-
 Previously passed and still reflected in the repository state:
 
 * `make clean-workspace-check`
@@ -282,7 +379,10 @@ Not run:
 * The first GitHub Actions push event produced `startup_failure` run `27815677467` with no jobs/logs. A later workflow-trigger hardening commit ran the named project CI workflows successfully, so this is no longer blocking clean-checkout validation evidence.
 * Successful macOS CI still emits a non-blocking Homebrew tap-trust transition warning while installing SwiftLint from runner state.
 * The Stage 1 dedup window is in-memory and process-local; it is not production replay protection and does not survive gateway restart.
-* The Stage 1 path classifier depends on platform-provided link kinds; the live Darwin adapter that populates those observations does not exist yet.
+* The Stage 1 path classifier depends on platform-provided link kinds; the
+  conservative Darwin collector now records BSD interface state but does not yet
+  populate Wi-Fi or Android USB tethering link kinds from SystemConfiguration,
+  Network framework or IORegistry evidence.
 * No packet captures, gateway tests or transport evidence exists yet.
 
 ## Known Blockers
@@ -292,6 +392,10 @@ Not run:
 
 ## Next Recommended Action
 
-Begin the next Stage 1 slice: implement a live Darwin observation collector behind the existing fixture boundary, or first capture and commit redacted fixtures from `networksetup`, SystemConfiguration/Network framework evidence and IORegistry evidence if live collection remains uncertain.
+Begin the next Stage 1 slice: add explicit Wi-Fi and Android USB tethering
+evidence sources behind the Darwin snapshot boundary. Prefer redacted fixtures
+or fixture-driven adapters for SystemConfiguration/Network framework Wi-Fi
+evidence and IORegistry USB association evidence before attempting socket
+binding.
 
 Do not claim dual-path success until later work proves that UDP socket A explicitly leaves through Wi-Fi, UDP socket B explicitly leaves through Android USB tethering, both reach the same gateway process, one logical packet is delivered once, and either path can disappear without ending the logical session.

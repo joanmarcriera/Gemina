@@ -1,8 +1,9 @@
 # macOS Skeleton
 
-This directory contains Stage 0 source directories and a Swift package used for compile-only validation.
+This directory contains source directories created during Stage 0 and a Swift
+package used for compile-only validation.
 
-An Xcode project has not been generated in Stage 0 because NetworkExtension signing, team identifiers, entitlements and build settings require owner review.
+An Xcode project was not generated during Stage 0 because NetworkExtension signing, team identifiers, entitlements and build settings require owner review.
 
 ## Manual Xcode Creation Steps
 
@@ -13,4 +14,5 @@ An Xcode project has not been generated in Stage 0 because NetworkExtension sign
 5. Add NetworkExtension entitlements only after the Apple Developer Team ID and signing approach are approved.
 6. Add the Go bridge target only after ADR and threat-model updates for Swift/Go memory ownership.
 
-The Swift package here is only a Stage 0 validation scaffold.
+The Swift package here remains a validation scaffold until an Xcode project and
+Apple signing details are approved.

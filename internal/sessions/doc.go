@@ -1,2 +1,3 @@
-// Package sessions will contain logical session state after Stage 0.
+// Package sessions will contain logical session state after the probe requires
+// multi-packet session tracking.
 package sessions

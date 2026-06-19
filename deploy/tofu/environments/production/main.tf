@@ -4,5 +4,5 @@ terraform {
 
 locals {
   environment = "production"
-  stage       = "stage-0-bootstrap"
+  stage       = "stage-1-probe"
 }

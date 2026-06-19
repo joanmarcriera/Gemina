@@ -1,2 +1,3 @@
-// Package gateway will contain private gateway internals after Stage 0.
+// Package gateway will contain private gateway internals when probe-mode server
+// work begins.
 package gateway
