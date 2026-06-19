@@ -52,6 +52,9 @@ The Darwin observation-boundary tests must cover:
 * command-backed live evidence merging with conservative BSD interface state;
 * `networksetup` hardware-port output reduced to Wi-Fi evidence without storing MAC addresses;
 * `ioreg` Ethernet-interface output reduced to Android USB evidence without storing raw product names or serial-like values;
+* `continuityctl darwin-evidence` preserving the stage marker when run without arguments;
+* diagnostic report output marking complete and incomplete classification explicitly;
+* diagnostic report output omitting display names and raw hardware values;
 * IPv6-only interfaces remaining unusable for the IPv4-only Stage 1 probe;
 * source and nil-source error handling;
 * evidence-source string values.

@@ -37,14 +37,15 @@ Completion criteria for Stage 0 exit:
 
 ## Next Exact Action
 
-Add a redacted diagnostic command for the Darwin evidence snapshot.
+Run the redacted Darwin evidence diagnostic with Android USB tethering connected.
 
 Completion criteria:
 
-* [ ] Add a `continuityctl` subcommand that prints `LiveEvidenceInterfaceSnapshots` as redacted JSON for manual Stage 1 evidence capture.
-* [ ] Include no source IP addresses, MAC addresses, serial numbers, raw access keys or raw IORegistry product strings in diagnostic output.
-* [ ] Report incomplete classification explicitly rather than claiming path success.
-* [ ] Keep socket binding, gateway networking and packet capture out of this diagnostic slice.
+* [ ] Connect Android USB tethering on the target Mac.
+* [ ] Run `go run ./cmd/continuityctl darwin-evidence`.
+* [ ] Confirm the JSON reports one usable Wi-Fi candidate and one usable Android USB tethering candidate without source IP addresses, MAC addresses, serial numbers, raw access keys or raw IORegistry product strings.
+* [ ] Record a redacted summary in `PROJECT_STATE.md`; do not commit raw local hardware output.
+* [ ] If classification remains incomplete, refine evidence acquisition before socket binding.
 * [ ] Update `PROJECT_STATE.md`, `TASKS.md` and `DECISIONS.md` with the Stage 1 implementation result.
 
 ## Completed Stage 1 Work
@@ -73,6 +74,9 @@ Completion criteria:
 * [x] Add provisional command-backed live evidence acquisition using `networksetup` and `ioreg` output reduced to redacted evidence tokens.
 * [x] Merge live evidence with conservative BSD interface state without hard-coded BSD names.
 * [x] Test that command-backed evidence does not retain MAC addresses, raw product names or serial-like values from fixtures.
+* [x] Add `continuityctl darwin-evidence` redacted JSON diagnostics for manual Stage 1 evidence capture.
+* [x] Test that diagnostic output marks incomplete classification explicitly and omits display names and raw hardware values.
+* [x] Run the diagnostic locally once; it found a Wi-Fi candidate and correctly reported missing Android USB tethering.
 * [x] Update root stage markers from Stage 0 bootstrap to Stage 1 probe.
 * [x] Remove stale first-party Stage 0 placeholder wording from active stubs and package docs.
 

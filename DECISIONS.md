@@ -426,3 +426,39 @@ Conditions for revisiting:
 Revisit when direct macOS API bindings are available, if command output differs
 on the target macOS version, if Android tethering evidence is ambiguous, or if
 privacy review requires a stricter diagnostic-data model.
+
+## 2026-06-20: Expose Darwin Evidence Through A Redacted Diagnostic Command
+
+Decision:
+
+Add `continuityctl darwin-evidence` to print a redacted JSON Stage 1 evidence
+report built from `LiveEvidenceInterfaceSnapshots`.
+
+Alternatives considered:
+
+* Keep evidence capture as library-only until socket binding exists.
+* Print raw `networksetup`, `ioreg` or interface address output for manual
+  review.
+* Proceed directly to UDP socket binding after library tests.
+
+Rationale:
+
+Before socket binding, the project needs a repeatable operator-facing check that
+the target Mac can identify one usable Wi-Fi candidate and one usable Android
+USB tethering candidate. JSON output is easier to archive and compare than
+terminal prose, but it must remain redacted and must not overstate success.
+
+Consequences:
+
+The diagnostic report includes BSD names, coarse interface state, coarse
+evidence tokens, candidates and missing/ambiguous classification issues. It
+omits display names, source IP addresses, MAC addresses, serial numbers, raw
+access keys and raw IORegistry product strings. The report explicitly labels
+itself diagnostic-only and not path success. Packet captures and gateway tests
+are still required before any dual-path claim.
+
+Conditions for revisiting:
+
+Revisit if privacy review disallows BSD names in diagnostics, if operators need
+a file-output mode with automatic redaction checks, or if the later socket probe
+needs a different evidence report schema.
