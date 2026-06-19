@@ -8,6 +8,11 @@ Review evidence baseline commit: `1e3b461`
 
 CI evidence commit: `fcd6238`
 
+Review tracking:
+
+* Engineering review: https://github.com/joanmarcriera/continuity-vpn/issues/1
+* Legal/provenance review: https://github.com/joanmarcriera/continuity-vpn/issues/2
+
 ## Purpose
 
 This document requests Stage 0 engineering review and legal/provenance review before any Stage 1 transport work begins.
@@ -114,8 +119,8 @@ These items do not need to block review unless reviewers decide otherwise:
 
 Do not begin Stage 1 until:
 
-* Stage 0 engineering review is complete.
-* Legal/provenance review is complete or has explicitly approved a narrower Stage 1 scope.
+* Stage 0 engineering review issue 1 is complete.
+* Legal/provenance review issue 2 is complete or has explicitly approved a narrower Stage 1 scope.
 * Any required review follow-ups are recorded in `TASKS.md` or GitHub issues.
 
 The first Stage 1 issue remains:

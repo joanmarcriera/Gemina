@@ -6,43 +6,34 @@ Last updated: 2026-06-19
 
 Stage 0 repository bootstrap and source due diligence.
 
-This cycle completed a bounded GitHub remote objective: create the private GitHub repository, configure `origin`, push `main`, and inspect the first GitHub automation results.
-
-This cycle completed a bounded Stage 0 CI objective: make the registered project CI workflows manually triggerable, push that workflow hardening, and verify GitHub clean-checkout CI succeeds.
+This cycle completed a bounded Stage 0 review-request objective: create a review packet and open GitHub issues for engineering review and legal/provenance review without marking either review complete.
 
 ## Completed Work
 
 * Read `PROJECT_STATE.md`, `TASKS.md`, `DECISIONS.md` and `AGENTS.md`.
 * Inspected Git status, recent commit and configured remotes.
-* Confirmed `gh` is authenticated as `joanmarcriera`.
+* Delegated a bounded Stage 0 review-packet surface check to `ollama_deep`; it did not return before the local work completed and was closed without usable output.
+* Added `docs/reviews/stage-0-review-request.md`.
+* Pushed commit `6d4c432` (`Add Stage 0 review request`) to `origin/main`.
+* Created GitHub labels:
+  * `stage-0`
+  * `stage-review`
+  * `legal-review`
+* Opened GitHub review issues:
+  * Stage 0 engineering review: https://github.com/joanmarcriera/continuity-vpn/issues/1
+  * Stage 0 legal/provenance review: https://github.com/joanmarcriera/continuity-vpn/issues/2
+
+Prior completed Stage 0 work remains in place:
+
 * Created the private GitHub repository `joanmarcriera/continuity-vpn`.
 * Configured `origin` as `git@github.com:joanmarcriera/continuity-vpn.git`.
 * Pushed `main` to `origin/main`.
-* Confirmed GitHub workflows are present and active:
-  * Go CI
-  * Infrastructure CI
-  * Licence Scan
-  * macOS CI
-  * Release
-* Confirmed GitHub Dependency Graph completed successfully for the initial push.
-* Inspected a GitHub Actions `startup_failure` run for the initial push; it had no jobs and no logs, so the initial push did not produce clean-checkout validation evidence.
-* Delegated a bounded workflow-trigger review to `ollama_fast`; it agreed that adding `workflow_dispatch` to the four project CI workflows was a minimal Stage 0 fix and did not identify blocking workflow issues.
-* Added `workflow_dispatch` to:
-  * `.github/workflows/go-ci.yml`
-  * `.github/workflows/infra-ci.yml`
-  * `.github/workflows/licence-scan.yml`
-  * `.github/workflows/macos-ci.yml`
-* Verified the workflow YAML parses locally.
-* Ran `make clean-workspace-check` after the workflow trigger change.
-* Pushed commit `fcd6238` (`Allow manual Stage 0 CI runs`) to `origin/main`.
+* Added `workflow_dispatch` to the four project CI workflows.
 * Confirmed all four named project CI workflows ran and passed on GitHub for commit `fcd6238`:
   * Go CI run `27816489936`
   * Infrastructure CI run `27816489953`
   * Licence Scan run `27816489977`
   * macOS CI run `27816489933`
-
-Prior completed Stage 0 work remains in place:
-
 * Created the atomic initial Stage 0 bootstrap commit.
 * Inspected Git status, staged state and ignored artefacts.
 * Delegated a bounded handover-file review to `ollama_fast`; the response made unsupported generic claims, so local source inspection and tests remained authoritative.
@@ -109,13 +100,9 @@ Initial bootstrap content:
 
 This cycle changed:
 
-* `.github/workflows/go-ci.yml`
-* `.github/workflows/infra-ci.yml`
-* `.github/workflows/licence-scan.yml`
-* `.github/workflows/macos-ci.yml`
+* `docs/reviews/stage-0-review-request.md`
 * `PROJECT_STATE.md`
 * `TASKS.md`
-* `DECISIONS.md`
 
 Ignored local artefacts:
 
@@ -131,25 +118,29 @@ Passed in this cycle:
 
 * `make clean-workspace-check`
 * `scripts/docs-check.sh`
-* `ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "workflow yaml parsed"' .github/workflows/*.yml`
 * `git diff --check`
 * `git diff --cached --check`
 * `git push origin main`
+* `gh issue list --repo joanmarcriera/continuity-vpn --state open --limit 20`
+* `gh label list --repo joanmarcriera/continuity-vpn --limit 100`
+* `gh label create stage-0 --repo joanmarcriera/continuity-vpn --description "Stage 0 bootstrap, provenance and planning" --color 0e8a16`
+* `gh label create stage-review --repo joanmarcriera/continuity-vpn --description "Stage gate review required" --color 5319e7`
+* `gh label create legal-review --repo joanmarcriera/continuity-vpn --description "Legal or licence provenance review required" --color b60205`
+* `gh issue create` for Stage 0 engineering review issue 1.
+* `gh issue create` for Stage 0 legal/provenance review issue 2.
+
+Previously passed and still reflected in the repository state:
+
+* `make clean-workspace-check`
+* `ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path) }; puts "workflow yaml parsed"' .github/workflows/*.yml`
 * `gh run watch 27816489936 --repo joanmarcriera/continuity-vpn --exit-status`
 * `gh run watch 27816489953 --repo joanmarcriera/continuity-vpn --exit-status`
 * `gh run watch 27816489977 --repo joanmarcriera/continuity-vpn --exit-status`
 * `gh run watch 27816489933 --repo joanmarcriera/continuity-vpn --exit-status`
-* `gh run view 27816489936 --repo joanmarcriera/continuity-vpn --json name,status,conclusion,event,headSha,createdAt,updatedAt,url,jobs`
-* `gh run view 27816489953 --repo joanmarcriera/continuity-vpn --json name,status,conclusion,event,headSha,createdAt,updatedAt,url,jobs`
-* `gh run view 27816489977 --repo joanmarcriera/continuity-vpn --json name,status,conclusion,event,headSha,createdAt,updatedAt,url,jobs`
-* `gh run view 27816489933 --repo joanmarcriera/continuity-vpn --json name,status,conclusion,event,headSha,createdAt,updatedAt,url,jobs`
 * GitHub Go CI passed on commit `fcd6238`.
 * GitHub Infrastructure CI passed on commit `fcd6238`.
 * GitHub Licence Scan passed on commit `fcd6238`.
 * GitHub macOS CI passed on commit `fcd6238`.
-
-Previously passed and still reflected in the repository state:
-
 * `gh auth status`
 * `gh repo create continuity-vpn --private --source . --remote origin --push`
 * `gh run list --repo joanmarcriera/continuity-vpn --limit 20`
@@ -184,6 +175,8 @@ Not run:
 
 * Licence classifications are documented as Stage 0 due-diligence records, not legal advice.
 * No upstream source has been approved for import into product directories yet.
+* Stage 0 engineering review is requested in issue 1 but is not yet complete.
+* Stage 0 legal/provenance review is requested in issue 2 but is not yet complete.
 * The Swift scaffold is build-only; real XCTest/UI tests need an Xcode project and full Apple test toolchain.
 * The first GitHub Actions push event produced `startup_failure` run `27815677467` with no jobs/logs. A later workflow-trigger hardening commit ran the named project CI workflows successfully, so this is no longer blocking clean-checkout validation evidence.
 * Successful GitHub CI emitted non-blocking runner annotations:
@@ -199,6 +192,6 @@ Not run:
 
 ## Next Recommended Action
 
-Request Stage 0 review and legal review of the recorded upstream licence/provenance material before any Stage 1 transport work or source import begins.
+Wait for Stage 0 engineering review issue 1 and legal/provenance review issue 2 to be completed, then record the outcome and any follow-up tasks before beginning Stage 1 transport work or source import.
 
 Do not begin Stage 1 dual-path probe implementation until Stage 0 exit criteria are complete and reviewed.
