@@ -31,7 +31,7 @@ Completion criteria for Stage 0 exit:
 * [x] Root upstream licence files have been inspected and recorded.
 * [x] `make clean-workspace-check` has passed from a temporary copy.
 * [ ] Full legal review is complete before any import.
-* [ ] CI has run on a clean checkout.
+* [x] CI has run on a clean checkout.
 * [x] Atomic Stage 0 bootstrap commit has been created.
 * [ ] Stage 0 exit criteria have been reviewed.
 
@@ -45,8 +45,8 @@ Completion criteria:
 * [x] Confirm ignored artefacts remain untracked: `.research-src/`, `.build/`, `.codex/` and `apps/macos/.build/`.
 * [x] Configure or confirm the chosen Git remote.
 * [x] Push the initial bootstrap commit to the chosen remote.
-* [ ] Run GitHub CI or equivalent clean-checkout validation.
-* [ ] Update `PROJECT_STATE.md` with CI or clean-checkout validation results.
+* [x] Run GitHub CI or equivalent clean-checkout validation.
+* [x] Update `PROJECT_STATE.md` with CI or clean-checkout validation results.
 * [ ] Request Stage 0 review before Stage 1 work starts.
 
 ## Remaining Stage 0 Hardening
@@ -55,8 +55,9 @@ Completion criteria:
 * [ ] Add real Swift XCTest/UI tests after the Xcode project and full Apple test toolchain are configured.
 * [ ] Run OpenTofu validation in an environment with `tofu` installed.
 * [ ] Run SwiftLint in an environment with `swiftlint` installed.
-* [ ] Investigate GitHub Actions startup failure from run `27815677467`.
-* [ ] Inspect GitHub Actions results after pushing the initial commit.
+* [x] Investigate GitHub Actions startup failure from run `27815677467`.
+* [x] Inspect GitHub Actions results after pushing the initial commit.
+* [ ] Review non-blocking GitHub CI annotations for future hardening.
 * [ ] Request Stage 0 review before any Stage 1 transport work.
 
 ## Stage 1 Candidate, Not Yet Started

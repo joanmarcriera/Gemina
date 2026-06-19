@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-06-18
+Last updated: 2026-06-19
 
 This file records material project decisions for continuity across Codex sessions. Formal ADRs still need to be created during Stage 0 where required by `docs/product/project-specification.md`.
 
@@ -191,3 +191,27 @@ Consequences:
 Conditions for revisiting:
 
 Revisit after the initial commit is pushed and CI runs from a real clean checkout.
+
+## 2026-06-19: Allow Manual Dispatch for Stage 0 CI
+
+Decision:
+
+Add `workflow_dispatch` to the Stage 0 Go, infrastructure, licence and macOS CI workflows.
+
+Alternatives considered:
+
+* Rely only on path-filtered push and pull-request triggers.
+* Remove path filters from every CI workflow.
+* Add a separate all-in-one Stage 0 validation workflow.
+
+Rationale:
+
+The first repository push produced a GitHub Actions `startup_failure` run with no jobs or logs, even though the workflows were later visible and active. Manual dispatch keeps path-filtered CI efficient while giving Stage 0 an explicit clean-checkout validation control.
+
+Consequences:
+
+Maintainers can run each Stage 0 CI workflow on demand from GitHub or `gh workflow run`. Push and pull-request triggers remain path-filtered.
+
+Conditions for revisiting:
+
+Revisit if Stage 0 adopts a single required CI gate, if branch protection requires different status checks, or if the workflows become expensive enough to need stricter manual controls.
