@@ -183,6 +183,10 @@ Passed in this cycle:
 * `git diff --check`
 * `make clean-workspace-check`
   * Passed from a temporary copy; included docs checks, licence/provenance checks, Go tests and SwiftPM build.
+* `git push origin main`
+  * Pushed implementation commit `9081915` (`Add Stage 1 probe dedup core`).
+* `gh run watch 27823267136 --repo joanmarcriera/continuity-vpn --exit-status`
+  * GitHub Go CI passed on commit `9081915`.
 * Fuzz testing considered.
   * Not added or run in this slice because no packet parser, serialiser or network input boundary exists yet; revisit when framing or gateway receive code exists.
 * Integration testing considered.
