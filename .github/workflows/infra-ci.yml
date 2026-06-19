@@ -15,8 +15,8 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: opentofu/setup-opentofu@v1
+      - uses: actions/checkout@v7.0.0
+      - uses: opentofu/setup-opentofu@v2.0.1
       - run: tofu -chdir=deploy/tofu/environments/dev init -backend=false
       - run: tofu -chdir=deploy/tofu/environments/dev validate
       - run: tofu -chdir=deploy/tofu/environments/production init -backend=false
