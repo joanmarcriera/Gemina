@@ -536,3 +536,195 @@ Conditions for revisiting:
 Revisit the dedup structure when the sequence-aware sliding replay window is
 designed, and the evidence vocabulary when direct macOS API collectors introduce
 new stable evidence keys.
+
+## 2026-06-21: Acquire the Android Tether Uplink via Userspace RNDIS, Not a Kernel/DriverKit Driver
+
+Decision:
+
+The second uplink (Android USB tethering) will be brought into macOS by the app
+itself, in userspace: claim the phone's RNDIS USB interfaces via IOUSBHost/libusb,
+drive the RNDIS control + data planes in-process, and present the result to the
+routing layer through an `NEPacketTunnelProvider`. We will not depend on a kernel
+extension, a DriverKit (DEXT) networking driver, or any relaxation of System
+Integrity Protection.
+
+Alternatives considered:
+
+* DriverKit USB-networking system extension that publishes a real NIC. Requires
+  the restricted `com.apple.developer.driverkit.transport.usb` entitlement
+  (Apple approval) and there is no broadly-available public DriverKit family for
+  third parties to create an Ethernet NIC.
+* External travel router presenting plain Ethernet (handover Option D). Reliable
+  but ships a separate hardware dependency to the user — fails the "inside the
+  app, minimal friction" goal.
+* Phone Wi-Fi hotspot + a second Mac radio. Needs hardware the Mac does not have
+  (one Wi-Fi chip) and reintroduces the Apple-Silicon USB-Wi-Fi driver gap.
+* Park the project, treating Android tethering on macOS as unsupported.
+
+Rationale:
+
+macOS ships no RNDIS host driver, so the phone never becomes a `enX` NIC — but
+`ioreg` confirmed the OnePlus 12R exposes a standard, unclaimed RNDIS function
+(control class `0xE0`, data class `0x0A`). A userspace viability spike
+(`research/usb-rndis-spike/`) opened the device, claimed both RNDIS interfaces,
+and completed the `REMOTE_NDIS_INITIALIZE` handshake (`status=0`, `medium=802.3`)
+from an unprivileged process **with SIP enabled**. The single risk that would
+have made the in-app approach impossible — whether userspace can take the
+interface at all — is therefore retired with direct evidence. This is the only
+option that keeps the uplink acquisition inside a notarisable app with one-time
+user consent and no extra hardware.
+
+Consequences:
+
+* Stage 1 evidence acquisition shifts from "find the `android-usb-tether` NIC" to
+  "find the RNDIS USB function": `darwin-evidence` cannot currently see this real
+  tether because it reads BSD interfaces and its IORegistry matcher also requires
+  the literal token `android`, which this device (`OnePlus`/`KALAMA`/`RNDIS …`)
+  does not carry. Both gaps are now tracked in `TASKS.md`.
+* The product gains an RNDIS host implementation and a NetworkExtension target,
+  both previously listed as not implemented.
+* Remaining unknowns before shipping: the claim must be re-confirmed inside the
+  App Sandbox (`com.apple.security.device.usb`), and the data plane
+  (`SET OID_GEN_CURRENT_PACKET_FILTER`, DHCP over the bulk pipe, RNDIS data
+  framing) must be built and proven with packet captures — the spike proves only
+  the control handshake.
+* Provenance constraint: the RNDIS host code is authored clean-room from the
+  public MS-RNDIS protocol; Linux's GPL `rndis_host.c` must not be read by its
+  author or pasted in.
+
+Conditions for revisiting:
+
+Revisit if the userspace claim fails inside the App Sandbox and the
+`com.apple.security.device.usb` entitlement cannot lift it, if Apple withdraws
+unprivileged USB interface access, or if the RNDIS data-plane throughput proves
+unfit and a DriverKit driver becomes necessary.
+
+## 2026-06-21: Target Mac App Store Packaging for a Bounded, Removable Footprint
+
+Decision:
+
+Distribute the macOS client through the Mac App Store. The NetworkExtension
+packet-tunnel ships as a bundled *app extension* inside a sandboxed app; there is
+no kernel extension, DriverKit driver or system extension. The app's entire
+footprint is enumerated and the uninstall contract is documented in
+`docs/product/footprint.md`.
+
+Alternatives considered:
+
+* Developer ID distribution outside the App Store. The NetworkExtension provider
+  would then have to be a System Extension that persists in the system, needs
+  user approval at install, and requires explicit deactivation at uninstall —
+  inherently less clean.
+* Defer the channel choice and build channel-agnostic.
+
+Rationale:
+
+The owner's stated priorities are a clean install/uninstall, minimal friction and
+a non-intrusive product. App Store packaging gives the smallest footprint by
+construction: a mandatory sandbox confines all state to one container, and an
+app-extension provider removes with the bundle so there is no system extension to
+approve or deactivate. The userspace-RNDIS decision already removed the only
+reason we would have needed a kernel/DriverKit driver, so a sandboxed
+App Store build is achievable rather than a compromise.
+
+Consequences:
+
+* The app must be sandboxed; USB access to the phone relies on
+  `com.apple.security.device.usb`, whose viability under the sandbox is the open
+  task gating this choice (`TASKS.md`).
+* The packet tunnel must route only the test/gateway destination via included
+  routes and never become the system default, both for the test rig and to keep
+  the product non-intrusive.
+* Uninstall MUST remove the VPN configuration (`removeFromPreferences()`) and
+  keychain items, not just the bundle; an orphaned VPN profile is the failure
+  mode this decision exists to prevent.
+* If App Store review rejects the USB-tethering use case, the fallback is
+  Developer ID + System Extension, with the documented sysext uninstall step.
+
+Conditions for revisiting:
+
+Revisit if the USB claim cannot be made to work under the App Sandbox, or if App
+Store review rejects the use case, in which case fall back to Developer ID
+distribution and update `docs/product/footprint.md` for the system-extension
+uninstall path.
+
+## 2026-06-21: Cabled Management Channel for Single-Mac Bonding Tests
+
+Decision:
+
+Test the dual-path / failover work on one MacBook Pro using a fixed interface
+split: a cabled Ethernet service is the management lifeline (pinned first in the
+network service order, never touched by the app), while Wi-Fi and the phone
+USB-RNDIS are the two test uplinks. The protocol and helper scripts
+(`scripts/snapshot-network.sh`, `scripts/restore-network.sh`) live in
+`docs/dev/test-environment.md`.
+
+Alternatives considered:
+
+* Test over Wi-Fi alone and accept losing connectivity (including the Claude
+  session) whenever a path-loss experiment runs.
+* Use a second Mac as the test driver.
+
+Rationale:
+
+Path-loss tests deliberately break the test uplinks, so the operator needs an
+out-of-band channel that survives. A pinned cabled service guarantees the default
+route stays put regardless of which test uplink is up. Stage 1 is socket-bind
+only and changes no global routing, so the risk is currently low; the protocol
+exists so it stays low when the scoped tunnel is introduced.
+
+Consequences:
+
+Baselines are captured before a cycle and the service order is reasserted on
+demand or on trouble with one command. When the NEPacketTunnelProvider lands, its
+disable step is added to the restore script and its included routes must exclude
+the management subnet.
+
+Conditions for revisiting:
+
+Revisit if testing moves to a dedicated rig or CI hardware where the operator's
+own connectivity is not at stake.
+
+## 2026-06-21: Gateway Deployed as a Source-Built Container Under systemd on the Host
+
+Decision:
+
+Deploy the Stage-1 probe gateway to the `oracle` VPS as a container, built
+natively on the host from rsynced first-party source (no registry, no
+cross-compilation), run under a systemd unit, and shipped by a single repeatable
+script (`scripts/deploy-dev-gateway.sh`). The runtime image is distroless,
+non-root, read-only rootfs.
+
+Alternatives considered:
+
+* Build the image on the Mac and push to a registry, then pull on the host.
+  Rejected: the Mac has no Docker daemon, the host is arm64 (cross-arch friction),
+  and a registry adds credentials and another moving part for a dev gateway.
+* Run the binary directly under systemd without a container. Workable, but the
+  container gives a clean, reproducible footprint and easy teardown.
+
+Rationale:
+
+The host is native arm64 with Docker, passwordless sudo, firewalld and rsync, so
+building on the host is the least-moving-parts path and is genuinely repeatable —
+re-running the script ships a new release. Building from rsynced source (with
+`.research-src` excluded) keeps GPL research material off the server and the
+build context first-party. systemd gives restart-on-boot and restart-on-crash.
+
+Consequences:
+
+* The deploy depends on host tooling (docker, systemd, firewalld, passwordless
+  sudo); documented in `docs/dev/gateway-deploy.md`.
+* The host firewall is opened by the script, but the Oracle Cloud VCN security
+  list is a separate cloud-level ingress filter that must be opened from the
+  console (no OCI CLI/credentials on the host). Until then the gateway is
+  reachable on-host but not from the internet; on-host end-to-end dedup is
+  verified.
+* No registry means no image provenance trail beyond the source tree; acceptable
+  for a dev gateway, revisit for any production/distributed build.
+
+Conditions for revisiting:
+
+Revisit when multiple hosts or reproducible signed images are needed (introduce a
+registry and CI build), or if the gateway moves to managed infrastructure defined
+in `deploy/tofu`.
