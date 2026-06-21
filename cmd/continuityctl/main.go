@@ -22,8 +22,13 @@ func main() {
 			fmt.Fprintf(os.Stderr, "continuityctl darwin-evidence: %v\n", err)
 			os.Exit(1)
 		}
+	case "probe":
+		if err := runProbe(os.Args[2:], os.Stdout); err != nil {
+			fmt.Fprintf(os.Stderr, "continuityctl probe: %v\n", err)
+			os.Exit(1)
+		}
 	default:
-		fmt.Fprintf(os.Stderr, "usage: %s [darwin-evidence]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "usage: %s [darwin-evidence|probe]\n", os.Args[0])
 		os.Exit(2)
 	}
 }
