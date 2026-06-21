@@ -1,0 +1,26 @@
+[Unit]
+Description=continuity-vpn Stage-1 probe gateway (container)
+Documentation=https://github.com/joanmarcriera/continuity-vpn
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+# Run the prebuilt local image. Re-deploying rebuilds the image and restarts
+# this unit; see scripts/deploy-dev-gateway.sh.
+Environment=GATEWAY_PORT=51820
+Environment=DEDUP_CAPACITY=8192
+ExecStartPre=-/usr/bin/docker rm -f continuity-gateway
+ExecStart=/usr/bin/docker run --rm --name continuity-gateway \
+  --read-only \
+  -p ${GATEWAY_PORT}:51820/udp \
+  -e CONTINUITY_GATEWAY_ADDR=:51820 \
+  -e CONTINUITY_GATEWAY_DEDUP_CAPACITY=${DEDUP_CAPACITY} \
+  continuity-gateway:latest
+ExecStop=/usr/bin/docker stop continuity-gateway
+Restart=always
+RestartSec=3
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target
