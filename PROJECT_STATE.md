@@ -38,10 +38,28 @@ Present and unit/race tested:
   reduced from `networksetup`/`ioreg` to redacted tokens.
 * `internal/diagnostics` + `cmd/continuityctl darwin-evidence` — redacted JSON
   Stage 1 evidence report labelled diagnostic-only-not-path-success.
+* `internal/protocol` probe wire codec (`ProbePacket`, `PathTag`) — versioned
+  fixed-size datagram carrying packet identity + coarse path tag, no host
+  identifiers; round-trip and malformed-input tested.
+* `internal/gateway` + `cmd/gateway` — UDP server that decodes probes, feeds the
+  dedup window, and logs first-copy/duplicate/rejected per path as redacted JSON
+  (source address never reaches the handler). Loopback-driven tests under race.
+  **Deployed and running** on the `oracle` VPS as a distroless arm64 container
+  under systemd (`continuity-gateway.service`); confirmed reachable end-to-end
+  over the internet. See `docs/dev/gateway-deploy.md`.
+* `internal/transport` `PathDialer` + `continuityctl probe` — binds a connected
+  UDP socket to a chosen interface for egress via Darwin `IP_BOUND_IF`, so a
+  socket leaves a specific path regardless of the default route. Loopback
+  delivery test on darwin; portable validation tests; non-darwin stub. Proven
+  live: `en0`-bound reached the gateway, `lo0`-bound was correctly trapped
+  ("network is unreachable"). The client per-path *egress mechanism* now exists;
+  the simultaneous two-path proof still needs the phone + cabled rig.
 
-Not implemented: VPN transport, packet framing, production dedup integration,
-NetworkExtension packet handling, gateway runtime, entitlement service, payment
-flow, real infrastructure resources, and direct SystemConfiguration / Network
+Not implemented: VPN transport (encryption/framing for real traffic), production
+dedup integration, NetworkExtension packet handling, the simultaneous two-path
+client probe (single-path egress binding now exists), entitlement service,
+payment flow, real infrastructure resources, and direct
+SystemConfiguration / Network
 framework / IORegistry API collection (only command-backed collection exists).
 
 Research sources are present only in the Git-ignored `.research-src/`. No upstream
@@ -72,9 +90,25 @@ Git remote: `origin` = `git@github.com:joanmarcriera/continuity-vpn.git`
   boundary derives them from explicit evidence and command-backed sources only;
   direct SystemConfiguration / Network framework / IORegistry API collection is
   not implemented.
-* The local diagnostic last ran incomplete because no Android USB tethering
-  candidate was connected.
-* No packet captures, gateway tests or transport evidence exist yet.
+* The local diagnostic reports the Android tether as a missing candidate even
+  when the phone is connected with tethering on. Root cause confirmed
+  2026-06-21: macOS ships no RNDIS host driver, so the phone never becomes a
+  `enX` NIC for the BSD-interface collector to see, and the IORegistry matcher
+  also requires the literal token `android` which this OnePlus
+  (`OnePlus`/`KALAMA`/`RNDIS …`) lacks. Fix tracked in `TASKS.md`.
+* In-app uplink acquisition is decided and de-risked (ADR 2026-06-21). A
+  userspace spike (`research/usb-rndis-spike/`) opened the phone's RNDIS
+  interfaces and completed `REMOTE_NDIS_INITIALIZE` (`status=0`, `medium=802.3`)
+  from an unprivileged process under SIP. The data plane and App-Sandbox
+  re-confirmation remain to build.
+* The gateway exists, is tested, and is deployed, but there is still no
+  *client-side* per-path UDP egress and no packet capture proving each path
+  independently reaches it — so dual-path success is NOT yet claimed.
+* Remote reachability to the deployed gateway is confirmed end-to-end over the
+  public internet (2026-06-21): probes from the Mac reach `oracle` and are
+  deduplicated server-side, verified with a timestamped capture. The earlier VCN
+  block was a source-port-range misconfiguration (set to the listen port instead
+  of "All"); fixed. See `docs/dev/gateway-deploy.md`.
 * Licence classifications are Stage 0 due-diligence records, not legal advice; no
   upstream source is approved for import.
 * Pre-merge CI gating is unfinished: PR-triggered CI confirmation, branch
