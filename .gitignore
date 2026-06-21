@@ -27,3 +27,6 @@ DerivedData/
 *.pem
 *.key
 *.mobileprovision
+
+# Local network baselines (raw host state — never commit)
+.netcheck/
