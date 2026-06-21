@@ -1,122 +1,103 @@
 # Tasks
 
-Last updated: 2026-06-20
+Last updated: 2026-06-21
 
-## Current Objective: Stage 1 Dual-Path UDP Probe
+This file is the single ordered source of truth for outstanding work. Durable
+narrative history lives in `PROJECT_STATE.md` and Git; architectural choices live
+in `DECISIONS.md`; the long-range epics live in
+`docs/product/project-specification.md`. Do not re-list tasks in other files —
+link here instead.
 
-Completion criteria for Stage 0 exit:
+Current stage: **Stage 1 — dual-path UDP probe.** Stage 0 exit criteria are met
+and reviewed.
 
-* [x] Repository structure exists.
-* [x] Product specification and agent operating rules are stored in the repository.
-* [x] Architecture overview exists.
-* [x] ADR template exists.
-* [x] ADR-0001 records the continuity-first decision.
-* [x] ADR-0002 records Swift client and Go transport/gateway.
-* [x] ADR-0003 records one opaque key per active device.
-* [x] ADR-0004 records the monorepo decision.
-* [x] Legal and provenance templates exist.
-* [x] Security threat-model template exists.
-* [x] Makefile exists with bootstrap, test, test-go, test-macos, lint, licence-check, fetch-research and docs-check targets.
-* [x] Clean-workspace validation target exists.
-* [x] Go workspace and skeleton Go module exist.
-* [x] Baseline macOS source directories and manual Xcode creation instructions exist.
-* [x] Baseline Go CI exists.
-* [x] Baseline macOS Swift build/lint CI exists.
-* [x] Baseline OpenTofu validation CI exists.
-* [x] Baseline licence scanning CI exists.
-* [x] Stage 1 backlog exists without starting Stage 1 implementation.
-* [x] Focused validation commands were run and recorded in `PROJECT_STATE.md`.
-* [x] All upstream projects are pinned with shell-verified commits.
-* [x] `make fetch-research` has been run successfully with network access.
-* [x] Root upstream licence files have been inspected and recorded.
-* [x] `make clean-workspace-check` has passed from a temporary copy.
-* [x] Stage 0 legal/provenance records review is complete for the no-import Stage 0 scope.
-* [x] CI has run on a clean checkout.
-* [x] Atomic Stage 0 bootstrap commit has been created.
-* [x] Stage 0 exit criteria have been reviewed.
+## Next exact action
 
-## Next Exact Action
-
-Run the redacted Darwin evidence diagnostic with Android USB tethering connected.
-
-Completion criteria:
+Run the redacted Darwin evidence diagnostic with Android USB tethering connected:
 
 * [ ] Connect Android USB tethering on the target Mac.
 * [ ] Run `go run ./cmd/continuityctl darwin-evidence`.
-* [ ] Confirm the JSON reports one usable Wi-Fi candidate and one usable Android USB tethering candidate without source IP addresses, MAC addresses, serial numbers, raw access keys or raw IORegistry product strings.
-* [ ] Record a redacted summary in `PROJECT_STATE.md`; do not commit raw local hardware output.
-* [ ] If classification remains incomplete, refine evidence acquisition before socket binding.
-* [ ] Update `PROJECT_STATE.md`, `TASKS.md` and `DECISIONS.md` with the Stage 1 implementation result.
+* [ ] Confirm the JSON reports one usable Wi-Fi candidate and one usable Android
+  USB tethering candidate, with no source IP addresses, MAC addresses, serial
+  numbers, raw access keys or raw IORegistry product strings.
+* [ ] Record a redacted summary in `PROJECT_STATE.md` (do not commit raw local
+  hardware output).
+* [ ] If classification stays incomplete, refine evidence acquisition before
+  socket binding.
 
-## Completed Stage 1 Work
+## Stage 1 — transport proof (the actual gate)
 
-* [x] Define the initial probe package boundary below the network layer.
-* [x] Add `internal/protocol` packet identity primitives.
-* [x] Add `internal/dedup` first-copy duplicate suppression for one logical packet delivered once from duplicate path copies.
-* [x] Add unit tests for identity validation, first-copy acceptance, duplicate rejection, invalid observations, bounded eviction and concurrent duplicate observations.
-* [x] Run race detector for the dedup/protocol slice.
-* [x] Define packet-capture and loss/recovery evidence required before claiming path success.
-* [x] Update the Stage 1 threat model for packet identity and duplicate suppression.
-* [x] Add `internal/paths` types for observed interfaces and path-candidate classification.
-* [x] Identify Wi-Fi and Android USB tethering candidates from injected fixture data without hard-coded interface names.
-* [x] Add unit tests for ambiguous, missing and multiple-candidate path observations.
-* [x] Keep socket binding and live macOS API calls out of the path-candidate classification slice.
-* [x] Define a Darwin adapter boundary that returns `internal/paths.Observation` values from injected `InterfaceSnapshot` fixtures.
-* [x] Add fixture-driven tests for Darwin observation data without live socket binding.
-* [x] Keep BSD interface names as data only in the Darwin fixture boundary; do not classify by names such as `en0`.
-* [x] Document planned macOS evidence sources for distinguishing Wi-Fi from Android USB tethering.
-* [x] Add conservative Darwin live interface-state collection using BSD interface flags and IPv4 presence.
-* [x] Test that the live collector boundary does not infer Wi-Fi or Android USB tethering from BSD names or display names.
-* [x] Add redacted Darwin fixture evidence for Wi-Fi, Android USB tethering and a generic USB network adapter.
-* [x] Derive Wi-Fi only from explicit Network framework or SystemConfiguration interface-type evidence.
-* [x] Derive Android USB tethering only from explicit Android USB IORegistry evidence.
-* [x] Keep generic USB network adapters and conflicting Wi-Fi/Android evidence unknown.
-* [x] Add provisional command-backed live evidence acquisition using `networksetup` and `ioreg` output reduced to redacted evidence tokens.
-* [x] Merge live evidence with conservative BSD interface state without hard-coded BSD names.
-* [x] Test that command-backed evidence does not retain MAC addresses, raw product names or serial-like values from fixtures.
-* [x] Add `continuityctl darwin-evidence` redacted JSON diagnostics for manual Stage 1 evidence capture.
-* [x] Test that diagnostic output marks incomplete classification explicitly and omits display names and raw hardware values.
-* [x] Run the diagnostic locally once; it found a Wi-Fi candidate and correctly reported missing Android USB tethering.
-* [x] Update root stage markers from Stage 0 bootstrap to Stage 1 probe.
-* [x] Remove stale first-party Stage 0 placeholder wording from active stubs and package docs.
+Overall proof, not complete until packet captures, gateway logs and path-loss
+evidence exist:
 
-## Remaining Stage 0 Hardening
+* [ ] Bind one UDP socket per path and prove per-interface egress (socket A via
+  Wi-Fi, socket B via Android USB tethering).
+* [ ] Send duplicated probes to one gateway process; deduplicate server-side.
+* [ ] Capture packet evidence showing each path independently reaches the gateway.
+* [ ] Path-loss test: either path can disappear without ending the logical session.
+* [ ] Add a dedup **fuzz test** (`internal/dedup`); the benchmark now exists.
+* [ ] Update the Stage 1 threat model and any ADRs if transport assumptions change.
 
-* [ ] Decide whether to create the Xcode project manually now or keep SwiftPM-only validation until signing details are available.
-* [ ] Add real Swift XCTest/UI tests after the Xcode project and full Apple test toolchain are configured.
-* [ ] Run OpenTofu validation in an environment with `tofu` installed.
-* [ ] Run SwiftLint in an environment with `swiftlint` installed.
-* [x] Investigate GitHub Actions startup failure from run `27815677467`.
-* [x] Inspect GitHub Actions results after pushing the initial commit.
-* [x] Review non-blocking GitHub CI annotations for future hardening.
-* [x] Update Stage 0 CI action versions and dependency inventory.
-* [ ] Decide whether to pin SwiftLint installation in macOS CI instead of relying on `brew install swiftlint`.
-* [x] Request Stage 0 review before any Stage 1 transport work.
-* [x] Complete Stage 0 engineering review issue 1.
-* [x] Complete Stage 0 legal/provenance review issue 2.
+## Code health (fold into the transport work, not separate effort)
 
-## Review Follow-ups (from Stage 0 reviewer comments, 2026-06-19)
+* [x] Replace `dedup.Window` O(n) eviction with an O(1) ring buffer; add
+  FIFO-order test and steady-state benchmark.
+* [x] Centralise Darwin evidence key/value vocabulary into shared constants so
+  producers and consumers cannot drift; fold the duplicated Wi-Fi helper.
+* [ ] Note for the real sequence space: `protocol.PacketNumber == 0` is currently
+  invalid, which interacts with the "safe on rollover" requirement.
 
-Source: `docs/reviews/stage-0-review-comments.md`. Non-blocking; recorded as a condition of approving Stage 1 start.
+## Stage 0 hardening — carry-over, complete before the first Stage 1 *merge*
 
-* [ ] Confirm PR path-filtered CI triggers run before Stage 1 merges. Push-triggered path-filtered CI has passed on `fcd6238` and `4a8afd4` after the initial `startup_failure` run `27815677467`.
-* [ ] Add branch protection / required status checks on `main` before Stage 1 merges.
-* [x] Reconcile commit-reference drift: `docs/reviews/stage-0-review-request.md` now cites both the original review baseline and the latest passing push-triggered CI on `4a8afd4`.
-* [x] Add `release.yml` (disabled Stage 0 placeholder) to the engineering records/inventory for completeness.
-* [ ] Pin SwiftLint install in macOS CI instead of unpinned `brew install swiftlint` (duplicate of hardening item above; close together).
+* [ ] Add branch protection / required status checks on `main`.
+* [ ] Confirm PR-triggered path-filtered CI runs (push-triggered path-filtered CI
+  has passed on `fcd6238` and `4a8afd4`).
+* [ ] Pin SwiftLint install in macOS CI instead of unpinned `brew install
+  swiftlint`.
+* [ ] Decide whether to generate the Xcode project now or stay SwiftPM-only until
+  signing details are known; add real XCTest/UI tests once decided.
+* [ ] Run OpenTofu validation and SwiftLint in an environment that has `tofu` and
+  `swiftlint` installed.
 
-## Legal/Provenance Standing Conditions (carry into Stage 1, from reviewer comments)
+## Legal / provenance standing conditions (block any upstream import)
 
-* [ ] Before importing ANY upstream file, run a per-file/subtree licence scan of the specific path (root-file inspection is not import clearance).
-* [ ] Complete full legal review before any source import or distribution decision that depends on third-party source reuse.
-* [ ] Enforce behavioural clean-room rule: whoever reads Engarde/OpenMPTCProuter (GPL) source must not author the corresponding dedup/transport core; produce clean-room notes before code is written.
-* [ ] At WireGuard reuse time, capture wireguard-go/wireguard-apple copyright notices in `NOTICE` and `code-provenance.md`.
-* [ ] If any MPL-2.0 file (terraform-provider-hcloud) is ever modified/vendored, honour per-file source-disclosure obligations.
+From the Stage 0 reviewer comments (`docs/reviews/stage-0-review-comments.md`),
+carried into Stage 1:
 
-## Stage 1 Overall Objective
+* [ ] Run a per-file/subtree licence scan of the specific path before importing
+  ANY upstream file (root-file inspection is not import clearance).
+* [ ] Author clean-room notes **before** writing any Engarde/OpenMPTCProuter
+  (GPL) inspired dedup/transport code; the reader of GPL source must not author
+  the corresponding core.
+* [ ] Capture wireguard-go / wireguard-apple copyright notices in `NOTICE` and
+  `docs/legal/code-provenance.md` at WireGuard reuse time.
+* [ ] Honour MPL-2.0 per-file source-disclosure obligations if any
+  terraform-provider-hcloud file is ever modified or vendored.
+* [ ] Complete full legal review before any source import or distribution
+  decision that depends on third-party source reuse.
 
-Overall engineering proof:
+## Completed
 
-* [ ] Prove that UDP socket A explicitly leaves through Wi-Fi, UDP socket B explicitly leaves through Android USB tethering, both reach the same Hetzner process, one logical packet is delivered once, and either path can disappear without ending the logical session.
+### Stage 0 exit (reviewed)
 
-Do not mark this complete until packet captures, gateway logs and path-loss evidence exist.
+Repository structure, product spec, architecture overview, ADR framework
+(ADR-0001..0004), legal/provenance templates, security threat-model template,
+Makefile targets, clean-workspace check, Go workspace + skeletons, baseline
+macOS scaffold, four CI workflows, pinned upstream manifest with shell-verified
+commits, root licence inspection, atomic bootstrap commit, and both Stage 0
+review gates (engineering issue 1, legal/provenance issue 2) — all complete. See
+`PROJECT_STATE.md` and Git history for detail.
+
+### Stage 1 so far
+
+* [x] `internal/protocol` packet identity primitives + tests.
+* [x] `internal/dedup` first-copy duplicate suppression (now ring-buffer backed)
+  + unit/race tests + benchmark.
+* [x] `internal/paths` fixture-driven Wi-Fi / Android USB tethering candidate
+  classification without hard-coded interface names + tests.
+* [x] `internal/platform/darwin` snapshot boundary, conservative live BSD
+  collector, evidence-derived link kinds (shared constants), and command-backed
+  live evidence from `networksetup` / `ioreg` reduced to redacted tokens + tests.
+* [x] `continuityctl darwin-evidence` redacted JSON diagnostic + tests; run once
+  locally (found Wi-Fi, correctly reported missing Android USB tethering).
+* [x] Root stage markers moved from Stage 0 bootstrap to Stage 1 probe.

@@ -120,7 +120,7 @@ func parseNetworkSetupHardwarePorts(output []byte) []InterfaceEvidenceRecord {
 			records = append(records, InterfaceEvidenceRecord{
 				BSDName: bsdName,
 				Evidence: []Evidence{
-					{Source: EvidenceSourceSystemConfiguration, Key: "interface-type", Value: "wifi"},
+					{Source: EvidenceSourceSystemConfiguration, Key: EvidenceKeyInterfaceType, Value: EvidenceValueWiFi},
 				},
 			})
 		}
@@ -160,7 +160,7 @@ func parseIORegistryEthernetInterfaces(output []byte) []InterfaceEvidenceRecord 
 		records = append(records, InterfaceEvidenceRecord{
 			BSDName: bsdName,
 			Evidence: []Evidence{
-				{Source: EvidenceSourceIORegistry, Key: "usb-transport", Value: "android-rndis"},
+				{Source: EvidenceSourceIORegistry, Key: EvidenceKeyUSBTransport, Value: EvidenceValueAndroidRNDIS},
 			},
 		})
 	}
@@ -208,11 +208,9 @@ func blockHasAndroidUSBTetherEvidence(block string) bool {
 		(strings.Contains(normalised, "rndis") || strings.Contains(normalised, "tether"))
 }
 
+// isWiFiHardwarePort reports whether a networksetup hardware-port name denotes
+// Wi-Fi. It shares the Wi-Fi vocabulary with the evidence consumer so the two
+// sides cannot drift.
 func isWiFiHardwarePort(value string) bool {
-	switch normaliseEvidenceToken(value) {
-	case "wifi", "airport", "ieee80211":
-		return true
-	default:
-		return false
-	}
+	return isWiFiEvidenceValue(value)
 }

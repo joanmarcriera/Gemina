@@ -83,6 +83,35 @@ func TestWindowEvictsOldestPacketIDWhenFull(t *testing.T) {
 	}
 }
 
+func TestWindowEvictsInFIFOOrder(t *testing.T) {
+	window := newTestWindow(t, 3)
+
+	// Fill the window, then overflow it by two entries.
+	for n := protocol.PacketNumber(1); n <= 5; n++ {
+		if got := window.Observe(testPacketID(n), "wifi"); got.Decision != DecisionFirstCopy {
+			t.Fatalf("observe %d = %s, want first-copy", n, got.Decision)
+		}
+	}
+
+	if window.Len() != 3 {
+		t.Fatalf("window length = %d, want 3", window.Len())
+	}
+
+	// IDs 1 and 2 are the two oldest and must have been evicted, so they are
+	// accepted again as first copies.
+	for _, evicted := range []protocol.PacketNumber{1, 2} {
+		if got := window.Observe(testPacketID(evicted), "usb-tether"); got.Decision != DecisionFirstCopy {
+			t.Fatalf("evicted id %d decision = %s, want first-copy", evicted, got.Decision)
+		}
+	}
+
+	// Re-observing ids 1 and 2 evicted ids 3 and 4 (the next-oldest), leaving 5
+	// as the only original still resident, so it remains a duplicate.
+	if got := window.Observe(testPacketID(5), "usb-tether"); got.Decision != DecisionDuplicate {
+		t.Fatalf("retained id 5 decision = %s, want duplicate", got.Decision)
+	}
+}
+
 func TestWindowConcurrentDuplicatesHaveOneFirstCopy(t *testing.T) {
 	window := newTestWindow(t, 32)
 	id := testPacketID(9)
@@ -118,6 +147,25 @@ func TestWindowConcurrentDuplicatesHaveOneFirstCopy(t *testing.T) {
 	}
 	if duplicates != copies-1 {
 		t.Fatalf("duplicates = %d, want %d", duplicates, copies-1)
+	}
+}
+
+// BenchmarkWindowObserveSteadyState measures first-copy observation once the
+// window is full, which is the eviction-bound steady state for a busy probe.
+func BenchmarkWindowObserveSteadyState(b *testing.B) {
+	const capacity = 4096
+	window, err := NewWindow(capacity)
+	if err != nil {
+		b.Fatalf("NewWindow(%d): %v", capacity, err)
+	}
+	for n := 1; n <= capacity; n++ {
+		window.Observe(testPacketID(protocol.PacketNumber(n)), "wifi")
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		window.Observe(testPacketID(protocol.PacketNumber(capacity+1+i)), "wifi")
 	}
 }
 

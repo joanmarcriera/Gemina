@@ -47,11 +47,16 @@ type record struct {
 	copyCount int
 }
 
+// Window suppresses duplicate packet copies, keeping at most capacity packet
+// IDs. Eviction is first-in, first-out using a fixed-size ring buffer so each
+// observation is O(1); it is intentionally not a sequence-aware replay window.
 type Window struct {
 	mu       sync.Mutex
 	capacity int
 	seen     map[protocol.PacketID]record
-	order    []protocol.PacketID
+	ring     []protocol.PacketID
+	head     int // index of the oldest live entry
+	count    int // number of live entries, always equal to len(seen)
 }
 
 func NewWindow(capacity int) (*Window, error) {
@@ -61,7 +66,7 @@ func NewWindow(capacity int) (*Window, error) {
 	return &Window{
 		capacity: capacity,
 		seen:     make(map[protocol.PacketID]record, capacity),
-		order:    make([]protocol.PacketID, 0, capacity),
+		ring:     make([]protocol.PacketID, capacity),
 	}, nil
 }
 
@@ -87,7 +92,7 @@ func (window *Window) Observe(id protocol.PacketID, path PathID) Result {
 
 	window.evictIfFull()
 	window.seen[id] = record{firstPath: path, copyCount: 1}
-	window.order = append(window.order, id)
+	window.pushID(id)
 
 	return Result{
 		Decision:  DecisionFirstCopy,
@@ -114,13 +119,23 @@ func (window *Window) Capacity() int {
 	return window.capacity
 }
 
+// pushID records id as the newest entry in the ring buffer. The caller must
+// hold window.mu and must have evicted first if the window was full.
+func (window *Window) pushID(id protocol.PacketID) {
+	tail := (window.head + window.count) % window.capacity
+	window.ring[tail] = id
+	window.count++
+}
+
+// evictIfFull removes the oldest entry when the window is at capacity so a new
+// packet ID can be inserted. The caller must hold window.mu.
 func (window *Window) evictIfFull() {
-	if len(window.seen) < window.capacity {
+	if window.count < window.capacity {
 		return
 	}
 
-	oldest := window.order[0]
+	oldest := window.ring[window.head]
 	delete(window.seen, oldest)
-	copy(window.order, window.order[1:])
-	window.order = window.order[:len(window.order)-1]
+	window.head = (window.head + 1) % window.capacity
+	window.count--
 }
