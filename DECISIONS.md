@@ -462,3 +462,77 @@ Conditions for revisiting:
 Revisit if privacy review disallows BSD names in diagnostics, if operators need
 a file-output mode with automatic redaction checks, or if the later socket probe
 needs a different evidence report schema.
+
+## 2026-06-21: Keep One Task List and a Lean Project State
+
+Decision:
+
+`TASKS.md` is the single ordered source of truth for outstanding work.
+`docs/backlog/stage-1.md` keeps only the fixed Stage 1 objective and acceptance
+evidence and points at `TASKS.md`. `PROJECT_STATE.md` is a lean cross-session
+handover (current state, risks, blockers, last validation), not an append-only
+log; full change history stays in Git.
+
+Alternatives considered:
+
+* Keep tracking tasks across `TASKS.md`, `docs/backlog/stage-1.md`,
+  `PROJECT_STATE.md` risks/blockers and the specification backlog.
+* Keep appending each cycle's blow-by-blow narrative to `PROJECT_STATE.md`.
+
+Rationale:
+
+Tasks had drifted across five surfaces with real duplication (for example the
+SwiftLint pinning item appeared twice inside `TASKS.md`), and `PROJECT_STATE.md`
+had grown to a 467-line log of CI run IDs and delegation anecdotes that every
+session must re-read. AGENTS.md itself warns against repeatedly reproducing large
+files. Consolidation lowers per-cycle context cost and removes conflicting
+"next action" sources.
+
+Consequences:
+
+Future sessions add and tick tasks only in `TASKS.md`, and trim rather than grow
+`PROJECT_STATE.md`. Other documents link to `TASKS.md` instead of re-listing
+tasks.
+
+Conditions for revisiting:
+
+Revisit if the project adopts an external issue tracker as the source of truth or
+if a different handover format is needed for multiple concurrent workstreams.
+
+## 2026-06-21: Ring-Buffer Dedup Eviction and Shared Darwin Evidence Vocabulary
+
+Decision:
+
+Back `internal/dedup.Window` eviction with a fixed-size ring buffer (O(1) per
+observation) and centralise the Darwin evidence key/value vocabulary into shared
+constants referenced by both the live command sources and
+`LinkKindFromEvidence`.
+
+Alternatives considered:
+
+* Keep the slice-shift eviction (O(n) per insert once the window is full) and the
+  string vocabulary duplicated across `live_evidence.go` and `evidence.go`.
+* Defer the dedup structure change until the sequence-aware replay window is
+  designed.
+
+Rationale:
+
+The slice-shift eviction shifted the whole order slice on every insert at
+capacity — the wrong shape for a dedup hot path the spec requires to be
+lock-efficient and benchmarked. The evidence vocabulary was an implicit contract
+spread across producer and consumer files, where a one-sided typo silently
+downgraded a path to `LinkKindUnknown` with no error. Both are small, reversible,
+test-backed changes that do not alter the probe's external behaviour.
+
+Consequences:
+
+Eviction is O(1) and benchmarked; a FIFO-order test guards correctness. The
+evidence vocabulary has one definition with a test pinning producer↔consumer
+agreement. The dedup window remains a feasibility structure, not production
+replay protection.
+
+Conditions for revisiting:
+
+Revisit the dedup structure when the sequence-aware sliding replay window is
+designed, and the evidence vocabulary when direct macOS API collectors introduce
+new stable evidence keys.
