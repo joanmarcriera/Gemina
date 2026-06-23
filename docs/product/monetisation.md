@@ -103,3 +103,58 @@ commercial launch the following work remains:
 
 None of the above changes the principle: the gate applies to the hosted tier
 only, and the self-hosted, open-source path stays free and ungated.
+
+## Stripe provider
+
+`internal/entitlement/stripe.go` provides a real `StripeProvider` that
+implements the same `PaymentProvider` interface, so it drops straight into the
+hosted `Service` in place of the `FakeProvider`. It talks to Stripe's REST API
+directly over `net/http` and is **standard-library only** — it deliberately
+does **not** pull in the `stripe-go` SDK or any other dependency.
+
+### Configuration
+
+The provider needs two secrets, both supplied at construction and **never**
+committed to the repository or written to logs:
+
+- **The secret API key** (`sk_live_…` / `sk_test_…`), used as the `Bearer`
+  token when creating Checkout sessions.
+- **The webhook signing secret** (`whsec_…`), used to verify the signature on
+  inbound webhooks.
+
+Both should be provided to the gateway via environment variables (for example
+`STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`) sourced from a secrets manager,
+and passed into `NewStripeProvider`. For testability the constructor also
+accepts options to inject an `*http.Client`, override the API base URL (it
+defaults to `https://api.stripe.com`), inject a `Clock`, and override the
+webhook timestamp tolerance.
+
+### Checkout
+
+`CreateCheckout(subject, tier)` POSTs to `/v1/checkout/sessions` as
+`application/x-www-form-urlencoded` with `mode=subscription` for the hosted
+tier, `client_reference_id` set to the opaque subject, and `metadata[subject]`
+and `metadata[tier]` carrying the same details so the later webhook can be
+correlated back. The JSON response is parsed into a `CheckoutSession` (id +
+hosted URL); any non-2xx response is mapped to a `ProviderError`.
+
+### Webhook endpoint
+
+The gateway (or website) must expose an HTTPS endpoint that Stripe POSTs
+webhooks to — for example `POST /webhooks/stripe`. The handler must pass the
+**raw, unmodified request body** together with the `Stripe-Signature` header
+straight to `Service.OnPaymentEvent(payload, signature)`; it must not
+re-marshal or otherwise alter the body, because the signature is computed over
+the exact bytes Stripe sent.
+
+`VerifyWebhook` implements Stripe's documented signing scheme: the
+`Stripe-Signature` header is `t=<unix>,v1=<hex hmac-sha256>`, and the provider
+computes an HMAC-SHA256 of `"<t>.<rawPayload>"` under the webhook secret and
+compares it to the `v1` value(s) in **constant time** (`crypto/hmac`). It
+rejects bad signatures, payloads whose signed timestamp is outside the
+tolerance window (default five minutes, checked against the injected `Clock`),
+malformed headers, and event types other than `checkout.session.completed`. On
+a valid completed event it returns a `PaymentEvent{Paid: true}` with the
+subject taken from `client_reference_id` (falling back to `metadata.subject`)
+and the tier from `metadata.tier`, which `Service.OnPaymentEvent` then turns
+into a signed entitlement token.
