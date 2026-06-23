@@ -58,3 +58,30 @@ func TestParseProbeConfigRejectsUnknownPath(t *testing.T) {
 		t.Fatalf("unknown path error = %v, want errUnknownPath", err)
 	}
 }
+
+func TestParseProbeConfigSinglePathByDefault(t *testing.T) {
+	cfg, err := parseProbeConfig([]string{"-interface", "en0", "-to", "gw:1"})
+	if err != nil {
+		t.Fatalf("parseProbeConfig: %v", err)
+	}
+	if cfg.dualPath() {
+		t.Fatalf("expected single path, got dualPath with iface2=%q", cfg.iface2)
+	}
+}
+
+func TestParseProbeConfigDualPath(t *testing.T) {
+	cfg, err := parseProbeConfig([]string{
+		"-interface", "en0", "-path", "wifi",
+		"-interface2", "en4", "-path2", "usb",
+		"-to", "gw:1",
+	})
+	if err != nil {
+		t.Fatalf("parseProbeConfig: %v", err)
+	}
+	if !cfg.dualPath() {
+		t.Fatal("expected dualPath")
+	}
+	if cfg.iface2 != "en4" || cfg.path2 != protocol.PathAndroidUSBTether {
+		t.Fatalf("second path = %q/%v", cfg.iface2, cfg.path2)
+	}
+}
