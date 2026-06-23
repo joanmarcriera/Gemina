@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Terms of Service — Continuity VPN</title>
+  <meta name="description" content="Terms of service for Continuity VPN. Open-source software under AGPL/Apache licences, plus an optional paid hosted gateway. A pre-release draft; not legal advice.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230c1418'/%3E%3Cpath d='M3 17 h7 l3-7 4 14 3-7 h6' fill='none' stroke='%233fb6a8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <style>
+    /* Scoped readability styles for the legal pages. The site palette
+       (--ink, --ink-tx, --signal, --wrap) is defined in styles.css. */
+    .legal { padding-block: clamp(40px, 7vw, 88px); }
+    .legal .wrap { max-width: 72ch; }
+    .legal h1 { margin-bottom: .25rem; }
+    .legal-meta { color: var(--ink-tx-mute); font-size: .95rem; margin-top: 0; }
+    .legal h2 { margin-top: 2.4rem; }
+    .legal h3 { margin-top: 1.6rem; }
+    .legal p, .legal li { line-height: 1.7; }
+    .legal ul { padding-left: 1.25rem; }
+    .legal li { margin-block: .35rem; }
+    .legal a { color: var(--signal); }
+    .legal code {
+      background: var(--ink-2);
+      border: 1px solid var(--ink-3);
+      border-radius: 4px;
+      padding: .05em .4em;
+      font-size: .9em;
+    }
+    .draft-notice {
+      border: 1px solid var(--signal);
+      border-left-width: 4px;
+      border-radius: 8px;
+      background: var(--ink-2);
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0 2rem;
+    }
+    .draft-notice strong { color: var(--signal); }
+    .back-home { display: inline-block; margin-bottom: 1.5rem; }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-head">
+  <div class="wrap head-inner">
+    <a class="brand" href="index.html" aria-label="Continuity VPN home">
+      <svg class="brand-mark" width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M2 17 h7 l3-7 4 14 3-7 h6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Continuity<span class="brand-thin">VPN</span></span>
+    </a>
+  </div>
+</header>
+
+<main id="main" class="legal">
+  <div class="wrap">
+    <a class="back-home" href="index.html">&larr; Back to home</a>
+
+    <h1>Terms of Service</h1>
+    <p class="legal-meta">Last updated: [date] &middot; Status: pre-release draft</p>
+
+    <div class="draft-notice" role="note">
+      <strong>Draft &mdash; not legal advice.</strong>
+      This is a pre-release draft for an open-source, pre-release product. It has
+      <strong>not</strong> been reviewed by a qualified lawyer and must not be relied
+      upon as it stands. Have a qualified legal professional review and adapt it for
+      your jurisdiction before publishing or relying on it. Placeholders such as
+      <code>[Company name]</code> and <code>[contact email]</code> must be completed
+      before launch.
+    </div>
+
+    <h2>1. About these terms</h2>
+    <p>
+      Continuity VPN is a macOS reliability tool that sends a copy of your protected
+      traffic over two uplinks at once to a single gateway, which delivers the first copy
+      and discards the duplicate. The <strong>client</strong> and <strong>gateway</strong>
+      are open source and can be <strong>self-hosted for free</strong>.
+      <strong>[Company name]</strong> ("we", "us", "our") also intends to offer an
+      <strong>optional paid hosted gateway</strong>.
+    </p>
+    <p>These terms have two parts:</p>
+    <ul>
+      <li><strong>The open-source software</strong> is governed by its open-source licences
+        (Section 2). These terms do not restrict the rights those licences grant you.</li>
+      <li><strong>The paid hosted gateway service</strong>, where and when we offer it, is
+        governed by the additional terms in Sections 4 onward.</li>
+    </ul>
+    <p>
+      This is a <strong>pre-release</strong> project. The hosted service is <strong>not yet
+      available</strong>; the subscription terms below describe how it is intended to
+      operate.
+    </p>
+
+    <h2>2. The open-source software and its licences</h2>
+    <p>The software is open source under an <strong>open-core dual licence</strong>:</p>
+    <ul>
+      <li>The <strong>gateway / server</strong> is licensed under
+        <strong>AGPL-3.0-only</strong>.</li>
+      <li>The <strong>client and shared core</strong> are licensed under
+        <strong>Apache-2.0</strong>.</li>
+    </ul>
+    <p>
+      Your rights to use, study, modify, self-host and redistribute the software are
+      defined by those licences, not by these terms. In particular, <strong>you may
+      self-host the gateway for free</strong> under the AGPL, with no account, payment or
+      entitlement token required. For the directory-to-licence map and the rationale, see
+      <a href="../docs/legal/licensing.md">docs/legal/licensing.md</a> and the full licence
+      texts in the <code>LICENSES/</code> directory of the repository.
+    </p>
+    <p>
+      If anything in these terms appears to conflict with the open-source licence that
+      applies to a piece of software, <strong>the open-source licence governs</strong> for
+      that software.
+    </p>
+
+    <h2>3. Pre-release status and no warranty</h2>
+    <p>
+      This is <strong>pre-release software</strong>. Key parts &mdash; including
+      encryption, the shipping macOS app data path, and the hosted accounts/payment flow
+      &mdash; are still in development and <strong>not yet complete</strong>. The dual-path
+      transport has been demonstrated, but the product is not finished.
+    </p>
+    <p>
+      To the maximum extent permitted by law, the software and any hosted service are
+      provided <strong>"as is" and "as available", without warranties of any
+      kind</strong>, whether express or implied, including any implied warranties of
+      merchantability, fitness for a particular purpose, non-infringement, or
+      uninterrupted or error-free operation. We do not warrant that the service will keep
+      any particular connection alive, prevent any dropout, or be available at any
+      particular time. Nothing in this Section limits the warranty terms of the
+      open-source licences as they apply to the open-source software.
+    </p>
+
+    <h2>4. Acceptable use</h2>
+    <p>Whether you self-host or use our hosted gateway, you agree not to:</p>
+    <ul>
+      <li>use the software or service for any unlawful purpose, or to send, carry or store
+        unlawful content;</li>
+      <li>attempt to gain unauthorised access to, disrupt, overload, or interfere with the
+        service, its infrastructure, or other users;</li>
+      <li>circumvent or tamper with the entitlement mechanism, share or forge entitlement
+        tokens, or otherwise obtain paid access without paying for it;</li>
+      <li>use the service to harm, harass, defraud or infringe the rights of others; or</li>
+      <li>use the service in breach of any applicable law, export control, or sanctions
+        regime.</li>
+    </ul>
+    <p>
+      We may suspend or terminate access to the <strong>hosted</strong> service for a
+      serious or repeated breach of this Section, as described in Section 7. (We cannot
+      suspend a gateway you self-host &mdash; that is yours to operate.)
+    </p>
+
+    <h2>5. The hosted subscription (when available)</h2>
+    <p>The following apply to the <strong>paid hosted gateway</strong> once it is offered:</p>
+    <ul>
+      <li><strong>Early access.</strong> The hosted service will launch as an
+        <strong>early-access</strong> offering. It may change, be limited, or be withdrawn
+        while in early access, and features may differ from those described on the
+        website.</li>
+      <li><strong>Pricing &mdash; to be determined.</strong> Pricing is <strong>not yet
+        finalised</strong>. We will tell you the price before any charge is ever made.
+        Subscriptions, where offered, renew for successive periods until cancelled, and
+        applicable taxes may be added.</li>
+      <li><strong>Billing via Stripe.</strong> Payments are processed by
+        <strong>Stripe</strong>, our third-party payment processor. By subscribing you also
+        agree to Stripe's applicable terms for the payment you make. We do not store your
+        raw card details.</li>
+      <li><strong>Entitlement.</strong> Paid access is granted by a signed entitlement
+        token that carries only an opaque subject id, a tier and an expiry &mdash; no
+        personal data. The gateway admits a paying client by checking that token.</li>
+      <li><strong>Cancellation.</strong> You may cancel at any time; cancellation stops
+        future renewals and takes effect at the end of the current paid period unless
+        stated otherwise. Refunds, where offered, will follow the refund terms stated at
+        purchase and any non-waivable rights you have under applicable consumer law.
+        <strong>[Specify refund/cancellation policy.]</strong></li>
+    </ul>
+    <p>
+      Because pricing and the payment flow are not yet live, the specifics in this Section
+      will be confirmed and may change before the hosted service launches.
+    </p>
+
+    <h2>6. Your responsibilities</h2>
+    <p>
+      You are responsible for: your own use of the software and service; keeping your
+      account credentials and any entitlement token secure; the lawfulness of the traffic
+      you send; and your own devices and connections (including any mobile-data charges
+      your carrier applies &mdash; the tool roughly doubles the data on protected traffic,
+      since it sends each packet over two links). If you self-host, you are solely
+      responsible for operating, securing and complying with the law in respect of your
+      own gateway.
+    </p>
+
+    <h2>7. Suspension and termination</h2>
+    <p>
+      You may stop using the software at any time, and may cancel a hosted subscription as
+      described above. We may suspend or terminate your access to the <strong>hosted</strong>
+      service if you breach these terms, if required by law, or if necessary to protect the
+      service or other users. We will give reasonable notice where practicable. Termination
+      of the hosted service does not affect your rights to the open-source software under
+      its licences.
+    </p>
+
+    <h2>8. Limitation of liability</h2>
+    <p>
+      To the maximum extent permitted by law, and except for liability that cannot lawfully
+      be excluded (such as for death or personal injury caused by negligence, or for
+      fraud):
+    </p>
+    <ul>
+      <li>we will not be liable for any indirect, incidental, special, consequential or
+        punitive damages, or for any loss of profits, revenue, data, or goodwill, arising
+        out of or relating to the software or the hosted service; and</li>
+      <li>our total aggregate liability arising out of or relating to the <strong>hosted
+        service</strong> will not exceed the amount you paid us for that service in the
+        <strong>[12] months</strong> before the event giving rise to the liability (and,
+        where you have paid us nothing &mdash; for example because you self-host &mdash; our
+        aggregate liability will not exceed <strong>[a nominal amount, e.g. the greater of
+        the fees paid or a small fixed sum]</strong>).</li>
+    </ul>
+    <p>
+      Some jurisdictions do not allow certain limitations, so some of the above may not
+      apply to you; in that case our liability is limited to the smallest extent permitted
+      by law. This Section does not limit any rights granted to you under the open-source
+      licences.
+    </p>
+
+    <h2>9. Changes to these terms</h2>
+    <p>
+      We may update these terms as the product and the hosted service develop. We will
+      revise the "Last updated" date and, for material changes affecting the hosted
+      service, give notice by an appropriate means. Continued use of the hosted service
+      after a change takes effect constitutes acceptance of the updated terms.
+    </p>
+
+    <h2>10. Governing law</h2>
+    <p>
+      These terms, and any dispute arising out of or in connection with them or the hosted
+      service, are governed by the laws of <strong>[governing-law jurisdiction]</strong>,
+      and the courts of <strong>[jurisdiction/venue]</strong> will have
+      <strong>[exclusive/non-exclusive]</strong> jurisdiction, without prejudice to any
+      non-waivable rights you have under the law of your own country of residence.
+      <strong>[Confirm with counsel.]</strong>
+    </p>
+
+    <h2>11. Contact</h2>
+    <p>
+      Questions about these terms: <strong>[contact email]</strong>.<br>
+      Postal address: <strong>[Company name], [registered/contact address]</strong>.
+    </p>
+
+    <p><a href="privacy.html">Privacy Policy</a> &middot; <a href="index.html">Back to home</a></p>
+
+    <p class="legal-meta">
+      <em>This is a pre-release draft for an open-source project and is not legal advice.
+      Have a qualified lawyer review it before relying on it.</em>
+    </p>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap foot-base">
+    <p>&copy; 2026 Continuity VPN. Open source &mdash; free to use, inspect and self-host.</p>
+    <p class="foot-pre">Pre-release. Features and pricing may change before launch.</p>
+  </div>
+</footer>
+</body>
+</html>

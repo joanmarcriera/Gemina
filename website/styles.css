@@ -560,7 +560,7 @@ input:focus-visible {
   padding-top: clamp(48px, 6vw, 72px);
 }
 .foot-grid {
-  display: grid; grid-template-columns: 1.4fr 1fr;
+  display: grid; grid-template-columns: 1.6fr 1fr 1fr;
   gap: 36px;
   padding-bottom: 36px;
   border-bottom: 1px solid var(--ink-3);
@@ -593,6 +593,8 @@ input:focus-visible {
   .check-grid { grid-template-columns: 1fr; }
   .steps { grid-template-columns: 1fr; gap: 0; }
   .step { border-top: none; border-left: 2px solid var(--paper-tx); padding: 6px 0 22px 18px; }
+  .foot-grid { grid-template-columns: 1fr 1fr; }
+  .foot-brand { grid-column: 1 / -1; }
 }
 @media (max-width: 620px) {
   body { font-size: 16px; }

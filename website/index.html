@@ -3,11 +3,51 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Continuity VPN — your connection never notices a dropout</title>
-  <meta name="description" content="Continuity VPN for macOS sends your traffic over Wi-Fi and your Android phone's cellular at the same time, so if one link drops your call, SSH session or VPN never notices. Open source and self-hostable.">
+  <title>Continuity VPN — seamless internet failover for macOS</title>
+  <meta name="description" content="Continuity VPN keeps your Mac online when one link drops — it sends your traffic over Wi-Fi and your Android phone's cellular at once. Open source, self-hostable.">
+  <link rel="canonical" href="https://continuityvpn.example/">
   <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#0c1418">
   <link rel="stylesheet" href="styles.css">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230c1418'/%3E%3Cpath d='M3 17 h7 l3-7 4 14 3-7 h6' fill='none' stroke='%233fb6a8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Continuity VPN">
+  <meta property="og:title" content="Continuity VPN — seamless internet failover for macOS">
+  <meta property="og:description" content="Sends your Mac's traffic over Wi-Fi and your Android phone's cellular at once, so if one link drops your call, SSH or VPN never notices. Open source, self-hostable. Pre-release.">
+  <meta property="og:url" content="https://continuityvpn.example/">
+  <meta property="og:locale" content="en_GB">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Continuity VPN — seamless internet failover for macOS">
+  <meta name="twitter:description" content="Two links at once so one dropout never ends your call, SSH or VPN. Open source, self-hostable. Pre-release.">
+
+  <!-- Structured data: honest pre-release, no invented hosted price, no ratings/reviews -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Continuity VPN",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "macOS",
+    "description": "Open-source macOS reliability tool that sends your traffic over Wi-Fi and an Android phone's USB-tethered cellular link at the same time, delivering seamless failover so a dropped link never interrupts a call, SSH session or VPN. Pre-release: dual-path transport proven; encryption and the full app in development.",
+    "url": "https://continuityvpn.example/",
+    "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+    "isAccessibleForFree": true,
+    "softwareVersion": "pre-release",
+    "releaseNotes": "Pre-release. Dual-path transport proven end-to-end; encryption and the shipping app are in development.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/PreOrder",
+      "description": "Self-host the gateway free and open source. An optional paid hosted gateway is planned (pricing to be announced; early access)."
+    },
+    "codeRepository": "https://github.com/joanmarcriera/continuity-vpn"
+  }
+  </script>
 </head>
 <body>
 <a class="skip-link" href="#main">Skip to content</a>
@@ -25,7 +65,7 @@
       <a href="#why">Why it's different</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
-      <a class="btn btn-ghost btn-sm" href="https://github.com/example/continuity-vpn">GitHub</a>
+      <a class="btn btn-ghost btn-sm" href="https://github.com/joanmarcriera/continuity-vpn">GitHub</a>
     </nav>
   </div>
 </header>
@@ -95,9 +135,10 @@
       <p class="eyebrow eyebrow-dark">CH&middot;02 — THE MECHANISM</p>
       <h2 id="how-title">Duplicate, race, dedup.</h2>
       <p class="section-lede">
-        There's no clever switching to fail, because nothing switches. Both links carry
-        a copy of every packet. The gateway keeps the first copy to arrive and discards the
-        rest. Whichever link is healthy at that instant is the one that matters.
+        This is how seamless internet failover works on macOS: there's no clever switching
+        to fail, because nothing switches. Both links carry a copy of every packet. The
+        gateway keeps the first copy to arrive and discards the rest. Whichever link is
+        healthy at that instant is the one that matters.
       </p>
 
       <ol class="steps">
@@ -225,7 +266,7 @@
             <li>Self-hostable, no account needed</li>
             <li>Community support</li>
           </ul>
-          <a class="btn btn-ghost-dark btn-block" href="https://github.com/example/continuity-vpn">View on GitHub</a>
+          <a class="btn btn-ghost-dark btn-block" href="https://github.com/joanmarcriera/continuity-vpn">View on GitHub</a>
         </article>
 
         <article class="plan plan-feature">
@@ -304,7 +345,7 @@
         <button class="btn btn-primary" type="submit">Join the waitlist</button>
       </form>
       <p class="wl-status" role="status" aria-live="polite" data-wl-status></p>
-      <p class="cta-alt">Rather run it yourself? <a href="https://github.com/example/continuity-vpn">Star it on GitHub</a> and self-host today.</p>
+      <p class="cta-alt">Rather run it yourself? <a href="https://github.com/joanmarcriera/continuity-vpn">Star it on GitHub</a> and self-host today.</p>
     </div>
   </section>
 
@@ -352,14 +393,19 @@
         </svg>
         <span>Continuity<span class="brand-thin">VPN</span></span>
       </a>
-      <p class="foot-note">Open-source seamless failover for macOS. Free to self-host; hosted gateway available in early access.</p>
+      <p class="foot-note">Open-source seamless internet failover for macOS. Free to self-host; hosted gateway available in early access — joining the waitlist locks in your place.</p>
     </div>
-    <nav class="foot-links" aria-label="Footer">
+    <nav class="foot-links" aria-label="Project">
       <h2 class="foot-h">Project</h2>
-      <a href="https://github.com/example/continuity-vpn">GitHub repository</a>
+      <a href="https://github.com/joanmarcriera/continuity-vpn">GitHub repository</a>
       <a href="#pricing">Self-host guide</a>
       <a href="#faq">FAQ</a>
       <a href="#waitlist">Join the waitlist</a>
+    </nav>
+    <nav class="foot-links" aria-label="Legal">
+      <h2 class="foot-h">Legal</h2>
+      <a href="/privacy.html">Privacy</a>
+      <a href="/terms.html">Terms</a>
     </nav>
   </div>
   <div class="wrap foot-base">
