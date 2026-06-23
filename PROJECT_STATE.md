@@ -123,15 +123,19 @@ Git remote: `origin` = `git@github.com:joanmarcriera/continuity-vpn.git`
   superseded by the class-keyed device source for detection but is left as-is for
   the host-driver-claimed case; see `TASKS.md`.
 * In-app uplink acquisition is decided and de-risked (ADR 2026-06-21), and the
-  RNDIS **data plane is now proven** (2026-06-23). The userspace spike
-  (`research/usb-rndis-spike/`) claims the phone's RNDIS interfaces, completes
-  `REMOTE_NDIS_INITIALIZE`, sets the packet filter, and round-trips a DHCP
-  DISCOVER/OFFER in `REMOTE_NDIS_PACKET_MSG` frames over the bulk pipes — L2
-  frames move both ways over the cellular tether from an unprivileged process
-  (no kext, no SIP, no root; verified live on the OnePlus 12R, redaction-clean).
-  This is the Route-B uplink and works on any Android (RNDIS is universal).
-  Remaining: hold the DHCP lease + prove real UDP egress to the oracle gateway,
-  then NEPacketTunnelProvider integration and App-Sandbox re-confirmation.
+  RNDIS uplink is now **proven end-to-end to the deployed gateway over cellular**
+  (2026-06-23). The userspace spike (`research/usb-rndis-spike/`) claims the
+  phone's RNDIS interfaces, completes `REMOTE_NDIS_INITIALIZE`, sets the packet
+  filter, holds a DHCP lease (DISCOVER→OFFER→REQUEST→ACK), ARP-resolves the
+  phone's gateway, and sends real continuity probes (CVP1) in UDP/IP frames to
+  the oracle gateway. Verified: the gateway logged first-copy/duplicate decisions
+  tagged `android-usb-tether` (correct server-side dedup) and a host-side tcpdump
+  saw the probes arrive from a cellular carrier public IP — so the phone is a
+  real independent WAN reaching the gateway, all from an unprivileged process
+  (no kext, no SIP, no root). This is the Route-B uplink and works on any Android
+  (RNDIS is universal). Pure framing logic is unit-tested (`make test`).
+  Remaining: feed RX/TX through an `NEPacketTunnelProvider`, App-Sandbox
+  re-confirmation of the USB claim, then simultaneous Wi-Fi + cellular dual-path.
 * Route decided 2026-06-23 (owner): pursue the RNDIS data plane, not NCM, for
   broad device support. NCM was investigated live and is two-sided — macOS claims
   an NCM tether natively (no kext; proven `en10`) but OxygenOS root-locks USB

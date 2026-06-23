@@ -51,11 +51,28 @@ RESULT: userspace RNDIS handshake COMPLETE
 `status=0x0` = success; `medium=0` = 802.3 Ethernet; the phone advertised a
 23700-byte max transfer. SIP was enabled (`csrutil status: enabled`).
 
+## Files
+
+| File | Role |
+| --- | --- |
+| `rndis_lib.{c,h}` | Pure framing logic: RNDIS wrap/unwrap, DHCP build/parse, ARP, UDP/IP, the CVP1 probe. Hardware-independent. |
+| `rndis_lib_test.c` | Unit tests for the above (`make test`, no phone). |
+| `rndis_usb.{c,h}` | libusb I/O: claim the RNDIS function, INITIALIZE, packet filter, bulk send/recv. |
+| `rndis_probe.c` | Control-plane viability (claim + INITIALIZE). |
+| `rndis_dataplane.c` | Data-plane proof (DHCP DISCOVER/OFFER round-trip). |
+| `rndis_egress.c` | Real UDP egress to the deployed gateway over cellular. |
+
 ## Run it
 
 ```bash
 brew install libusb        # one-off
-make run                   # phone connected, USB tethering enabled
+make test                  # pure unit tests, no hardware
+make run                   # control plane (phone connected, USB tethering on)
+make run-dataplane         # data-plane DHCP round-trip
+
+# Real egress to the gateway over cellular. Pass the gateway address via env so
+# it is never compiled in; verify arrival in the gateway logs (ssh oracle).
+CONTINUITY_GATEWAY_IP=<gateway-ip> CONTINUITY_GATEWAY_PORT=51820 make run-egress
 ```
 
 If the phone is absent or not in tethering mode the probe prints `FAIL open`.
@@ -76,15 +93,26 @@ have killed the in-app approach (can we even open the interface?) is retired.
   both ways over the cellular tether from an unprivileged process** (no kext, no
   SIP, no root). `make rndis_dataplane && ./rndis_dataplane` with USB tethering
   on. See skill `userspace-rndis-dataplane`.
-- **App Sandbox entitlement.** Both probes ran un-sandboxed. A Developer-ID
+- **Real egress — PROVEN 2026-06-23.** `rndis_egress.c` holds a DHCP lease
+  (DISCOVER→OFFER→REQUEST→ACK), ARP-resolves the phone's gateway, and sends real
+  continuity probes (CVP1 wire format) in UDP/IP frames to the deployed gateway.
+  Verified end-to-end: the gateway logged 10 first-copy + 10 duplicate decisions
+  tagged `android-usb-tether` (correct server-side dedup), and a host-side
+  `tcpdump` saw the packets arrive from a **cellular carrier public IP**, not the
+  Mac's LAN. Since the bytes leave the Mac only down the USB bulk pipe, this
+  proves the phone is a real independent WAN reaching the gateway from an
+  unprivileged process.
+- **App Sandbox entitlement.** The probes ran un-sandboxed. A Developer-ID
   notarised app needs the `com.apple.security.device.usb` entitlement; verify
   the claim still succeeds inside the app's sandbox.
-- **Egress into the stack.** Feed received frames into an
-  `NEPacketTunnelProvider` so the bonding/failover layer can route per-flow.
+- **Into the stack.** Feed received frames into an `NEPacketTunnelProvider` so
+  the bonding/failover layer can route per-flow (RX in, TX out).
 
 ## Provenance
 
-`rndis_probe.c` is authored clean-room from the public Remote NDIS (MS-RNDIS)
-protocol constants. It is **not** derived from Linux's GPL
-`drivers/net/usb/rndis_host.c`. Keep it that way: do not paste GPL driver source
-into this file or the product RNDIS implementation.
+All spike source (`rndis_probe.c`, `rndis_lib.c`, `rndis_usb.c`,
+`rndis_dataplane.c`, `rndis_egress.c`) is authored clean-room from the public
+Remote NDIS (MS-RNDIS) constants and the DHCP/ARP/IPv4/UDP RFCs. It is **not**
+derived from Linux's GPL `drivers/net/usb/rndis_host.c` or any GPL DHCP/network
+source. Keep it that way: do not paste GPL driver source into these files or the
+product RNDIS implementation.
