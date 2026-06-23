@@ -22,6 +22,14 @@ Code lives in `research/usb-rndis-spike/`, layered so the pure logic is testable
 - `rndis_dataplane.c` — data plane (DHCP DISCOVER/OFFER round-trip; proven).
 - `rndis_egress.c` — real UDP egress to the deployed gateway over cellular
   (lease + ARP + CVP1 probes; proven end-to-end 2026-06-23).
+- `rndis_uplink.{c,h}` — reusable "bring the tether up to a usable IP uplink and
+  send UDP" (claim → INITIALIZE → filter → DHCP lease → ARP → send). Shared by
+  egress and dual-path.
+- `rndis_net.{c,h}` — gateway-from-env, random session, and a Wi-Fi OS socket
+  bound to an interface via Darwin `IP_BOUND_IF` (the OS-side path).
+- `rndis_dualpath.c` — the Stage-1 dual-path proof: same identity over Wi-Fi
+  (path A, bound socket) AND cellular (path B, RNDIS) simultaneously, plus
+  path-loss phases. Proven 2026-06-23.
 
 **Keep new logic testable**: put any new pure framing/parsing in `rndis_lib.c`
 with a test in `rndis_lib_test.c`; put USB I/O in `rndis_usb.c`; keep the driver
@@ -121,8 +129,29 @@ bulk-OUT ZLP termination if a frame ever lands on a wMaxPacketSize multiple.
 2. ✅ Data plane: packet filter + DHCP round-trip (`rndis_dataplane.c`).
 3. ✅ Hold the lease + ARP the phone gateway; send a real CVP1 UDP probe to the
    oracle gateway over cellular, verified in gateway logs (`rndis_egress.c`).
-4. ▢ Feed RX frames into `NEPacketTunnelProvider` and TX from it, so the
-   bonding/failover layer routes per-flow.
-5. ▢ Re-confirm the USB claim inside the App Sandbox with
+4. ✅ Simultaneous Wi-Fi + cellular dual-path through the gateway, with dedup and
+   path-loss survival — the Stage-1 gate (`rndis_dualpath.c`). Verified: gateway
+   logged 11 first-copy + 5 duplicate for one session; host capture saw two
+   independent public WANs (home ISP + cellular carrier).
+5. ▢ Feed RX frames into `NEPacketTunnelProvider` and TX from it, so the
+   bonding/failover layer routes per-flow real traffic.
+6. ▢ Re-confirm the USB claim inside the App Sandbox with
    `com.apple.security.device.usb`.
-6. ▢ Simultaneous Wi-Fi + cellular dual-path through the gateway (Stage-1 gate).
+
+## Dual-path proof recipe (`rndis_dualpath.c`)
+
+Path A is an OS UDP socket bound to the Wi-Fi interface via `IP_BOUND_IF` (so it
+egresses Wi-Fi regardless of the default route); path B is the RNDIS uplink. Send
+the **same** session+number over both (only the PathTag differs) so the gateway
+dedups by identity. Run it:
+
+```bash
+CONTINUITY_GATEWAY_IP=<ip> CONTINUITY_GATEWAY_PORT=51820 \
+CONTINUITY_WIFI_IFACE=en0 make run-dualpath
+```
+
+Verify both paths are genuinely independent WANs: the gateway-host `tcpdump`
+shows **two distinct public source addresses** — the Mac's home ISP (Wi-Fi) and
+the cellular carrier (RNDIS). The gateway logs show first-copy + duplicate per
+identity. The path-loss phases (one path only) must still deliver every identity.
+Mask source octets when reporting; delete capture files (they hold WAN IPs).

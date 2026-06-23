@@ -1,4 +1,6 @@
 # Compiled spike binaries — rebuild with `make`.
 rndis_probe
 rndis_dataplane
+rndis_egress
+rndis_dualpath
 rndis_lib_test
