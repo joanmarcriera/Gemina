@@ -63,13 +63,23 @@ prints `FAIL <what>` and stops.
 go build -o /tmp/continuityctl ./cmd/continuityctl
 /tmp/continuityctl                 # -> continuityctl:stage-1-probe
 /tmp/continuityctl darwin-evidence # -> redacted Stage 1 evidence JSON
+/tmp/continuityctl preflight       # -> one-line compatibility verdict + next step
+/tmp/continuityctl preflight -json # -> redacted compatibility report (app/website)
+/tmp/continuityctl probe -h        # -> per-path UDP probe (incl. -interface2 dual-path)
 ```
 
-The next real task in `TASKS.md` is to run `darwin-evidence` **with an Android
-phone USB-tethered**: a complete run reports one usable `wi-fi` candidate and one
-usable `android-usb-tether` candidate. Without tethering it reports
-`"classification_status": "incomplete"` and a missing Android candidate — that is
-expected, not a failure.
+`darwin-evidence` reports raw path evidence; `preflight` is the user-facing
+**compatibility verdict** (`internal/diagnostics/compatibility.go`): supported /
+needs-android / needs-wifi / needs-both / unsupported-macos, with one actionable
+next step. Key rule (all-Android, minimal friction): an RNDIS tether function
+present ⇒ **supported**, because the app's bundled userspace driver
+(`research/usb-rndis-spike/`, skill `userspace-rndis-dataplane`) drives any
+Android; native NCM is supported without the driver.
+
+With an Android phone USB-tethered, `darwin-evidence` reports a usable `wi-fi`
+candidate plus a `device_functions` `android-rndis` entry; `preflight` returns
+`supported`. Without tethering, `darwin-evidence` is `incomplete` and `preflight`
+returns `needs-android` — expected, not a failure.
 
 ## Gotchas
 
