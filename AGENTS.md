@@ -30,7 +30,7 @@ Two Ollama servers are available.
 
 * Provider name: `ollama_rtx4060`
 * Agent name: `ollama_fast`
-* Endpoint: `http://192.168.0.5:30068`
+* Endpoint: `http://<ollama-fast-host>:30068` (set to the GPU box's LAN address locally; never commit the real address)
 * Hardware: NVIDIA RTX 4060 with 8 GB VRAM
 * Characteristics: relatively fast, but constrained model size and context
 * Intended work: narrow reviews, file summarisation, test-case suggestions, documentation drafts, classification, extraction and other bounded tasks
