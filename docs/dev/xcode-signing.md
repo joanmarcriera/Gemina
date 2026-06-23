@@ -58,13 +58,22 @@ GOOS=darwin GOARCH=arm64 \
   go build -buildmode=c-archive -o build/libcontinuitycore.a ./<cgo-bridge-pkg>
 ```
 
-The `<cgo-bridge-pkg>` is a small `//export`ed cgo wrapper around
-`pkg/clientcore` exposing `cc_session_new / cc_outbound / cc_inbound /
-cc_session_free` (see ADR-0005 for the signatures and the memory-ownership rule:
-Swift owns the buffers; Go retains nothing across calls). Add the generated
-`.a` + `.h` to the extension target and import via a bridging header. **This cgo
-bridge is the next code task** and can be built/tested headlessly once written —
-only the signing below needs your account.
+The cgo bridge **already exists**: `bridge/continuitycore` exports
+`cc_session_new / cc_outbound / cc_inbound / cc_session_free` (handle-based, no Go
+pointer crosses the boundary), with the C header at
+`bridge/include/continuitycore.h`. Build the archive and add the `.a` + that
+header to the extension target, importing it via a bridging header:
+
+```sh
+GOOS=darwin GOARCH=arm64 \
+  go build -buildmode=c-archive -o build/libcontinuitycore.a ./bridge/continuitycore
+```
+
+Then implement a small Swift `TransportCore` conforming type that calls these C
+functions (allocating the output buffers Swift-side per the header's
+memory-ownership contract), and pass it to the `ContinuityTunnelProvider`
+skeleton's `makeRelay()` (it is already wired to `packetFlow`;
+`apps/macos/PacketTunnelExtension/`). Only the signing below needs your account.
 
 ## 4. Signing
 
