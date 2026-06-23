@@ -43,6 +43,13 @@ func (s *SessionStore) Forget(id protocol.SessionID) {
 	delete(s.keys, id)
 }
 
+// len reports the number of admitted sessions.
+func (s *SessionStore) len() int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return len(s.keys)
+}
+
 // Admitter gates session admission by entitlement. A self-hosted gateway runs the
 // service in ModeOpen and admits every session; the paid hosted gateway runs in
 // ModeHosted and admits a session only on a valid entitlement token. This is
