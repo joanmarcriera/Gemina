@@ -7,66 +7,80 @@ import (
 	"continuity-vpn/internal/protocol"
 )
 
-// Continuity VPN data-plane wire format. Unlike the fixed-size probe (CVP1), a
-// data packet carries a variable payload (one tunnelled IP packet) after a
-// fixed header. It deliberately carries no host identifiers — only a session +
-// packet number so the peer can deduplicate copies that arrive over multiple
-// paths.
+// Continuity VPN data-plane wire format. A data packet carries a variable
+// encrypted payload (one tunnelled IP packet) after a fixed header. The header
+// is cleartext and authenticated (it is the AEAD additional data) so the gateway
+// can deduplicate by identity without decrypting; it carries no host
+// identifiers, only a session + packet number and a direction bit.
 //
 //	offset 0  magic   "CVD1" (4 bytes)
 //	offset 4  version 1 byte (dataVersion)
-//	offset 5  flags   1 byte (reserved, must be 0)
+//	offset 5  flags   1 byte (bit 0 = direction: 0 initiator, 1 responder)
 //	offset 6  session 16 bytes (SessionID)
 //	offset 22 number  8 bytes, big-endian (PacketNumber)
-//	offset 30 payload variable
+//	offset 30 payload variable (AES-256-GCM ciphertext||tag of the plaintext)
 const (
 	dataVersion    = 1
 	dataHeaderSize = 6 + protocol.SessionIDSize + 8 // 30
-	// maxPayload bounds a single tunnelled packet. 1500 (Ethernet MTU) plus a
-	// little headroom; the caller fragments above this.
+	flagDirection  = 0x01
+	// maxPayload bounds a single tunnelled packet's plaintext. 1500 (Ethernet
+	// MTU) plus a little headroom; the caller fragments above this.
 	maxPayload = 1600
 )
 
 var dataMagic = [4]byte{'C', 'V', 'D', '1'}
 
 var (
-	errShortData   = errors.New("data datagram shorter than header")
-	errBadMagic    = errors.New("data datagram has wrong magic")
-	errBadVersion  = errors.New("data datagram has unsupported version")
-	errBadIdentity = errors.New("data datagram carries an invalid packet identity")
-	errOversize    = errors.New("payload exceeds maximum size")
+	errShortData    = errors.New("data datagram shorter than header")
+	errBadMagic     = errors.New("data datagram has wrong magic")
+	errBadVersion   = errors.New("data datagram has unsupported version")
+	errBadIdentity  = errors.New("data datagram carries an invalid packet identity")
+	errBadDirection = errors.New("data datagram has the wrong direction for this endpoint")
+	errOversize     = errors.New("payload exceeds maximum size")
 )
 
-// encodeData frames a payload under the given identity. The same bytes are sent
-// over every path; the peer dedups by identity.
-func encodeData(id protocol.PacketID, payload []byte) ([]byte, error) {
-	if !id.Valid() {
-		return nil, errBadIdentity
-	}
-	if len(payload) > maxPayload {
-		return nil, errOversize
-	}
-	out := make([]byte, dataHeaderSize+len(payload))
+// frameHeader builds the 30-byte cleartext header for an identity and direction.
+// It doubles as the AEAD additional-authenticated-data, so any tampering with
+// the identity or direction makes decryption fail.
+func frameHeader(id protocol.PacketID, dir byte) []byte {
+	out := make([]byte, dataHeaderSize)
 	copy(out[0:4], dataMagic[:])
 	out[4] = dataVersion
-	out[5] = 0 // flags reserved
+	if dir == dirResponder {
+		out[5] = flagDirection
+	}
 	copy(out[6:6+protocol.SessionIDSize], id.Session[:])
 	binary.BigEndian.PutUint64(out[6+protocol.SessionIDSize:], uint64(id.Number))
-	copy(out[dataHeaderSize:], payload)
-	return out, nil
+	return out
 }
 
-// decodeData parses a data datagram, returning its payload and identity. Trailing
-// interpretation is the caller's; the payload slice aliases the input buffer.
-func decodeData(b []byte) ([]byte, protocol.PacketID, error) {
+// SessionIDFromDatagram reads the session id from a CVD1 datagram so a gateway
+// can pick the per-session key/state before decrypting. It validates the magic,
+// version and that the id is non-zero.
+func SessionIDFromDatagram(b []byte) (protocol.SessionID, error) {
+	id, _, _, err := parseHeader(b)
+	if err != nil {
+		return protocol.SessionID{}, err
+	}
+	return id.Session, nil
+}
+
+// parseHeader validates and decodes a datagram's header, returning the identity,
+// direction, and the offset at which the encrypted payload begins.
+func parseHeader(b []byte) (protocol.PacketID, byte, int, error) {
 	if len(b) < dataHeaderSize {
-		return nil, protocol.PacketID{}, errShortData
+		return protocol.PacketID{}, 0, 0, errShortData
 	}
 	if [4]byte(b[0:4]) != dataMagic {
-		return nil, protocol.PacketID{}, errBadMagic
+		return protocol.PacketID{}, 0, 0, errBadMagic
 	}
 	if b[4] != dataVersion {
-		return nil, protocol.PacketID{}, errBadVersion
+		return protocol.PacketID{}, 0, 0, errBadVersion
+	}
+
+	dir := dirInitiator
+	if b[5]&flagDirection != 0 {
+		dir = dirResponder
 	}
 
 	var session protocol.SessionID
@@ -74,7 +88,7 @@ func decodeData(b []byte) ([]byte, protocol.PacketID, error) {
 	number := protocol.PacketNumber(binary.BigEndian.Uint64(b[6+protocol.SessionIDSize:]))
 	id := protocol.PacketID{Session: session, Number: number}
 	if !id.Valid() {
-		return nil, protocol.PacketID{}, errBadIdentity
+		return protocol.PacketID{}, 0, 0, errBadIdentity
 	}
-	return b[dataHeaderSize:], id, nil
+	return id, dir, dataHeaderSize, nil
 }
