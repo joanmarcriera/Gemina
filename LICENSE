@@ -1,5 +1,40 @@
-All rights reserved.
+This project is dual-licensed (open-core).
 
-No licence is granted for distribution, copying, modification or use outside this repository until the project owner replaces this placeholder with an approved commercial licence.
+The gateway/server is licensed under the GNU Affero General Public License,
+version 3 only (AGPL-3.0-only). The client and the shared core are licensed
+under the Apache License, version 2.0 (Apache-2.0). This split keeps the client
+distributable on the Mac App Store, which cannot carry AGPL software, while the
+AGPL keeps the hosted gateway open.
 
-Third-party material, if ever imported, must retain its original licence and attribution as recorded in `docs/legal/code-provenance.md`, `docs/legal/upstream-licences.md` and `NOTICE`.
+Directory -> licence map:
+
+  AGPL-3.0-only:
+    cmd/gateway/
+    internal/gateway/
+    gateway-only deploy assets under deploy/ that contain gateway server logic
+
+  Apache-2.0 (everything the client ships or links, plus shared tooling):
+    apps/macos/
+    pkg/clientcore/
+    pkg/protocoltypes/
+    pkg/testkit/
+    internal/protocol/
+    internal/dedup/
+    internal/transport/
+    internal/paths/
+    internal/platform/
+    internal/diagnostics/
+    internal/bootstrap/
+    cmd/continuityctl/
+    and the rest of the shared core and tooling
+
+Full licence texts:
+  LICENSES/AGPL-3.0.txt    (https://www.gnu.org/licenses/agpl-3.0.txt)
+  LICENSES/Apache-2.0.txt  (https://www.apache.org/licenses/LICENSE-2.0.txt)
+
+Full explanation, the compatibility rationale and contributor guidance:
+  docs/legal/licensing.md
+
+Third-party material, if ever imported, retains its original licence and
+attribution as recorded in docs/legal/code-provenance.md,
+docs/legal/upstream-licences.md and NOTICE.

@@ -150,8 +150,21 @@ set of targets.
 
 ## Licence
 
-See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). The licence is being finalised
-for the open-source release; until it is, treat the current `LICENSE` as
-authoritative. Third-party material, if ever imported, retains its original
-licence and attribution as recorded under `docs/legal/`.
-```
+This project is dual-licensed (open-core):
+
+* The **gateway/server** is **AGPL-3.0-only** — `cmd/gateway/`,
+  `internal/gateway/`, and gateway-only server assets under `deploy/`.
+* The **client and shared core** are **Apache-2.0** — `apps/macos/`, the `pkg/`
+  packages, `cmd/continuityctl/`, and the shared `internal/` packages.
+
+The AGPL keeps the hosted gateway open; the client stays Apache-2.0 so it can
+ship on the Mac App Store, which cannot carry AGPL software. Apache-2.0 is
+one-way compatible into AGPL-3.0, so the gateway may include the core but the
+client must never include gateway code.
+
+Full texts: [`LICENSES/AGPL-3.0.txt`](LICENSES/AGPL-3.0.txt) and
+[`LICENSES/Apache-2.0.txt`](LICENSES/Apache-2.0.txt). The directory map and
+rationale are in [`docs/legal/licensing.md`](docs/legal/licensing.md); see also
+[`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). Third-party material, if ever
+imported, retains its original licence and attribution as recorded under
+`docs/legal/`.
