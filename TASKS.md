@@ -55,9 +55,15 @@ and **go-to-market** (open-core + hosted gateway). Next, in priority order:
   with `com.apple.security.device.usb` (the spike ran un-sandboxed). Gates the
   App Store route.
 * [ ] Going public: rewrite git history to drop the real LAN address, finalise
-  CONTRIBUTING licence wording, then run `scripts/prepare-public.sh` (see
-  `docs/dev/repository-strategy.md`). Marketing groundwork done
-  (`docs/marketing/seo.md`, `docs/marketing/video-script.md`).
+  CONTRIBUTING licence wording, have a lawyer review `docs/legal/privacy-policy.md`
+  + `terms-of-service.md`, then run `scripts/prepare-public.sh` (see
+  `docs/dev/repository-strategy.md`). GTM groundwork done: SEO-hardened `website/`
+  (+ privacy/terms pages), `docs/marketing/` (seo, video-script, launch-plan,
+  press-kit). Record the demo video from the script before launch.
+* [ ] Make the `DataGateway` runnable: a mode in `cmd/gateway` (probe | data) that
+  loads/persists an Ed25519 identity + entitlement config, serves the real
+  handshake+data path, and exposes its `/metrics`. The library + tests exist
+  (`internal/gateway.DataGateway`); only the cmd wiring + deploy remain.
 * [~] Go-to-market: licence decided + applied (AGPL gateway / Apache client),
   open-core README + landing page done; hosted-tier entitlement/payments
   scaffolded (`internal/entitlement`). Remaining: real payment integration

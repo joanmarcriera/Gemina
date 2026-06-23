@@ -102,13 +102,17 @@ Built this cycle (all unit/race tested):
   authentication**: an Ed25519 gateway identity the client pins, signing the
   ephemeral key (defeats an active MITM; `handshake_auth.go`). The on-wire
   handshake message + pinned-key distribution remain.
-* `internal/gateway` admission + handshake — `SessionStore` (KeyResolver) +
-  `Admitter` gate session admission by entitlement (open=free, hosted=token,
-  fail-closed). `Admitter.Handshake` + the `pkg/clientcore` CVH1
-  ClientHello/ServerHello codec and `BeginClientHandshake`/`Complete` give the
-  full on-wire exchange: mutual auth (client pins gateway Ed25519 identity;
-  gateway admits the token), X25519 key agreement, then encrypted data through
-  the DataPlane — end-to-end tested.
+* `internal/gateway` admission + handshake + real server — `SessionStore` +
+  `Admitter` gate admission by entitlement (open=free, hosted=token, fail-closed).
+  The CVH1 ClientHello/ServerHello exchange (`pkg/clientcore` +
+  `Admitter.Handshake`) does mutual auth (client pins gateway Ed25519 identity;
+  gateway admits the token) + X25519 key agreement; the ClientHello is timestamped
+  and the gateway enforces a freshness window to bound replay. `DataGateway`
+  ties it together: it demuxes ClientHello/CVD1 (`ClassifyDatagram`), terminates
+  the handshake, decrypts+dedups the data plane, and exposes redacted data-path
+  metrics (`continuity_handshakes_total`, `continuity_data_packets_total`,
+  `continuity_active_sessions`); source addresses are used only to reply, never
+  logged. End-to-end tested.
 * `internal/entitlement` Stripe — `StripeProvider` (stdlib net/http, no SDK):
   checkout creation + real webhook signature verification (HMAC, constant-time,
   replay-tolerance). Drops into `entitlement.Service`. Real keys/accounts remain.
@@ -131,10 +135,14 @@ Built this cycle (all unit/race tested):
   (`docs/legal/licensing.md`). Xcode/signing owner-action guide in
   `docs/dev/xcode-signing.md`.
 
-Marketing/release groundwork (docs only): SEO + content strategy and a video
-walkthrough script under `docs/marketing/`; a public-repository strategy
-(`docs/dev/repository-strategy.md`, recommends a single open-core monorepo) with a
-read-only `scripts/prepare-public.sh` GO/NO-GO audit.
+Go-to-market groundwork: the static landing page (`website/`) is SEO-hardened
+(OG/Twitter/JSON-LD, sitemap/robots, pricing) with draft privacy/terms pages;
+`docs/marketing/` has the SEO strategy, video script, launch plan (with
+ready-to-post Show HN / Product Hunt / social drafts) and a press kit;
+`docs/legal/` has canonical privacy-policy and terms-of-service drafts (lawyer
+review pending). A public-repository strategy (`docs/dev/repository-strategy.md`,
+recommends a single open-core monorepo) with a read-only `scripts/prepare-public.sh`
+GO/NO-GO audit.
 
 Not implemented: the real `NEPacketTunnelProvider` (packetFlow I/O + path
 sockets, linking the cgo bridge; needs full Xcode/signing), the on-wire handshake
