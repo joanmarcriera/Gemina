@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net"
 
 	"continuity-vpn/internal/protocol"
 	"continuity-vpn/internal/transport"
@@ -19,7 +20,14 @@ type probeConfig struct {
 	path      protocol.PathTag
 	count     int
 	duplicate bool
+
+	// Optional second path. When iface2 is set, each probe identity is sent over
+	// both interfaces (a cross-path duplicate), demonstrating dual-path egress.
+	iface2 string
+	path2  protocol.PathTag
 }
+
+func (c probeConfig) dualPath() bool { return c.iface2 != "" }
 
 // parseProbeConfig parses the `probe` subcommand flags. It is separated from the
 // network send so the flag/validation logic is unit-testable.
@@ -30,6 +38,8 @@ func parseProbeConfig(args []string) (probeConfig, error) {
 	pathName := fs.String("path", "wifi", "path tag: wifi|usb")
 	count := fs.Int("count", 1, "number of distinct probes to send")
 	duplicate := fs.Bool("duplicate", false, "also send each probe a second time to exercise dedup")
+	iface2 := fs.String("interface2", "", "optional second interface; sends each probe over both paths")
+	path2Name := fs.String("path2", "usb", "path tag for the second interface")
 	if err := fs.Parse(args); err != nil {
 		return probeConfig{}, err
 	}
@@ -49,7 +59,18 @@ func parseProbeConfig(args []string) (probeConfig, error) {
 		return probeConfig{}, err
 	}
 
-	return probeConfig{iface: *iface, to: *to, path: tag, count: *count, duplicate: *duplicate}, nil
+	cfg := probeConfig{iface: *iface, to: *to, path: tag, count: *count, duplicate: *duplicate}
+
+	if *iface2 != "" {
+		tag2, err := parsePathTag(*path2Name)
+		if err != nil {
+			return probeConfig{}, err
+		}
+		cfg.iface2 = *iface2
+		cfg.path2 = tag2
+	}
+
+	return cfg, nil
 }
 
 func parsePathTag(name string) (protocol.PathTag, error) {
@@ -78,6 +99,15 @@ func runProbe(args []string, out io.Writer) error {
 	}
 	defer conn.Close()
 
+	var conn2 *net.UDPConn
+	if cfg.dualPath() {
+		conn2, err = transport.PathDialer{Interface: cfg.iface2}.DialUDP(cfg.to)
+		if err != nil {
+			return fmt.Errorf("second path: %w", err)
+		}
+		defer conn2.Close()
+	}
+
 	session, err := randomSession()
 	if err != nil {
 		return err
@@ -85,11 +115,9 @@ func runProbe(args []string, out io.Writer) error {
 
 	sent := 0
 	for n := 1; n <= cfg.count; n++ {
-		packet := protocol.ProbePacket{
-			ID:   protocol.PacketID{Session: session, Number: protocol.PacketNumber(n)},
-			Path: cfg.path,
-		}
-		wire, err := packet.MarshalBinary()
+		id := protocol.PacketID{Session: session, Number: protocol.PacketNumber(n)}
+
+		wire, err := protocol.ProbePacket{ID: id, Path: cfg.path}.MarshalBinary()
 		if err != nil {
 			return err
 		}
@@ -99,14 +127,31 @@ func runProbe(args []string, out io.Writer) error {
 		}
 		for i := 0; i < copies; i++ {
 			if _, err := conn.Write(wire); err != nil {
-				return fmt.Errorf("send probe %d: %w", n, err)
+				return fmt.Errorf("send probe %d over %s: %w", n, cfg.iface, err)
+			}
+			sent++
+		}
+
+		if conn2 != nil {
+			// Same identity over the second path: a cross-path duplicate.
+			wire2, err := protocol.ProbePacket{ID: id, Path: cfg.path2}.MarshalBinary()
+			if err != nil {
+				return err
+			}
+			if _, err := conn2.Write(wire2); err != nil {
+				return fmt.Errorf("send probe %d over %s: %w", n, cfg.iface2, err)
 			}
 			sent++
 		}
 	}
 
-	fmt.Fprintf(out, "sent %d datagram(s): %d distinct probe(s) over %s as path %q%s\n",
-		sent, cfg.count, cfg.iface, cfg.path.String(), duplicateNote(cfg.duplicate))
+	if cfg.dualPath() {
+		fmt.Fprintf(out, "sent %d datagram(s): %d distinct probe(s) over %s (%q) and %s (%q)\n",
+			sent, cfg.count, cfg.iface, cfg.path.String(), cfg.iface2, cfg.path2.String())
+	} else {
+		fmt.Fprintf(out, "sent %d datagram(s): %d distinct probe(s) over %s as path %q%s\n",
+			sent, cfg.count, cfg.iface, cfg.path.String(), duplicateNote(cfg.duplicate))
+	}
 	return nil
 }
 

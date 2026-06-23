@@ -19,6 +19,12 @@ import (
 // trailing bytes without unbounded allocation on a public listener.
 const maxDatagram = 1500
 
+// summaryEvery is how many processed datagrams between Info-level summary logs.
+// Per-packet detail is logged at Debug; under a high probe rate this keeps the
+// default (Info) hot path free of per-packet logging while still reporting
+// progress.
+const summaryEvery = 1000
+
 // Decision is the outcome of handling one datagram.
 type Decision uint8
 
@@ -85,7 +91,9 @@ func (s *Server) Handle(datagram []byte) Record {
 	probe, err := protocol.UnmarshalProbe(datagram)
 	if err != nil {
 		s.rejected.Add(1)
-		s.logger.Debug("probe rejected", "decision", DecisionRejected.String(), "reason", err.Error())
+		if s.logger.Enabled(context.Background(), slog.LevelDebug) {
+			s.logger.Debug("probe rejected", "decision", DecisionRejected.String(), "reason", err.Error())
+		}
 		return Record{Decision: DecisionRejected}
 	}
 
@@ -111,13 +119,29 @@ func (s *Server) Handle(datagram []byte) Record {
 		return Record{Decision: DecisionRejected}
 	}
 
-	s.logger.Info("probe",
-		"decision", rec.Decision.String(),
-		"path", rec.Path.String(),
-		"first_path", rec.FirstPath.String(),
-		"copy_count", rec.CopyCount,
-	)
+	// Per-packet detail at Debug, guarded so the attribute strings are not even
+	// built when Debug is disabled (the common, high-throughput case).
+	if s.logger.Enabled(context.Background(), slog.LevelDebug) {
+		s.logger.Debug("probe",
+			"decision", rec.Decision.String(),
+			"path", rec.Path.String(),
+			"first_path", rec.FirstPath.String(),
+			"copy_count", rec.CopyCount,
+		)
+	}
 	return rec
+}
+
+// logSummary emits the cumulative counters at Info. Serve calls it periodically
+// so progress is visible without per-packet Info logging.
+func (s *Server) logSummary(reason string) {
+	st := s.Stats()
+	s.logger.Info("probe summary",
+		"reason", reason,
+		"first_copies", st.FirstCopies,
+		"duplicates", st.Duplicates,
+		"rejected", st.Rejected,
+	)
 }
 
 // Serve reads datagrams from conn until ctx is cancelled, handling each one. It
@@ -130,6 +154,7 @@ func (s *Server) Serve(ctx context.Context, conn net.PacketConn) error {
 	}()
 
 	buf := make([]byte, maxDatagram)
+	var processed uint64
 	for {
 		n, _, err := conn.ReadFrom(buf)
 		if err != nil {
@@ -139,6 +164,10 @@ func (s *Server) Serve(ctx context.Context, conn net.PacketConn) error {
 			return err
 		}
 		s.Handle(buf[:n])
+		processed++
+		if processed%summaryEvery == 0 {
+			s.logSummary("interval")
+		}
 	}
 }
 
