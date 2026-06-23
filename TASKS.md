@@ -13,19 +13,24 @@ and reviewed.
 
 ## Next exact action
 
-Build the userspace RNDIS data plane on top of the proven control handshake
-(viability spike: `research/usb-rndis-spike/`, ADR 2026-06-21). The in-app
-uplink-acquisition approach is decided; the control handshake is proven under
-SIP. Next, in order:
+The userspace RNDIS **data plane is proven** (2026-06-23,
+`research/usb-rndis-spike/rndis_dataplane.c`): claim → INITIALIZE → packet-filter
+→ DHCP DISCOVER/OFFER round-trip in `REMOTE_NDIS_PACKET_MSG` frames, verified
+live on the OnePlus 12R, no kext/SIP/root. Route B (RNDIS, works on any Android)
+is confirmed by the owner over NCM. Next, in order:
 
+* [x] Bring the RNDIS link up (`SET OID_GEN_CURRENT_PACKET_FILTER`) and prove a
+  round-trip packet over the tether (DHCP DISCOVER out / OFFER in). Done.
+* [ ] Hold the lease (DHCP REQUEST/ACK) and prove **real UDP egress** to the
+  deployed oracle gateway through the RNDIS path — not just a local DHCP
+  round-trip — confirming cellular reachability end-to-end (redact addresses).
+* [ ] Present the link to the stack via `NEPacketTunnelProvider` so routing can
+  bind a UDP socket to it (RX frames in, TX frames out).
 * [ ] Re-confirm the userspace USB claim succeeds inside an App-Sandbox context
   with `com.apple.security.device.usb` (the spike ran un-sandboxed).
-* [ ] Bring the RNDIS link up: `SET OID_GEN_CURRENT_PACKET_FILTER`, then DHCP
-  over the bulk pipe to obtain the phone's address (redact it).
-* [ ] Frame RNDIS data messages on the bulk IN/OUT endpoints; prove a round-trip
-  packet over the tether with a capture.
-* [ ] Present the link to the stack via `NEPacketTunnelProvider` so routing can
-  bind a UDP socket to it.
+
+See skill `userspace-rndis-dataplane` for the build/run/safety loop and RNDIS
+protocol reference.
 
 ### Detector gap found 2026-06-21 (fix alongside the above)
 
@@ -33,25 +38,26 @@ SIP. Next, in order:
 update evidence acquisition to match the RNDIS reality, not a NIC that never
 appears:
 
-* [ ] The collector reads BSD interfaces, but an unclaimed RNDIS function is not
-  a `enX` NIC. Add a USB-function evidence source (RNDIS control class `0xE0` +
-  data class `0x0A` present) so the Android uplink is detectable before the host
-  driver brings a link up. Note (confirmed 2026-06-21 by reading
-  `live_evidence.go`): `IORegistryCommandSource` queries
-  `ioreg -r -c IOEthernetInterface`, which the unclaimed RNDIS function never
-  publishes — the new source must query the USB layer (e.g.
-  `ioreg -r -c IOUSBHostInterface -l`) and key on `bInterfaceClass`, not a
-  vendor string.
-  * Design decision needed (do WITH the owner — it reshapes the report
-    contract): present-on-USB is **not** a usable candidate (no IP, no link yet),
-    so the report needs an honest "tether function present but not yet usable"
-    status / device-level evidence channel rather than a `Candidate`. Do not
-    fabricate a usable `android-usb-tether` candidate from USB presence alone —
-    that would violate the never-fake-path-success rule.
-* [ ] `blockHasAndroidUSBTetherEvidence` (`internal/platform/darwin/live_evidence.go`)
+* [x] The collector reads BSD interfaces, but an unclaimed RNDIS function is not
+  a `enX` NIC. Added a USB-function evidence source
+  (`USBFunctionDeviceSource`, `internal/platform/darwin/usb_functions.go`) that
+  queries `ioreg -r -c IOUSBHostInterface -l` and keys on the RNDIS control
+  signature (`bInterfaceClass=224`/subclass 1/protocol 3), **not** a vendor
+  string. Verified live against the OnePlus on 2026-06-23. Also fixed a latent
+  bug in the shared `splitIORegistryBlocks` parser: it used `bufio.Scanner`,
+  which silently truncated at the 64 KiB line limit (full USB `ioreg -l` has
+  ~90 KiB lines); it now splits on raw newlines.
+  * [x] Design decision (resolved WITH owner, 2026-06-23): present-on-USB is a
+    device-level signal, not a usable candidate. The report gained a
+    `device_functions` channel (`usable:false`/`host_driver_claimed:false`) plus
+    a `tether-present-not-usable` issue; a present-but-unusable function is never
+    promoted to a `Candidate`. Owner framing: this is the data a **pre-purchase
+    compatibility check** consumes ("is my Mac+Android combo supported?").
+* [~] `blockHasAndroidUSBTetherEvidence` (`internal/platform/darwin/live_evidence.go`)
   requires the literal token `android`; the OnePlus identifies as
-  `OnePlus`/`KALAMA`/`RNDIS …` and is missed. Match on the RNDIS function
-  signature, not the vendor string. Keep tokens coarse and redacted.
+  `OnePlus`/`KALAMA`/`RNDIS …` and is missed. **Superseded for detection** by the
+  class-keyed device source above. Left in place only for the
+  host-driver-claimed (real `enX`) case; revisit when/if a host driver lands.
 
 ### Packaging & clean footprint (App Store target — ADR 2026-06-21)
 
@@ -68,6 +74,30 @@ app extension, no kernel/DriverKit/system extension. Contract in
   verification checklist.
 * [ ] Scope the packet tunnel to included routes for the gateway only; never set
   it as the system default; exclude the management subnet.
+
+### Pre-purchase compatibility check (owner direction 2026-06-23)
+
+Goal: minimal-friction onboarding — let a prospective macOS + Android user
+confirm their combination is supported *before* they buy, and bundle whatever a
+supported config needs into the installer. The `device_functions` channel in
+`darwin-evidence` (added 2026-06-23) is the evidence foundation.
+
+* NCM investigated live 2026-06-23 (OnePlus 12R, OxygenOS/Android 16) — result is
+  two-sided (see memory `ncm-tether-lower-friction-than-rndis`, skill
+  `android-usb-tether-function`):
+  * [x] macOS claims an NCM tether natively — `svc usb setFunctions ncm` →
+    `en10`, `ioreg` `CDC Network Control Model (NCM) … matched`, **no kext/SIP**.
+  * [x] Confirmed the blocker: OxygenOS pins `mUsbTetheringFunction: RNDIS` in a
+    **root-locked** overlay; the NCM function comes up as `usb0` with no NAT
+    (macOS gets APIPA). No `device_config`/`cmd overlay`/settings lever exists.
+* [ ] Define the supported matrix on this evidence: **NCM-default phones
+  (Pixel/AOSP 14+)** → zero-install, works natively; **RNDIS-pinned phones
+  (OnePlus & many OEMs)** → need the userspace RNDIS data plane or root. Confirm
+  which Android builds default to NCM tethering.
+* [ ] Build a user-facing preflight that maps `device_functions` + OS version to
+  supported / not-yet-usable / unsupported, with a clear next step for each.
+* [ ] Decide build-vs-bundle per supported config (driver/data-plane shipped in
+  the installer) so a supported user needs no manual setup.
 
 ### Test environment (cabled management channel — ADR 2026-06-21)
 
