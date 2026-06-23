@@ -68,13 +68,17 @@ have killed the in-app approach (can we even open the interface?) is retired.
 
 **Still to confirm before shipping:**
 
-- **App Sandbox entitlement.** This probe ran un-sandboxed. A Developer-ID
+- **Data plane — PROVEN 2026-06-23.** `rndis_dataplane.c` brings the link up
+  (`SET OID_GEN_CURRENT_PACKET_FILTER`), sends a DHCP DISCOVER framed in
+  `REMOTE_NDIS_PACKET_MSG` on bulk OUT, and reads the phone tether's DHCP OFFER
+  back on bulk IN — a full L2 round-trip. Verified live against the OnePlus 12R
+  RNDIS tether, reliably across repeated runs, redaction-clean. **L2 frames move
+  both ways over the cellular tether from an unprivileged process** (no kext, no
+  SIP, no root). `make rndis_dataplane && ./rndis_dataplane` with USB tethering
+  on. See skill `userspace-rndis-dataplane`.
+- **App Sandbox entitlement.** Both probes ran un-sandboxed. A Developer-ID
   notarised app needs the `com.apple.security.device.usb` entitlement; verify
   the claim still succeeds inside the app's sandbox.
-- **Data plane.** `INITIALIZE` is the control handshake only. Shipping needs:
-  `SET` `OID_GEN_CURRENT_PACKET_FILTER` to bring the link up, DHCP over the
-  bulk pipe to obtain the phone's address, then RNDIS data-message framing on
-  the bulk IN/OUT endpoints.
 - **Egress into the stack.** Feed received frames into an
   `NEPacketTunnelProvider` so the bonding/failover layer can route per-flow.
 
