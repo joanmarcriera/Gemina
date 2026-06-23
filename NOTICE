@@ -4,6 +4,11 @@ This repository currently contains original project code and documentation for
 the Stage 1 dual-path UDP probe. No production VPN transport or released
 product exists yet.
 
+This project is dual-licensed (open-core): the gateway/server is
+`AGPL-3.0-only` and the client and shared core are `Apache-2.0`. The directory
+map and rationale are in `docs/legal/licensing.md`; the full licence texts are
+in `LICENSES/AGPL-3.0.txt` and `LICENSES/Apache-2.0.txt`.
+
 No third-party source files have been copied into product directories.
 
 Upstream projects listed in `research/upstream-manifest.yaml` are tracked for due diligence and research intake. Their licences, notices and provenance must be verified before any source code is copied, vendored, forked or distributed.
