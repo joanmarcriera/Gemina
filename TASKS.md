@@ -21,13 +21,19 @@ is confirmed by the owner over NCM. Next, in order:
 
 * [x] Bring the RNDIS link up (`SET OID_GEN_CURRENT_PACKET_FILTER`) and prove a
   round-trip packet over the tether (DHCP DISCOVER out / OFFER in). Done.
-* [ ] Hold the lease (DHCP REQUEST/ACK) and prove **real UDP egress** to the
-  deployed oracle gateway through the RNDIS path — not just a local DHCP
-  round-trip — confirming cellular reachability end-to-end (redact addresses).
+* [x] Hold the lease (DHCP REQUEST/ACK) and prove **real UDP egress** to the
+  deployed oracle gateway through the RNDIS path (2026-06-23). `rndis_egress.c`:
+  lease held, gateway ARP-resolved, real CVP1 probes sent; the gateway logged
+  10 first-copy + 10 duplicate `android-usb-tether` decisions and a host tcpdump
+  saw them arrive from a cellular carrier public IP. Phone proven as an
+  independent WAN reaching the gateway, unprivileged.
 * [ ] Present the link to the stack via `NEPacketTunnelProvider` so routing can
   bind a UDP socket to it (RX frames in, TX frames out).
 * [ ] Re-confirm the userspace USB claim succeeds inside an App-Sandbox context
   with `com.apple.security.device.usb` (the spike ran un-sandboxed).
+* [ ] Simultaneous Wi-Fi + cellular dual-path: send the same identity over en0
+  (Wi-Fi, OS socket) and the RNDIS path at once; show both reach the gateway and
+  dedup. (The Stage-1 dual-path gate; now unblocked by the proven RNDIS egress.)
 
 See skill `userspace-rndis-dataplane` for the build/run/safety loop and RNDIS
 protocol reference.
