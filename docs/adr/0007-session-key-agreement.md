@@ -43,12 +43,14 @@ decrypt past sessions.
 
 ## Consequences
 
-* This ADR covers key *derivation*, not *authentication of the public keys*. As
-  written it is secure against a passive eavesdropper but not an active
-  man-in-the-middle: the transport that exchanges the public keys must
-  authenticate the gateway's key — e.g. pin the gateway static key in the client,
-  or carry/cosign it via the signed entitlement token (`internal/entitlement`).
-  Tracked in `TASKS.md`.
+* Gateway authentication is now provided (`handshake_auth.go`): the gateway holds
+  a long-term **Ed25519** identity, the client **pins** its public key, and the
+  gateway **signs its ephemeral X25519 key** (bound to the session) so a client
+  rejects any MITM-substituted key. The client is authenticated to the gateway by
+  its entitlement token (`internal/entitlement`). What remains is the on-wire
+  handshake *message* that carries the ephemeral key + signature, and how the
+  client obtains the pinned identity (bundled for the hosted gateway; shown once
+  / via config for a self-hosted one).
 * The exchange that carries the public keys (a small handshake datagram before
   data, or in the connection setup) is still to be wired into the gateway and the
   NE provider.
