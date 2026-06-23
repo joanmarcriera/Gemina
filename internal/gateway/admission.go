@@ -1,10 +1,12 @@
 package gateway
 
 import (
+	"crypto/ed25519"
 	"sync"
 
 	"continuity-vpn/internal/entitlement"
 	"continuity-vpn/internal/protocol"
+	"continuity-vpn/pkg/clientcore"
 )
 
 // SessionStore holds the keys of admitted sessions and resolves them for the
@@ -66,4 +68,40 @@ func (a *Admitter) Admit(token string, id protocol.SessionID, key []byte) (entit
 	}
 	a.store.put(id, key)
 	return claims, nil
+}
+
+// Handshake is the gateway side of the on-wire handshake. It decodes the
+// client's ClientHello, derives the session key from a fresh gateway ephemeral
+// key and the client's ephemeral key, admits the client by its entitlement token
+// (registering the key only if admitted — fail-closed), and returns a ServerHello
+// signed with the gateway's Ed25519 identity for the client to authenticate.
+func (a *Admitter) Handshake(clientHello []byte, identityPriv ed25519.PrivateKey, dedupCapacity int) (serverHello []byte, claims entitlement.Claims, err error) {
+	id, clientEph, token, err := clientcore.DecodeClientHello(clientHello)
+	if err != nil {
+		return nil, entitlement.Claims{}, err
+	}
+
+	gatewayEphPriv, gatewayEphPub, err := clientcore.GenerateKeyPair()
+	if err != nil {
+		return nil, entitlement.Claims{}, err
+	}
+	key, err := clientcore.DeriveSessionKey(gatewayEphPriv, clientEph, id)
+	if err != nil {
+		return nil, entitlement.Claims{}, err
+	}
+
+	// Admit before revealing the signed ServerHello; on rejection the key is not
+	// registered and the DataPlane will refuse the session's packets.
+	claims, err = a.Admit(token, id, key)
+	if err != nil {
+		return nil, entitlement.Claims{}, err
+	}
+
+	sig := clientcore.SignHandshake(identityPriv, gatewayEphPub, id)
+	serverHello, err = clientcore.EncodeServerHello(id, gatewayEphPub, sig)
+	if err != nil {
+		a.store.Forget(id) // unwind the registration if we cannot answer
+		return nil, entitlement.Claims{}, err
+	}
+	return serverHello, claims, nil
 }
