@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy — Continuity VPN</title>
+  <meta name="description" content="Privacy policy for Continuity VPN's optional paid hosted gateway. A pre-release draft; not legal advice. Self-hosters: we hold nothing.">
+  <meta name="color-scheme" content="dark light">
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230c1418'/%3E%3Cpath d='M3 17 h7 l3-7 4 14 3-7 h6' fill='none' stroke='%233fb6a8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <style>
+    /* Scoped readability styles for the legal pages. The site palette
+       (--ink, --ink-tx, --signal, --wrap) is defined in styles.css. */
+    .legal { padding-block: clamp(40px, 7vw, 88px); }
+    .legal .wrap { max-width: 72ch; }
+    .legal h1 { margin-bottom: .25rem; }
+    .legal-meta { color: var(--ink-tx-mute); font-size: .95rem; margin-top: 0; }
+    .legal h2 { margin-top: 2.4rem; }
+    .legal h3 { margin-top: 1.6rem; }
+    .legal p, .legal li { line-height: 1.7; }
+    .legal ul { padding-left: 1.25rem; }
+    .legal li { margin-block: .35rem; }
+    .legal a { color: var(--signal); }
+    .legal code {
+      background: var(--ink-2);
+      border: 1px solid var(--ink-3);
+      border-radius: 4px;
+      padding: .05em .4em;
+      font-size: .9em;
+    }
+    .draft-notice {
+      border: 1px solid var(--signal);
+      border-left-width: 4px;
+      border-radius: 8px;
+      background: var(--ink-2);
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0 2rem;
+    }
+    .draft-notice strong { color: var(--signal); }
+    .back-home { display: inline-block; margin-bottom: 1.5rem; }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-head">
+  <div class="wrap head-inner">
+    <a class="brand" href="index.html" aria-label="Continuity VPN home">
+      <svg class="brand-mark" width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M2 17 h7 l3-7 4 14 3-7 h6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Continuity<span class="brand-thin">VPN</span></span>
+    </a>
+  </div>
+</header>
+
+<main id="main" class="legal">
+  <div class="wrap">
+    <a class="back-home" href="index.html">&larr; Back to home</a>
+
+    <h1>Privacy Policy</h1>
+    <p class="legal-meta">Last updated: [date] &middot; Status: pre-release draft</p>
+
+    <div class="draft-notice" role="note">
+      <strong>Draft &mdash; not legal advice.</strong>
+      This is a pre-release draft for an open-source, pre-release product. It has
+      <strong>not</strong> been reviewed by a qualified lawyer and must not be relied
+      upon as it stands. Have a qualified legal professional review and adapt it for
+      your jurisdiction before publishing or relying on it. Placeholders such as
+      <code>[Company name]</code> and <code>[contact email]</code> must be completed
+      before launch.
+    </div>
+
+    <h2>Who this policy is about</h2>
+    <p>
+      Continuity VPN is a macOS reliability tool. It sends a copy of your protected
+      traffic over two uplinks at once &mdash; your Wi-Fi and an Android phone's
+      cellular link over USB &mdash; to a single gateway, which delivers the first
+      copy and discards the duplicate. The aim is continuity: if one link blips, the
+      other is already carrying the same packets.
+    </p>
+    <p>
+      The <strong>client</strong> and the <strong>gateway</strong> are open source and
+      can be <strong>self-hosted for free</strong>. We also intend to offer an
+      <strong>optional paid hosted gateway</strong>, operated by
+      <strong>[Company name]</strong> ("we", "us", "our"), for people who would rather
+      not run their own server. This policy explains what data we, as the operator of
+      the <em>hosted</em> service, handle and why.
+    </p>
+    <p>
+      This is a <strong>pre-release</strong> project. Accounts, payments and the hosted
+      entitlement flow are <strong>not yet live</strong>; the descriptions below state
+      how the hosted service is designed to behave when it launches. We will update
+      this policy before the hosted service begins processing real personal data.
+    </p>
+
+    <h2>The most important distinction: self-hosted vs hosted</h2>
+    <ul>
+      <li>
+        <strong>If you self-host the gateway, we hold nothing about you.</strong>
+        A self-hosted gateway is software you run on your own infrastructure. We do not
+        operate it, we receive no data from it, and we have no account, payment or log
+        relating to your use of it. Your relationship is with your own server. (If you
+        obtain the software through a third party such as a code-hosting platform or
+        package registry, that third party's own privacy terms apply to that download.)
+      </li>
+      <li>
+        <strong>If you use our paid hosted gateway,</strong> the limited data described
+        below is handled by us and our payment processor so that we can bill you and run
+        the service.
+      </li>
+    </ul>
+    <p>The rest of this policy concerns the <strong>hosted</strong> service only.</p>
+
+    <h2>What the hosted service collects, and why</h2>
+    <p>
+      We have designed the hosted service to handle as little personal data as possible.
+      Specifically:
+    </p>
+
+    <h3>1. Account and billing data (via Stripe)</h3>
+    <p>
+      To take a subscription payment we use <strong>Stripe</strong> as our third-party
+      payment processor. When you subscribe, Stripe collects and processes your payment
+      details (for example your card or other payment-method details and associated
+      billing information) directly.
+      <strong>We do not see or store your full card number or other raw payment
+      credentials.</strong> Stripe acts as an independent processor / controller for that
+      payment data under its own terms; see "Third-party processors" below.
+    </p>
+    <p>
+      From the billing relationship we hold the minimum needed to operate a subscription,
+      which may include: a billing/customer reference issued by Stripe, your subscription
+      status (active, cancelled, expired), and an email address used for account and
+      billing communication where one is provided. We use this <strong>only</strong> to
+      provide the service, take payment, prevent fraud and abuse, and contact you about
+      your subscription.
+    </p>
+
+    <h3>2. The entitlement token (carries no personal data by design)</h3>
+    <p>
+      Access to the hosted gateway is granted by a signed <strong>entitlement
+      token</strong>. By design this token carries only:
+    </p>
+    <ul>
+      <li>an <strong>opaque subject identifier</strong> &mdash; an internal reference,
+        <strong>not</strong> your name or email;</li>
+      <li>a <strong>tier</strong> (which level of access the token grants); and</li>
+      <li>an <strong>expiry</strong> time.</li>
+    </ul>
+    <p>
+      The token is cryptographically signed and contains <strong>no
+      personally-identifying data</strong>. The gateway checks the token to admit a
+      paying client; it does not need to know who you are to do so.
+    </p>
+
+    <h3>3. Minimal, redacted operational metrics from the gateway</h3>
+    <p>
+      The gateway's job is to deduplicate the two copies of your traffic and forward the
+      survivor. To run the service reliably we keep <strong>coarse, redacted operational
+      signals</strong> &mdash; for example counts of packets by decision (first-copy,
+      duplicate, rejected) and by path, and aggregate health metrics. These are designed
+      to contain <strong>no IP addresses and no host identifiers</strong>: the source
+      address of incoming traffic is deliberately kept out of the logging path, and logs
+      record only redacted, coarse decisions rather than identifiable detail.
+    </p>
+
+    <h2>What the hosted service does <em>not</em> collect</h2>
+    <p>By design, we do <strong>not</strong>:</p>
+    <ul>
+      <li><strong>Log the content of your traffic.</strong> The gateway forwards traffic;
+        it does not record what you send or receive.</li>
+      <li><strong>Store IP addresses or host identifiers in our logs.</strong> The logging
+        and metrics paths are built to exclude them.</li>
+      <li><strong>Put personal data in the entitlement token.</strong> It carries only an
+        opaque subject id, a tier, and an expiry.</li>
+      <li><strong>Store your raw card details.</strong> Payment credentials are handled by
+        Stripe, not by us.</li>
+      <li><strong>Sell your data</strong>, or use it for advertising or profiling.</li>
+    </ul>
+    <p>
+      Once end-to-end encryption ships (it is still in development &mdash; see the project
+      status), the traffic itself is intended to be end-to-end between your client and the
+      gateway. We will describe the encryption guarantees accurately when they are in
+      place, and will not overstate them before then.
+    </p>
+
+    <h2>Third-party processors</h2>
+    <p>
+      We rely on a small number of third parties to provide the hosted service. Today the
+      principal one is:
+    </p>
+    <ul>
+      <li>
+        <strong>Stripe</strong> &mdash; payment processing and subscription billing.
+        Stripe collects and processes payment and billing data under its own privacy
+        policy and terms. See Stripe's privacy documentation (for example
+        <a href="https://stripe.com/privacy" rel="noopener">stripe.com/privacy</a>) for
+        its role and how it handles that data.
+      </li>
+    </ul>
+    <p>
+      We may also use standard infrastructure providers (for example a hosting/VPS
+      provider) to run the gateway. We will keep this list accurate and current as the
+      hosted service is built out. We do not sell personal data to anyone.
+    </p>
+
+    <h2>Where data is processed</h2>
+    <p>
+      The hosted service and our processors may process data in one or more countries.
+      Where personal data is transferred across borders, we will rely on an appropriate
+      safeguard (for example the relevant standard contractual clauses or an adequacy
+      decision). The specific locations and safeguards will be stated here before the
+      hosted service launches. <strong>[Specify hosting region(s) and transfer
+      mechanism.]</strong>
+    </p>
+
+    <h2>How long we keep data</h2>
+    <p>We keep personal data only as long as we need it for the purposes above:</p>
+    <ul>
+      <li><strong>Account and billing records</strong> &mdash; kept for the life of your
+        subscription and afterwards for as long as we are required to keep them for legal,
+        accounting and tax purposes, then deleted or anonymised. <strong>[Specify retention
+        period, e.g. tax-record retention.]</strong></li>
+      <li><strong>The entitlement token</strong> &mdash; short-lived; it expires by design
+        and is not a long-term store of personal data (it contains none).</li>
+      <li><strong>Operational metrics and redacted logs</strong> &mdash; kept for a limited
+        operational window for reliability, security and capacity purposes, then discarded
+        or retained only in aggregate. <strong>[Specify retention window.]</strong></li>
+    </ul>
+
+    <h2>Your rights</h2>
+    <p>
+      If you are in the UK or the European Economic Area, the UK GDPR / EU GDPR gives you
+      rights over your personal data, including the rights to: access a copy of it; have
+      inaccurate data corrected; have it erased; restrict or object to certain processing;
+      and data portability. Where we rely on consent, you may withdraw it at any time. You
+      also have the right to complain to your data-protection authority (in the UK, the
+      Information Commissioner's Office).
+    </p>
+    <p>
+      Because the hosted service holds so little &mdash; and because the entitlement token
+      and operational logs are designed to contain no personal identifiers &mdash; much of
+      what we can act on relates to your <strong>account and billing record</strong>. Some
+      payment data is held by Stripe as processor/controller, so a request may need to be
+      directed to, or coordinated with, Stripe.
+    </p>
+    <p>
+      To exercise any right, contact us at <strong>[contact email]</strong>. We will
+      respond within the time required by applicable law.
+    </p>
+
+    <h2>Children</h2>
+    <p>
+      The service is not directed at children and is not intended for use by anyone under
+      the age at which they can enter into a subscription in their jurisdiction.
+    </p>
+
+    <h2>Changes to this policy</h2>
+    <p>
+      We will update this policy as the hosted service is built and before it begins
+      processing real personal data, and will revise the "Last updated" date above.
+      Material changes will be communicated by an appropriate means.
+    </p>
+
+    <h2>Contact</h2>
+    <p>
+      Questions about this policy or your data: <strong>[contact email]</strong>.<br>
+      Postal address: <strong>[Company name], [registered/contact address]</strong>.
+    </p>
+
+    <p><a href="terms.html">Terms of Service</a> &middot; <a href="index.html">Back to home</a></p>
+
+    <p class="legal-meta">
+      <em>This is a pre-release draft for an open-source project and is not legal advice.
+      Have a qualified lawyer review it before relying on it.</em>
+    </p>
+  </div>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap foot-base">
+    <p>&copy; 2026 Continuity VPN. Open source &mdash; free to use, inspect and self-host.</p>
+    <p class="foot-pre">Pre-release. Features and pricing may change before launch.</p>
+  </div>
+</footer>
+</body>
+</html>
