@@ -5,9 +5,32 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"errors"
+	"time"
 
 	"continuity-vpn/internal/protocol"
 )
+
+// DefaultHandshakeTolerance bounds how far a ClientHello timestamp may be from
+// the gateway's clock. It limits how long a captured ClientHello (with a still
+// valid token) can be replayed to open sessions, independent of the token's TTL.
+const DefaultHandshakeTolerance = 60 * time.Second
+
+// ErrStaleHandshake is returned for a ClientHello whose timestamp is outside the
+// tolerance window in either direction.
+var ErrStaleHandshake = errors.New("handshake timestamp outside tolerance window")
+
+// CheckHandshakeFresh reports whether a ClientHello timestamp is within tolerance
+// of now (in either direction).
+func CheckHandshakeFresh(timestamp int64, now time.Time, tolerance time.Duration) error {
+	skew := now.Sub(time.Unix(timestamp, 0))
+	if skew < 0 {
+		skew = -skew
+	}
+	if skew > tolerance {
+		return ErrStaleHandshake
+	}
+	return nil
+}
 
 // randomSessionID fills id with cryptographically-random bytes, ensuring it is
 // non-zero (a zero session id is invalid).
@@ -40,7 +63,9 @@ const (
 	x25519PubSize = 32
 	maxTokenLen   = 4096
 
-	clientHelloFixed = 6 + protocol.SessionIDSize + x25519PubSize + 2 // before token
+	// ClientHello: header + session id + 8-byte timestamp + ephemeral key +
+	// 2-byte token length, then the token.
+	clientHelloFixed = 6 + protocol.SessionIDSize + 8 + x25519PubSize + 2 // before token
 	serverHelloLen   = 6 + protocol.SessionIDSize + x25519PubSize + ed25519.SignatureSize
 )
 
@@ -79,8 +104,9 @@ func parseHandshakeHeader(b []byte, msgType byte) (protocol.SessionID, error) {
 	return id, nil
 }
 
-// EncodeClientHello frames a ClientHello.
-func EncodeClientHello(id protocol.SessionID, ephemeralPub []byte, token string) ([]byte, error) {
+// EncodeClientHello frames a ClientHello. timestamp is the client's Unix-seconds
+// clock, which the gateway checks for freshness to bound replay.
+func EncodeClientHello(id protocol.SessionID, timestamp int64, ephemeralPub []byte, token string) ([]byte, error) {
 	if len(ephemeralPub) != x25519PubSize {
 		return nil, errHandshakeField
 	}
@@ -89,28 +115,33 @@ func EncodeClientHello(id protocol.SessionID, ephemeralPub []byte, token string)
 	}
 	out := make([]byte, clientHelloFixed+len(token))
 	putHandshakeHeader(out, msgClientHello, id)
-	copy(out[6+protocol.SessionIDSize:], ephemeralPub)
-	binary.BigEndian.PutUint16(out[6+protocol.SessionIDSize+x25519PubSize:], uint16(len(token)))
+	tsStart := 6 + protocol.SessionIDSize
+	binary.BigEndian.PutUint64(out[tsStart:], uint64(timestamp))
+	ephStart := tsStart + 8
+	copy(out[ephStart:], ephemeralPub)
+	binary.BigEndian.PutUint16(out[ephStart+x25519PubSize:], uint16(len(token)))
 	copy(out[clientHelloFixed:], token)
 	return out, nil
 }
 
 // DecodeClientHello parses a ClientHello.
-func DecodeClientHello(b []byte) (id protocol.SessionID, ephemeralPub []byte, token string, err error) {
+func DecodeClientHello(b []byte) (id protocol.SessionID, timestamp int64, ephemeralPub []byte, token string, err error) {
 	id, err = parseHandshakeHeader(b, msgClientHello)
 	if err != nil {
-		return protocol.SessionID{}, nil, "", err
+		return protocol.SessionID{}, 0, nil, "", err
 	}
 	if len(b) < clientHelloFixed {
-		return protocol.SessionID{}, nil, "", errShortHandshake
+		return protocol.SessionID{}, 0, nil, "", errShortHandshake
 	}
-	ephStart := 6 + protocol.SessionIDSize
+	tsStart := 6 + protocol.SessionIDSize
+	timestamp = int64(binary.BigEndian.Uint64(b[tsStart:]))
+	ephStart := tsStart + 8
 	eph := b[ephStart : ephStart+x25519PubSize]
 	tokenLen := int(binary.BigEndian.Uint16(b[ephStart+x25519PubSize:]))
 	if len(b) != clientHelloFixed+tokenLen || tokenLen > maxTokenLen {
-		return protocol.SessionID{}, nil, "", errHandshakeField
+		return protocol.SessionID{}, 0, nil, "", errHandshakeField
 	}
-	return id, append([]byte(nil), eph...), string(b[clientHelloFixed:]), nil
+	return id, timestamp, append([]byte(nil), eph...), string(b[clientHelloFixed:]), nil
 }
 
 // EncodeServerHello frames a ServerHello.
@@ -164,7 +195,7 @@ func BeginClientHandshake(gatewayIdentity ed25519.PublicKey, token string) ([]by
 	if err != nil {
 		return nil, nil, err
 	}
-	hello, err := EncodeClientHello(id, pub, token)
+	hello, err := EncodeClientHello(id, time.Now().Unix(), pub, token)
 	if err != nil {
 		return nil, nil, err
 	}
