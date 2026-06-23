@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 
 	"continuity-vpn/internal/dedup"
+	"continuity-vpn/internal/metrics"
 	"continuity-vpn/internal/protocol"
 )
 
@@ -69,6 +70,10 @@ type Server struct {
 	firstCopies atomic.Uint64
 	duplicates  atomic.Uint64
 	rejected    atomic.Uint64
+
+	metrics *metrics.Registry
+	packets *metrics.CounterVec // continuity_packets_total{decision,path}
+	rejects *metrics.CounterVec // continuity_rejected_total{reason}
 }
 
 // NewServer builds a gateway with a dedup window of the given capacity. A nil
@@ -81,8 +86,24 @@ func NewServer(capacity int, logger *slog.Logger) (*Server, error) {
 	if logger == nil {
 		logger = slog.New(slog.DiscardHandler)
 	}
-	return &Server{window: window, logger: logger}, nil
+
+	reg := metrics.NewRegistry()
+	s := &Server{
+		window:  window,
+		logger:  logger,
+		metrics: reg,
+		packets: reg.Counter("continuity_packets_total",
+			"Probe datagrams handled, by decision and path.", "decision", "path"),
+		rejects: reg.Counter("continuity_rejected_total",
+			"Datagrams rejected before dedup, by reason.", "reason"),
+	}
+	return s, nil
 }
+
+// Metrics returns the registry rendering the gateway's Prometheus metrics. All
+// label values are fixed coarse tokens, so the output never carries a host
+// identifier (see observability/METRICS.md).
+func (s *Server) Metrics() *metrics.Registry { return s.metrics }
 
 // Handle processes one datagram: decode, deduplicate, count, and log. It never
 // receives or logs the source address, so a source identifier cannot leak by
@@ -91,6 +112,8 @@ func (s *Server) Handle(datagram []byte) Record {
 	probe, err := protocol.UnmarshalProbe(datagram)
 	if err != nil {
 		s.rejected.Add(1)
+		s.packets.Inc(DecisionRejected.String(), protocol.PathUnknown.String())
+		s.rejects.Inc(rejectReason(err))
 		if s.logger.Enabled(context.Background(), slog.LevelDebug) {
 			s.logger.Debug("probe rejected", "decision", DecisionRejected.String(), "reason", err.Error())
 		}
@@ -108,14 +131,18 @@ func (s *Server) Handle(datagram []byte) Record {
 	case dedup.DecisionFirstCopy:
 		s.firstCopies.Add(1)
 		rec.Decision = DecisionFirstCopy
+		s.packets.Inc(DecisionFirstCopy.String(), probe.Path.String())
 	case dedup.DecisionDuplicate:
 		s.duplicates.Add(1)
 		rec.Decision = DecisionDuplicate
 		rec.FirstPath = firstPathTag(result.FirstPath)
+		s.packets.Inc(DecisionDuplicate.String(), probe.Path.String())
 	default:
 		// Observe only returns invalid for an invalid id/path, which a decoded
 		// probe cannot produce; treat defensively as rejected.
 		s.rejected.Add(1)
+		s.packets.Inc(DecisionRejected.String(), protocol.PathUnknown.String())
+		s.rejects.Inc("invalid-identity")
 		return Record{Decision: DecisionRejected}
 	}
 
@@ -177,6 +204,24 @@ func (s *Server) Stats() Stats {
 		FirstCopies: s.firstCopies.Load(),
 		Duplicates:  s.duplicates.Load(),
 		Rejected:    s.rejected.Load(),
+	}
+}
+
+// rejectReason maps a probe-decode error to a fixed, coarse reason token for the
+// rejected metric. It never returns the raw error text, so no datagram content
+// can leak into a label.
+func rejectReason(err error) string {
+	switch {
+	case errors.Is(err, protocol.ErrShortProbe):
+		return "short"
+	case errors.Is(err, protocol.ErrBadMagic):
+		return "bad-magic"
+	case errors.Is(err, protocol.ErrUnsupportedVersion):
+		return "unsupported-version"
+	case errors.Is(err, protocol.ErrInvalidProbe):
+		return "invalid-identity"
+	default:
+		return "other"
 	}
 }
 

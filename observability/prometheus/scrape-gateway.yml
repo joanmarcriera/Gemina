@@ -1,0 +1,21 @@
+# Prometheus scrape configuration for the continuity gateway.
+#
+# The gateway serves the Prometheus text format at GET /metrics on the address
+# set by CONTINUITY_GATEWAY_METRICS_ADDR (the metrics endpoint is disabled when
+# that variable is unset). Point `targets` at that host:port. Use a hostname or
+# your own service-discovery — do not commit real IP addresses.
+#
+# Merge this scrape_config into your prometheus.yml.
+
+scrape_configs:
+  - job_name: continuity-gateway
+    metrics_path: /metrics
+    scheme: http
+    scrape_interval: 15s
+    static_configs:
+      - targets:
+          - gateway-host:9090
+        labels:
+          service: continuity-gateway
+          # Set this to distinguish hosted vs self-hosted, or per-region, etc.
+          deployment: hosted

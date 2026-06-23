@@ -5,12 +5,16 @@ package main
 
 import (
 	"context"
+	"errors"
+	"io"
 	"log/slog"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	"continuity-vpn/internal/gateway"
 )
@@ -55,6 +59,12 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	// Optional Prometheus metrics endpoint. Off unless an address is configured,
+	// so the default footprint is unchanged and self-hosters opt in.
+	if metricsAddr := os.Getenv("CONTINUITY_GATEWAY_METRICS_ADDR"); metricsAddr != "" {
+		startMetricsServer(ctx, metricsAddr, server, logger)
+	}
+
 	logger.Info("gateway listening", "addr", addr, "dedup_capacity", capacity, "stage", "stage-1-probe")
 	if err := server.Serve(ctx, conn); err != nil {
 		logger.Error("serve", "error", err.Error())
@@ -67,6 +77,30 @@ func main() {
 		"duplicates", stats.Duplicates,
 		"rejected", stats.Rejected,
 	)
+}
+
+// startMetricsServer serves GET /metrics (Prometheus text format) on addr until
+// ctx is cancelled. The body is the gateway's redacted, coarse-token metrics.
+func startMetricsServer(ctx context.Context, addr string, server *gateway.Server, logger *slog.Logger) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/metrics", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+		_, _ = io.WriteString(w, server.Metrics().Render())
+	})
+	srv := &http.Server{Addr: addr, Handler: mux, ReadHeaderTimeout: 5 * time.Second}
+
+	go func() {
+		<-ctx.Done()
+		shutCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		_ = srv.Shutdown(shutCtx)
+	}()
+	go func() {
+		logger.Info("metrics listening", "addr", addr)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("metrics serve", "error", err.Error())
+		}
+	}()
 }
 
 func envOr(key, fallback string) string {
