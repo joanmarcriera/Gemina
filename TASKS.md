@@ -119,8 +119,14 @@ supported config needs into the installer. The `device_functions` channel in
   (Pixel/AOSP 14+)** → zero-install, works natively; **RNDIS-pinned phones
   (OnePlus & many OEMs)** → need the userspace RNDIS data plane or root. Confirm
   which Android builds default to NCM tethering.
-* [ ] Build a user-facing preflight that maps `device_functions` + OS version to
-  supported / not-yet-usable / unsupported, with a clear next step for each.
+* [x] Build a user-facing preflight that maps `device_functions` + OS version to
+  a verdict + next step (2026-06-23). `continuityctl preflight`
+  (`internal/diagnostics/compatibility.go`) returns supported / needs-android /
+  needs-wifi / needs-both / unsupported-macos with a plain next step; default
+  one-line summary, `-json` for the app/website. Key call: an RNDIS function
+  present = **supported** (the app's userspace driver handles any Android),
+  native NCM = supported without the driver. Table-driven tests cover the matrix;
+  verified live ("supported", app-driver-rndis, macOS 26.5).
 * [ ] Decide build-vs-bundle per supported config (driver/data-plane shipped in
   the installer) so a supported user needs no manual setup.
 
