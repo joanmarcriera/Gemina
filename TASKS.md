@@ -38,9 +38,20 @@ and **go-to-market** (open-core + hosted gateway). Next, in priority order:
   scrape assets and `observability/METRICS.md`. Design in
   `docs/superpowers/specs/2026-06-23-monitoring-design.md`. Client-side metrics
   defined for when the app lands.
+* [x] Authenticate the handshake against an active MITM (2026-06-24): Ed25519
+  gateway identity + client pinning, gateway signs its ephemeral key
+  (`pkg/clientcore/handshake_auth.go`, ADR-0007). On-wire message + pinned-key
+  distribution remain.
+* [x] Wire entitlement into gateway admission (2026-06-24):
+  `SessionStore`/`Admitter` gate sessions by token (open=free, hosted=token,
+  fail-closed); the DataPlane only serves admitted sessions.
 * [ ] Re-confirm the userspace USB claim succeeds inside an App-Sandbox context
   with `com.apple.security.device.usb` (the spike ran un-sandboxed). Gates the
   App Store route.
+* [ ] Going public: rewrite git history to drop the real LAN address, finalise
+  CONTRIBUTING licence wording, then run `scripts/prepare-public.sh` (see
+  `docs/dev/repository-strategy.md`). Marketing groundwork done
+  (`docs/marketing/seo.md`, `docs/marketing/video-script.md`).
 * [~] Go-to-market: licence decided + applied (AGPL gateway / Apache client),
   open-core README + landing page done; hosted-tier entitlement/payments
   scaffolded (`internal/entitlement`). Remaining: real payment integration
