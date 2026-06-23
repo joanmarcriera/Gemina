@@ -21,21 +21,24 @@ All five "Definition of Dual-Path Success" criteria met (see `PROJECT_STATE.md`)
 The transport *capability* is done; the work now splits into **productisation**
 and **go-to-market** (open-core + hosted gateway). Next, in priority order:
 
+* [x] Add encryption/framing for real traffic (2026-06-23). Identity-bound
+  AES-256-GCM in `pkg/clientcore` (ADR-0006), and `internal/gateway.DataPlane`
+  decrypts + dedups server-side, proven end-to-end in-process. No invented crypto
+  (stdlib AEAD); key agreement (handshake) left as future work.
 * [~] Wire the proven transport into the shipping app via
-  `NEPacketTunnelProvider`. Transport brain built + tested: `pkg/clientcore`
-  Session frames outbound tunnel packets with identity and dedups inbound (CVD1
-  wire format, race-tested two-path delivery). Architecture decided in ADR-0005
-  (Go core over a narrow C boundary; provider owns packetFlow + the Wi-Fi socket
-  + the RNDIS uplink). Swift seam sketched (`DualPathTransport.swift`, builds).
-  **Still needed:** the cgo C-shared bridge, the real `NEPacketTunnelProvider`
-  with packetFlow I/O + sockets (needs full Xcode/signing), and batching.
+  `NEPacketTunnelProvider`. Transport brain + encryption + dedup built and tested
+  (`pkg/clientcore`, `internal/gateway.DataPlane`, race-clean). Architecture in
+  ADR-0005; Swift seam sketched (`DualPathTransport.swift`, builds). **Still
+  needed (owner/Xcode-gated, see `docs/dev/xcode-signing.md`):** the cgo C-shared
+  bridge, the real `NEPacketTunnelProvider` (packetFlow I/O + path sockets), the
+  session-key handshake, and batching.
 * [ ] Re-confirm the userspace USB claim succeeds inside an App-Sandbox context
   with `com.apple.security.device.usb` (the spike ran un-sandboxed). Gates the
   App Store route.
-* [ ] Add encryption/framing for real traffic (no invented crypto — adopt a
-  reviewed construction; capture provenance/licence per the conditions below).
-* [ ] Go-to-market in parallel: open-core repo prep + hosted-gateway tier (see
-  "Product model" below).
+* [~] Go-to-market: licence decided + applied (AGPL gateway / Apache client),
+  open-core README + landing page done; hosted-tier entitlement/payments
+  scaffolded (`internal/entitlement`). Remaining: real payment integration
+  (Stripe/IAP + accounts) and making the repo public.
 
 Proven foundations (done): RNDIS control handshake, data plane (DHCP round-trip),
 real UDP egress to the gateway over cellular, and simultaneous dual-path. Drivers
@@ -80,14 +83,16 @@ for users who don't want to self-host. See memory
   as config — hold this line through the app UI and the NE tunnel.
 * [ ] Make the gateway trivially self-hostable: document the single-container
   deploy + the one port (UDP 51820); a `docker run` quickstart in the README.
-* [ ] Decide licences (client vs gateway) for a "pay to use our server" model —
-  avoid a licence that lets a competitor resell our hosted tier while keeping
-  contributor friction low. Fold into the legal/provenance review below.
-* [ ] Hosted tier: wire the entitlement/account/payment path (stubs exist) so
-  gating lives at the **hosted gateway**, not by crippling the OSS client.
-* [ ] Public GitHub repo prep: README with the value prop + self-host quickstart,
-  LICENSE/NOTICE, CONTRIBUTING, a landing page that sells the hosted tier and
-  routes users through the pre-purchase compatibility check.
+* [x] Decide + apply licences (2026-06-23): AGPL-3.0 gateway + Apache-2.0
+  client/core (`docs/legal/licensing.md`) — stops a hosted-tier reseller while
+  keeping the App-Store-bound client permissive. Per-file SPDX headers to follow.
+* [~] Hosted tier entitlement/payment path scaffolded (`internal/entitlement`):
+  signed tokens + Open/Hosted gate so gating lives at the hosted gateway, not by
+  crippling the OSS client. Remaining: real payment integration (Stripe/IAP) +
+  accounts, and wiring the gate into the gateway admission path.
+* [~] Public GitHub repo prep: open-core README + self-host quickstart, dual
+  LICENSE/NOTICE, landing page (`website/`) done. Remaining: make the repo
+  public and route the landing page through `continuityctl preflight`.
 
 ### Packaging & clean footprint (App Store target — ADR 2026-06-21)
 
