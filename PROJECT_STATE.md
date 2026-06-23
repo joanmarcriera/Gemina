@@ -102,10 +102,23 @@ Built this cycle (all unit/race tested):
   authentication**: an Ed25519 gateway identity the client pins, signing the
   ephemeral key (defeats an active MITM; `handshake_auth.go`). The on-wire
   handshake message + pinned-key distribution remain.
-* `internal/gateway` admission — `SessionStore` (KeyResolver) + `Admitter` gate
-  session admission by entitlement: open mode (self-host) admits all, hosted mode
-  requires a valid token, fail-closed. Connects payments to the data path; the
-  DataPlane only serves admitted sessions.
+* `internal/gateway` admission + handshake — `SessionStore` (KeyResolver) +
+  `Admitter` gate session admission by entitlement (open=free, hosted=token,
+  fail-closed). `Admitter.Handshake` + the `pkg/clientcore` CVH1
+  ClientHello/ServerHello codec and `BeginClientHandshake`/`Complete` give the
+  full on-wire exchange: mutual auth (client pins gateway Ed25519 identity;
+  gateway admits the token), X25519 key agreement, then encrypted data through
+  the DataPlane — end-to-end tested.
+* `internal/entitlement` Stripe — `StripeProvider` (stdlib net/http, no SDK):
+  checkout creation + real webhook signature verification (HMAC, constant-time,
+  replay-tolerance). Drops into `entitlement.Service`. Real keys/accounts remain.
+* `apps/macos` Swift↔Go link — `CContinuityCore` SwiftPM C target (vendored ABI
+  header) + `CoreTransport.swift` implementing `TransportCore` via the cgo bridge;
+  `swift build` green. The path sockets + handshake-over-the-wire in Swift remain
+  Xcode-runtime work.
+* Monetisation study (`docs/product/monetisation-apple-study.md`): keep Stripe as
+  the rail (a free macOS companion to a paid web service can skip App Store IAP);
+  IAP, if ever used, is 15% (Small Business Program).
 * `bridge/continuitycore` — the cgo C-shared bridge exposing the core to Swift
   over a handle-based ABI (ADR-0005); builds as a darwin/arm64 c-archive.
   `apps/macos` `ContinuityTunnelProvider` (guarded) wires packetFlow to the
