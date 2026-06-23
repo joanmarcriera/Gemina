@@ -83,12 +83,31 @@ Present and unit/race tested:
   logging every packet). The listener sets a 4 MiB read buffer for burst
   tolerance. Set `CONTINUITY_GATEWAY_LOG_LEVEL=debug` for per-packet detail.
 
-Not implemented: VPN transport (encryption/framing for real traffic), production
-dedup integration, NetworkExtension packet handling, the simultaneous two-path
-client probe (single-path egress binding now exists), entitlement service,
-payment flow, real infrastructure resources, and direct
-SystemConfiguration / Network
-framework / IORegistry API collection (only command-backed collection exists).
+Built this cycle (all unit/race tested):
+
+* `pkg/clientcore` — the client/gateway transport core: frames tunnel packets
+  with a per-session identity, encrypts the payload with identity-bound
+  AES-256-GCM (ADR-0006; nonce from identity+direction, header authenticated, so
+  encryption never disturbs the dual-path duplication), and deduplicates inbound
+  so a logical packet duplicated over both paths is delivered once. Driven over
+  the narrow Swift/Go boundary (ADR-0005); Swift seam sketched + builds.
+* `internal/gateway` `DataPlane` — per-session responder state that decrypts +
+  dedups CVD1 data packets, proven end-to-end in-process against a real client
+  session. The encrypted real data path, server-side.
+* `internal/entitlement` — hosted-tier scaffold: signed entitlement tokens, a
+  payment-provider interface with a fake impl, and an Open/Hosted gate so the
+  paid hosted gateway is gated while self-hosting stays free. No real keys yet.
+* Licence decided and applied: AGPL-3.0 gateway + Apache-2.0 client/core
+  (`docs/legal/licensing.md`). Xcode/signing owner-action guide in
+  `docs/dev/xcode-signing.md`.
+
+Not implemented: the cgo C-shared bridge + the real `NEPacketTunnelProvider`
+(packetFlow I/O + path sockets; needs full Xcode/signing), the session-key
+handshake (the core takes a pre-shared key), App-Sandbox re-confirmation of the
+USB claim, a real payment integration (Stripe/IAP + accounts), production dedup
+window sizing/rollover, real infrastructure resources, and direct
+SystemConfiguration / Network framework / IORegistry API collection (only
+command-backed collection exists).
 
 Research sources are present only in the Git-ignored `.research-src/`. No upstream
 implementation source has been imported into product directories.
