@@ -12,18 +12,40 @@ DriverKit, without disabling SIP**. This is the Route-B uplink: it works on
 *every* Android (RNDIS is universal), unlike NCM which is device-dependent (see
 [[ncm-tether-lower-friction-than-rndis]] and skill `android-usb-tether-function`).
 
-Code lives in `research/usb-rndis-spike/`:
-- `rndis_probe.c` — claim + `REMOTE_NDIS_INITIALIZE` (control plane; proven).
-- `rndis_lib.{c,h}` — the **pure** framing logic (RNDIS wrap/unwrap, DHCP build/
-  parse, checksum). Hardware-independent so it can be unit-tested.
-- `rndis_dataplane.c` — the USB I/O around `rndis_lib`: packet filter + DHCP
-  DISCOVER/OFFER round-trip (data plane: proves L2 frames move both ways).
-- `rndis_lib_test.c` — unit tests (`make test`, no phone needed).
+Code lives in `research/usb-rndis-spike/`, layered so the pure logic is testable:
+- `rndis_lib.{c,h}` — **pure** framing: RNDIS wrap/unwrap, DHCP build/parse,
+  ARP, UDP/IP, the CVP1 probe, checksums. Hardware-independent.
+- `rndis_lib_test.c` — unit tests for all of the above (`make test`, no phone).
+- `rndis_usb.{c,h}` — libusb I/O: claim by RNDIS class, INITIALIZE, packet
+  filter, bulk send/recv. Shared by every driver.
+- `rndis_probe.c` — control plane (claim + INITIALIZE; proven).
+- `rndis_dataplane.c` — data plane (DHCP DISCOVER/OFFER round-trip; proven).
+- `rndis_egress.c` — real UDP egress to the deployed gateway over cellular
+  (lease + ARP + CVP1 probes; proven end-to-end 2026-06-23).
 
 **Keep new logic testable**: put any new pure framing/parsing in `rndis_lib.c`
-with a test in `rndis_lib_test.c`, and keep `rndis_dataplane.c` to USB I/O only.
-Tests use synthetic, non-identifying data (a locally-administered test MAC, no
-real IPs) to stay within the redaction invariant.
+with a test in `rndis_lib_test.c`; put USB I/O in `rndis_usb.c`; keep the driver
+`main()`s thin. Tests use synthetic, non-identifying data (locally-administered
+test MACs, TEST-NET/RFC1918 addresses as C byte arrays, never dotted-quad
+strings — the redaction hook blocks those) to stay within the invariant.
+
+## Proving egress end-to-end (the verification recipe)
+
+`rndis_egress.c` takes the gateway address from the environment so no server IP
+is ever compiled in:
+
+```bash
+CONTINUITY_GATEWAY_IP=<ip> CONTINUITY_GATEWAY_PORT=51820 make run-egress
+```
+
+To confirm arrival (the bytes leave only via the USB bulk pipe, so any arrival
+proves cellular egress): on the gateway host, watch the container logs for
+`first-copy`/`duplicate` decisions tagged `android-usb-tether`, and run
+`sudo tcpdump -ni any 'udp and port 51820'` — the source will be a **cellular
+carrier public IP**, not the Mac's LAN. Mask the source octets when reporting and
+delete any capture file afterwards (it holds the carrier IP). The gateway runs in
+Docker, so its own logs see a SNAT'd source — use the host tcpdump for the source
+proof and the container logs for the decode/dedup proof.
 
 ## Build & run
 
@@ -97,9 +119,10 @@ bulk-OUT ZLP termination if a frame ever lands on a wMaxPacketSize multiple.
 
 1. ✅ Control: claim + INITIALIZE (`rndis_probe.c`).
 2. ✅ Data plane: packet filter + DHCP round-trip (`rndis_dataplane.c`).
-3. ▢ Hold the lease + ARP/route to the phone gateway; pass a real UDP probe to
-   the oracle gateway bound to this path.
+3. ✅ Hold the lease + ARP the phone gateway; send a real CVP1 UDP probe to the
+   oracle gateway over cellular, verified in gateway logs (`rndis_egress.c`).
 4. ▢ Feed RX frames into `NEPacketTunnelProvider` and TX from it, so the
    bonding/failover layer routes per-flow.
 5. ▢ Re-confirm the USB claim inside the App Sandbox with
    `com.apple.security.device.usb`.
+6. ▢ Simultaneous Wi-Fi + cellular dual-path through the gateway (Stage-1 gate).
