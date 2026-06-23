@@ -98,8 +98,14 @@ Built this cycle (all unit/race tested):
   payment-provider interface with a fake impl, and an Open/Hosted gate so the
   paid hosted gateway is gated while self-hosting stays free. No real keys yet.
 * `pkg/clientcore` key agreement — X25519 ECDH + HKDF-SHA256 (ADR-0007), so the
-  AEAD key is derived, not pre-shared (forward-secret). Public-key
-  authentication against an active MITM remains.
+  AEAD key is derived, not pre-shared (forward-secret), **with gateway
+  authentication**: an Ed25519 gateway identity the client pins, signing the
+  ephemeral key (defeats an active MITM; `handshake_auth.go`). The on-wire
+  handshake message + pinned-key distribution remain.
+* `internal/gateway` admission — `SessionStore` (KeyResolver) + `Admitter` gate
+  session admission by entitlement: open mode (self-host) admits all, hosted mode
+  requires a valid token, fail-closed. Connects payments to the data path; the
+  DataPlane only serves admitted sessions.
 * `bridge/continuitycore` — the cgo C-shared bridge exposing the core to Swift
   over a handle-based ABI (ADR-0005); builds as a darwin/arm64 c-archive.
   `apps/macos` `ContinuityTunnelProvider` (guarded) wires packetFlow to the
@@ -112,13 +118,20 @@ Built this cycle (all unit/race tested):
   (`docs/legal/licensing.md`). Xcode/signing owner-action guide in
   `docs/dev/xcode-signing.md`.
 
+Marketing/release groundwork (docs only): SEO + content strategy and a video
+walkthrough script under `docs/marketing/`; a public-repository strategy
+(`docs/dev/repository-strategy.md`, recommends a single open-core monorepo) with a
+read-only `scripts/prepare-public.sh` GO/NO-GO audit.
+
 Not implemented: the real `NEPacketTunnelProvider` (packetFlow I/O + path
-sockets, linking the cgo bridge; needs full Xcode/signing), authenticating the
-handshake public keys + wiring their exchange, App-Sandbox re-confirmation of the
-USB claim, a real payment integration (Stripe/IAP + accounts), client-side
-metrics (no app yet), production dedup window sizing/rollover, real infrastructure
-resources, and direct SystemConfiguration / Network framework / IORegistry API
-collection (only command-backed collection exists).
+sockets, linking the cgo bridge; needs full Xcode/signing), the on-wire handshake
+*message* carrying the signed ephemeral key + pinned-identity distribution,
+App-Sandbox re-confirmation of the USB claim, a real payment integration
+(Stripe/IAP + accounts), client-side metrics (no app yet), production dedup
+window sizing/rollover, real infrastructure resources, and direct
+SystemConfiguration / Network framework / IORegistry API collection (only
+command-backed collection exists). Before going public: rewrite git history to
+drop a real LAN address (see the release audit).
 
 Research sources are present only in the Git-ignored `.research-src/`. No upstream
 implementation source has been imported into product directories.
