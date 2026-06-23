@@ -1,6 +1,14 @@
 # Contributing
 
-This repository is in Stage 1 dual-path UDP probe work.
+This repository is in Stage 1 dual-path UDP probe work. It is heading towards an
+open-core release: the client and the gateway are open source and self-hostable,
+with an optional paid hosted gateway as the commercial model. Contributions to the
+client and gateway are welcome under that model.
+
+Note that the project licence is still being finalised for the open-source
+release — see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). Until it is settled,
+contributions are accepted on the understanding that they may be released under
+the eventual open-source licence the owner selects.
 
 Before making changes:
 

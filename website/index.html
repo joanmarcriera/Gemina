@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Continuity VPN — your connection never notices a dropout</title>
+  <meta name="description" content="Continuity VPN for macOS sends your traffic over Wi-Fi and your Android phone's cellular at the same time, so if one link drops your call, SSH session or VPN never notices. Open source and self-hostable.">
+  <meta name="color-scheme" content="dark light">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230c1418'/%3E%3Cpath d='M3 17 h7 l3-7 4 14 3-7 h6' fill='none' stroke='%233fb6a8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-head">
+  <div class="wrap head-inner">
+    <a class="brand" href="#top" aria-label="Continuity VPN home">
+      <svg class="brand-mark" width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M2 17 h7 l3-7 4 14 3-7 h6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span>Continuity<span class="brand-thin">VPN</span></span>
+    </a>
+    <nav class="head-nav" aria-label="Primary">
+      <a href="#how">How it works</a>
+      <a href="#why">Why it's different</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn btn-ghost btn-sm" href="https://github.com/example/continuity-vpn">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <span id="top"></span>
+
+  <!-- ===================== HERO ===================== -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">CH&middot;01 — SEAMLESS FAILOVER</p>
+        <h1 id="hero-title">
+          Your connection<br>
+          never notices<br>
+          <span class="accent">the dropout.</span>
+        </h1>
+        <p class="lede">
+          Continuity VPN runs your Mac's traffic over <strong>two links at once</strong> —
+          your Wi-Fi and your Android phone's cellular, over USB. The same packets travel
+          both paths. If one drops, the other is already carrying it. Your call, your SSH
+          session, your VPN tunnel: none of them feel a thing.
+        </p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#waitlist">Join the early-access waitlist</a>
+          <a class="btn btn-ghost" href="#pricing">Self-host it free</a>
+        </div>
+        <p class="hero-note">
+          <span class="dot" aria-hidden="true"></span>
+          Pre-release. The dual-path transport is proven; the full app and encryption are in development.
+        </p>
+      </div>
+
+      <!-- Signature: live signal scope -->
+      <figure class="scope" aria-labelledby="scope-cap">
+        <div class="scope-head">
+          <span class="scope-label">LINK MONITOR</span>
+          <span class="scope-status" data-live>both paths up</span>
+        </div>
+        <svg class="scope-svg" viewBox="0 0 400 220" role="img" aria-labelledby="scope-cap">
+          <title id="scope-cap">Two input traces — Wi-Fi and phone — carrying the same packets into one unbroken output line. When one input drops, the output continues uninterrupted.</title>
+          <!-- grid -->
+          <g class="grid" aria-hidden="true">
+            <line x1="0" y1="55" x2="400" y2="55"/>
+            <line x1="0" y1="110" x2="400" y2="110"/>
+            <line x1="0" y1="165" x2="400" y2="165"/>
+          </g>
+          <!-- channel labels -->
+          <text class="ch-label" x="10" y="40">WI-FI</text>
+          <text class="ch-label ch-amber" x="10" y="150">PHONE&middot;LTE</text>
+          <text class="ch-label ch-out" x="10" y="208">OUTPUT</text>
+          <!-- Wi-Fi trace (top) -->
+          <path class="trace trace-wifi" data-trace="wifi" d="M40 45 H120 l8 -16 8 32 8 -16 H400" fill="none"/>
+          <!-- Phone trace (middle) -->
+          <path class="trace trace-phone" data-trace="phone" d="M40 110 H200 l8 -16 8 32 8 -16 H400" fill="none"/>
+          <!-- Output trace (bottom) — always continuous -->
+          <path class="trace trace-out" d="M40 198 H100 l8 -14 8 28 8 -14 H240 l8 -14 8 28 8 -14 H400" fill="none"/>
+        </svg>
+        <figcaption class="scope-cap">The output line never breaks — that's the whole product.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== HOW IT WORKS ===================== -->
+  <section id="how" class="band band-bone" aria-labelledby="how-title">
+    <div class="wrap">
+      <p class="eyebrow eyebrow-dark">CH&middot;02 — THE MECHANISM</p>
+      <h2 id="how-title">Duplicate, race, dedup.</h2>
+      <p class="section-lede">
+        There's no clever switching to fail, because nothing switches. Both links carry
+        a copy of every packet. The gateway keeps the first copy to arrive and discards the
+        rest. Whichever link is healthy at that instant is the one that matters.
+      </p>
+
+      <ol class="steps">
+        <li class="step">
+          <span class="step-no">01</span>
+          <h3>Send it twice</h3>
+          <p>Your Mac copies each outbound packet and sends one over Wi-Fi and one over the phone's cellular link at the same moment.</p>
+        </li>
+        <li class="step">
+          <span class="step-no">02</span>
+          <h3>Let them race</h3>
+          <p>Both copies travel to the gateway by independent paths. They don't depend on each other, so a slow or dead link can't hold the other up.</p>
+        </li>
+        <li class="step">
+          <span class="step-no">03</span>
+          <h3>First copy wins</h3>
+          <p>The gateway forwards the first copy it sees and drops the duplicate. If a link goes quiet, its copies simply stop arriving — and you never notice.</p>
+        </li>
+      </ol>
+
+      <!-- inline flow diagram -->
+      <figure class="flow">
+        <svg viewBox="0 0 760 230" role="img" aria-labelledby="flow-cap">
+          <title id="flow-cap">A diagram: Wi-Fi and Phone each send a duplicate packet to the gateway; the gateway keeps the first to arrive and forwards it to the internet, discarding the duplicate.</title>
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" class="arrow-head"/>
+            </marker>
+            <marker id="arrow-mute" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" class="arrow-head-mute"/>
+            </marker>
+          </defs>
+
+          <!-- sources -->
+          <g class="node node-wifi">
+            <rect x="10" y="30" width="150" height="56" rx="10"/>
+            <text x="85" y="54">Wi-Fi</text>
+            <text class="node-sub" x="85" y="72">copy A</text>
+          </g>
+          <g class="node node-phone">
+            <rect x="10" y="144" width="150" height="56" rx="10"/>
+            <text x="85" y="168">Android &middot; LTE</text>
+            <text class="node-sub" x="85" y="186">copy A</text>
+          </g>
+
+          <!-- paths to gateway -->
+          <path class="link link-solid" d="M160 58 C 250 58, 270 100, 350 112" marker-end="url(#arrow)"/>
+          <path class="link link-dash" d="M160 172 C 250 172, 270 130, 350 120" marker-end="url(#arrow-mute)"/>
+
+          <!-- gateway -->
+          <g class="node node-gw">
+            <rect x="352" y="80" width="172" height="68" rx="12"/>
+            <text x="438" y="108">Gateway</text>
+            <text class="node-sub" x="438" y="128">keep first &middot; drop dup</text>
+          </g>
+
+          <!-- output -->
+          <path class="link link-solid" d="M524 114 H 590" marker-end="url(#arrow)"/>
+          <g class="node node-net">
+            <rect x="592" y="86" width="158" height="56" rx="10"/>
+            <text x="671" y="110">Internet</text>
+            <text class="node-sub" x="671" y="128">one clean stream</text>
+          </g>
+        </svg>
+        <figcaption>One packet, two paths in, one stream out. The dashed copy is the one that lost the race — it's harmlessly discarded.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ===================== WHY DIFFERENT ===================== -->
+  <section id="why" class="band" aria-labelledby="why-title">
+    <div class="wrap">
+      <p class="eyebrow">CH&middot;03 — WHY IT'S DIFFERENT</p>
+      <h2 id="why-title">Built for staying up, not racing ahead.</h2>
+      <p class="section-lede">
+        Plenty of tools promise to bond links for more speed. This isn't that. Continuity
+        VPN spends your second link on <em>certainty</em> — the connection holds when one
+        path falters.
+      </p>
+
+      <div class="feature-grid">
+        <article class="feature">
+          <span class="feature-tag">RELIABILITY, NOT SPEED</span>
+          <h3>Survives a dropout</h3>
+          <p>Because every packet already travels both links, there's no reconnect, no stall and no renegotiation when one drops. The healthy link was always carrying it too.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-tag">ANY ANDROID</span>
+          <h3>Just plug in and tether</h3>
+          <p>The app drives your phone's USB tether from userspace. Enable USB tethering and you're done. Any Android with tethering works; some phones are picked up natively by macOS.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-tag">NOTHING TO UNLOCK</span>
+          <h3>No root, no kernel hacks</h3>
+          <p>No rooting your phone. No kernel extensions, no DriverKit, no SIP changes on your Mac. It runs as an ordinary, unprivileged app.</p>
+        </article>
+        <article class="feature">
+          <span class="feature-tag">OPEN SOURCE</span>
+          <h3>Yours to inspect and run</h3>
+          <p>The app and the gateway are free and open source. Read the code, run the gateway yourself as a single container, or let us host it for you.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== PRICING ===================== -->
+  <section id="pricing" class="band band-bone" aria-labelledby="pricing-title">
+    <div class="wrap">
+      <p class="eyebrow eyebrow-dark">CH&middot;04 — TWO PATHS</p>
+      <h2 id="pricing-title">Run it yourself, or let us run it.</h2>
+      <p class="section-lede">
+        The software is the same either way. The only question is who keeps the gateway online.
+      </p>
+
+      <div class="plans">
+        <article class="plan">
+          <header class="plan-head">
+            <h3>Self-host</h3>
+            <p class="plan-price">Free<span class="plan-unit"> &middot; open source</span></p>
+          </header>
+          <p class="plan-desc">Run the gateway yourself as a single container, on a VPS or a box you already own. Full control, no subscription.</p>
+          <ul class="plan-list">
+            <li>The complete app and gateway</li>
+            <li>One container to deploy</li>
+            <li>Self-hostable, no account needed</li>
+            <li>Community support</li>
+          </ul>
+          <a class="btn btn-ghost-dark btn-block" href="https://github.com/example/continuity-vpn">View on GitHub</a>
+        </article>
+
+        <article class="plan plan-feature">
+          <span class="plan-badge">EARLY ACCESS</span>
+          <header class="plan-head">
+            <h3>Hosted by us</h3>
+            <p class="plan-price">Price TBD<span class="plan-unit"> &middot; subscription</span></p>
+          </header>
+          <p class="plan-desc">We run and maintain the gateway so you don't have to. Plug in your phone, sign in, and the failover path is already there.</p>
+          <ul class="plan-list">
+            <li>Managed gateway, kept online for you</li>
+            <li>Nothing to deploy or update</li>
+            <li>Same open-source app</li>
+            <li>Early-access pricing — joining the waitlist locks in your place</li>
+          </ul>
+          <a class="btn btn-primary btn-block" href="#waitlist">Join the waitlist</a>
+        </article>
+      </div>
+      <p class="plan-foot">Pricing is not finalised. Early-access members will be told the price before anything is ever charged.</p>
+    </div>
+  </section>
+
+  <!-- ===================== DEVICE CHECK ===================== -->
+  <section id="check" class="band" aria-labelledby="check-title">
+    <div class="wrap check-grid">
+      <div>
+        <p class="eyebrow">CH&middot;05 — FIRST STEP</p>
+        <h2 id="check-title">A quick compatibility check, before anything else.</h2>
+        <p class="section-lede">
+          The very first thing the app does is look at what you've got: a Mac, a Wi-Fi
+          connection, and an Android phone it can tether to over USB. It tells you plainly
+          where you stand — no jargon, no guesswork.
+        </p>
+        <p class="check-note">You'll need a Mac plus an Android phone with USB tethering. Any Android with tethering qualifies; you don't root it or change anything on the Mac.</p>
+      </div>
+
+      <ul class="verdicts" aria-label="Possible compatibility verdicts">
+        <li class="verdict verdict-ok">
+          <span class="verdict-icon" aria-hidden="true">&#10003;</span>
+          <div>
+            <h3>Supported</h3>
+            <p>You have Wi-Fi and a phone we can use. You're ready for seamless failover.</p>
+          </div>
+        </li>
+        <li class="verdict verdict-phone">
+          <span class="verdict-icon" aria-hidden="true">&#9919;</span>
+          <div>
+            <h3>Connect your Android</h3>
+            <p>Wi-Fi is there, but we can't see a phone yet. Plug one in over USB and enable tethering.</p>
+          </div>
+        </li>
+        <li class="verdict verdict-wifi">
+          <span class="verdict-icon" aria-hidden="true">&#9888;</span>
+          <div>
+            <h3>Connect to Wi-Fi</h3>
+            <p>We can see a phone, but no Wi-Fi to pair it with. Join a network to set up the second path.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== WAITLIST ===================== -->
+  <section id="waitlist" class="band band-cta" aria-labelledby="wl-title">
+    <div class="wrap cta-inner">
+      <p class="eyebrow">CH&middot;06 — GET ON THE LIST</p>
+      <h2 id="wl-title">Be there when the failover path goes live.</h2>
+      <p class="section-lede">
+        We'll email you when early access opens — and tell you the price before anything is
+        ever charged. No spam, leave whenever you like.
+      </p>
+      <form class="wl-form" action="#" method="post" novalidate>
+        <label class="sr-only" for="wl-email">Email address</label>
+        <input id="wl-email" name="email" type="email" inputmode="email" autocomplete="email"
+               placeholder="you@example.com" required>
+        <button class="btn btn-primary" type="submit">Join the waitlist</button>
+      </form>
+      <p class="wl-status" role="status" aria-live="polite" data-wl-status></p>
+      <p class="cta-alt">Rather run it yourself? <a href="https://github.com/example/continuity-vpn">Star it on GitHub</a> and self-host today.</p>
+    </div>
+  </section>
+
+  <!-- ===================== FAQ ===================== -->
+  <section id="faq" class="band band-bone" aria-labelledby="faq-title">
+    <div class="wrap">
+      <p class="eyebrow eyebrow-dark">CH&middot;07 — STRAIGHT ANSWERS</p>
+      <h2 id="faq-title">Frequently asked questions</h2>
+      <div class="faq-list">
+        <details class="faq">
+          <summary>Is my Android phone supported?</summary>
+          <p>If it can share its connection over USB tethering — and essentially every modern Android can — it works. There's no approved-device list. Some phones are also recognised natively by macOS, which makes setup even smoother.</p>
+        </details>
+        <details class="faq">
+          <summary>Do I need to root my phone?</summary>
+          <p>No. The app drives the standard USB tether that Android already provides. Nothing on the phone is unlocked, flashed or modified.</p>
+        </details>
+        <details class="faq">
+          <summary>Does it change my Mac's security or SIP?</summary>
+          <p>No. There are no kernel extensions, no DriverKit drivers and no System Integrity Protection changes. Continuity VPN runs as an ordinary, unprivileged macOS app.</p>
+        </details>
+        <details class="faq">
+          <summary>Is my traffic encrypted?</summary>
+          <p>Encryption is still in development, so we won't claim it yet. The dual-path transport — the same packet reaching the gateway over both links and being deduplicated — is proven and working. We'll be clear about the encryption story before general release.</p>
+        </details>
+        <details class="faq">
+          <summary>Can I self-host the gateway?</summary>
+          <p>Yes. The app and gateway are open source, and the gateway ships as a single container you can run on your own server. The hosted subscription simply means we keep that gateway online for you.</p>
+        </details>
+        <details class="faq">
+          <summary>Will this make my connection faster?</summary>
+          <p>No — and that's deliberate. It's a reliability tool, not a bandwidth one. The second link buys you a connection that survives a dropout, not a bigger pipe.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-foot">
+  <div class="wrap foot-grid">
+    <div class="foot-brand">
+      <a class="brand" href="#top" aria-label="Continuity VPN home">
+        <svg class="brand-mark" width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
+          <path d="M2 17 h7 l3-7 4 14 3-7 h6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span>Continuity<span class="brand-thin">VPN</span></span>
+      </a>
+      <p class="foot-note">Open-source seamless failover for macOS. Free to self-host; hosted gateway available in early access.</p>
+    </div>
+    <nav class="foot-links" aria-label="Footer">
+      <h2 class="foot-h">Project</h2>
+      <a href="https://github.com/example/continuity-vpn">GitHub repository</a>
+      <a href="#pricing">Self-host guide</a>
+      <a href="#faq">FAQ</a>
+      <a href="#waitlist">Join the waitlist</a>
+    </nav>
+  </div>
+  <div class="wrap foot-base">
+    <p>&copy; 2026 Continuity VPN. Open source — free to use, inspect and self-host.</p>
+    <p class="foot-pre">Pre-release. Features and pricing may change before launch.</p>
+  </div>
+</footer>
+
+<script src="app.js" defer></script>
+</body>
+</html>
