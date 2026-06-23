@@ -50,10 +50,10 @@ without re-deriving the transport brain in Swift.
    buffers and holds no Swift pointers across calls; no Go pointer is retained by
    Swift (per ADR-0002's memory-ownership condition).
 
-4. **Encryption is layered below framing, separately.** The payload is encrypted
-   by a reviewed construction (no invented crypto; tracked in `TASKS.md`) before
-   `Outbound` frames it and after `Inbound` delivers it. This ADR does not choose
-   the construction.
+4. **Encryption is integral to the core** (ADR-0006). `Outbound` encrypts the
+   payload and `Inbound` authenticates+decrypts it with an identity-bound
+   AES-256-GCM AEAD, so the framed bytes the provider sends are already
+   ciphertext. Key agreement (the handshake) remains future work.
 
 ## Alternatives Considered
 
