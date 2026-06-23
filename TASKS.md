@@ -26,12 +26,18 @@ and **go-to-market** (open-core + hosted gateway). Next, in priority order:
   decrypts + dedups server-side, proven end-to-end in-process. No invented crypto
   (stdlib AEAD); key agreement (handshake) left as future work.
 * [~] Wire the proven transport into the shipping app via
-  `NEPacketTunnelProvider`. Transport brain + encryption + dedup + key agreement
-  (X25519/HKDF, ADR-0007) built and tested; the **cgo bridge**
-  (`bridge/continuitycore`, c-archive) and a guarded `ContinuityTunnelProvider`
-  skeleton exist. **Still needed (owner/Xcode-gated, `docs/dev/xcode-signing.md`):**
-  the real provider linking the bridge with packetFlow I/O + path sockets,
-  authenticating the handshake keys + their exchange, and batching.
+  `NEPacketTunnelProvider`. Built + tested: transport brain, encryption, dedup,
+  authenticated key agreement (X25519/HKDF + Ed25519 pinning), the **on-wire
+  handshake** (mutual auth + admission, end-to-end), the **cgo bridge**, and the
+  **Swift glue** (`CoreTransport` over the bridge; `swift build` green). **Still
+  needed (Xcode-runtime, `docs/dev/xcode-signing.md`):** the real provider with
+  packetFlow I/O + the two path sockets, driving the handshake over the wire from
+  Swift, pinned-identity distribution, and batching.
+* [~] Payments: `StripeProvider` (stdlib) implements the provider interface
+  (checkout + verified webhooks) and drops into `entitlement.Service`. Remaining:
+  real Stripe keys + account storage + the webhook endpoint the gateway/site
+  exposes. Monetisation strategy studied — keep Stripe (see
+  `docs/product/monetisation-apple-study.md`).
 * [x] Monitoring/observability (2026-06-23): stdlib Prometheus `/metrics` on the
   gateway (failover signal `continuity_packets_total{decision,path}` +
   `continuity_rejected_total{reason}`, redaction-enforced), plus Grafana/alerts/
