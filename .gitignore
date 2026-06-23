@@ -30,3 +30,21 @@ DerivedData/
 
 # Local network baselines (raw host state — never commit)
 .netcheck/
+
+# Third-party AI/agent tooling scratch directories — never publish.
+# These are local assistant/editor working dirs, not product source. The
+# project's own agent config lives under the tracked .claude/ directory; only
+# these foreign tool dirs are excluded. See docs/dev/repository-strategy.md and
+# scripts/prepare-public.sh, which fail if any of these are tracked.
+.agents/
+.codebuddy/
+.continue/
+.junie/
+.kiro/
+# (.codex/ and .codex-* are already excluded near the top of this file.)
+skills-lock.json
+
+# Built artefacts that must never be published (the gateway binary is produced
+# by `go build`/`make`; rebuild it, do not commit it).
+/gateway
+/continuityctl
