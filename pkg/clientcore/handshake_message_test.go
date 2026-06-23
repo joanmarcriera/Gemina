@@ -10,16 +10,16 @@ func TestClientHelloRoundTrip(t *testing.T) {
 	_, ephPub, _ := GenerateKeyPair()
 	token := "an.entitlement.token"
 
-	hello, err := EncodeClientHello(id, ephPub, token)
+	hello, err := EncodeClientHello(id, 1717171717, ephPub, token)
 	if err != nil {
 		t.Fatalf("encode: %v", err)
 	}
-	gotID, gotEph, gotToken, err := DecodeClientHello(hello)
+	gotID, gotTS, gotEph, gotToken, err := DecodeClientHello(hello)
 	if err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	if gotID != id || !bytes.Equal(gotEph, ephPub) || gotToken != token {
-		t.Fatalf("round-trip mismatch: id=%v eph=%v token=%q", gotID == id, bytes.Equal(gotEph, ephPub), gotToken)
+	if gotID != id || gotTS != 1717171717 || !bytes.Equal(gotEph, ephPub) || gotToken != token {
+		t.Fatalf("round-trip mismatch: id=%v ts=%d eph=%v token=%q", gotID == id, gotTS, bytes.Equal(gotEph, ephPub), gotToken)
 	}
 }
 
@@ -42,7 +42,7 @@ func TestServerHelloRoundTrip(t *testing.T) {
 }
 
 func TestDecodeRejectsMalformed(t *testing.T) {
-	if _, _, _, err := DecodeClientHello([]byte("short")); err == nil {
+	if _, _, _, _, err := DecodeClientHello([]byte("short")); err == nil {
 		t.Fatal("accepted short client hello")
 	}
 	if _, _, _, err := DecodeServerHello([]byte("short")); err == nil {
@@ -50,10 +50,10 @@ func TestDecodeRejectsMalformed(t *testing.T) {
 	}
 	id := sessionID(1)
 	_, eph, _ := GenerateKeyPair()
-	good, _ := EncodeClientHello(id, eph, "t")
+	good, _ := EncodeClientHello(id, 0, eph, "t")
 	bad := append([]byte(nil), good...)
 	bad[0] ^= 0xFF // corrupt magic
-	if _, _, _, err := DecodeClientHello(bad); err == nil {
+	if _, _, _, _, err := DecodeClientHello(bad); err == nil {
 		t.Fatal("accepted bad magic")
 	}
 }
@@ -67,7 +67,7 @@ func TestClientHandshakeCompletesAndKeysMatch(t *testing.T) {
 	if err != nil {
 		t.Fatalf("begin: %v", err)
 	}
-	id, clientEph, _, err := DecodeClientHello(hello)
+	id, _, clientEph, _, err := DecodeClientHello(hello)
 	if err != nil {
 		t.Fatalf("decode hello: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestClientHandshakeRejectsForgedGateway(t *testing.T) {
 	attackerPriv, _, _ := GenerateIdentity()
 
 	hello, hs, _ := BeginClientHandshake(idPub, "token")
-	id, clientEph, _, _ := DecodeClientHello(hello)
+	id, _, clientEph, _, _ := DecodeClientHello(hello)
 
 	gwEphPriv, gwEphPub, _ := GenerateKeyPair()
 	_ = gwEphPriv
@@ -120,7 +120,7 @@ func TestClientHandshakeRejectsForgedGateway(t *testing.T) {
 func TestClientHandshakeRejectsSessionMismatch(t *testing.T) {
 	idPriv, idPub, _ := GenerateIdentity()
 	hello, hs, _ := BeginClientHandshake(idPub, "token")
-	_, clientEph, _, _ := DecodeClientHello(hello)
+	_, _, clientEph, _, _ := DecodeClientHello(hello)
 
 	other := sessionID(0xEE) // not the session the client started
 	gwEphPriv, gwEphPub, _ := GenerateKeyPair()

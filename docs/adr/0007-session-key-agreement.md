@@ -52,9 +52,12 @@ decrypt past sessions.
   `Complete`; gateway side `Admitter.Handshake`): the client sends its ephemeral
   key + token, the gateway derives the key, admits on the token, and returns its
   signed ephemeral key; an end-to-end test runs the full mutual-auth + key
-  agreement + admission + encrypted-data path. What remains is how the client
-  obtains the pinned identity (bundled for the hosted gateway; shown once / via
-  config for a self-hosted one) and replay/timeout handling on the handshake.
+  agreement + admission + encrypted-data path. The ClientHello carries a
+  timestamp the gateway checks against a tolerance window
+  (`DefaultHandshakeTolerance`), bounding how long a captured handshake can be
+  replayed regardless of the token TTL. What remains is how the client obtains
+  the pinned identity (bundled for the hosted gateway; shown once / via config
+  for a self-hosted one).
 * The exchange that carries the public keys (a small handshake datagram before
   data, or in the connection setup) is still to be wired into the gateway and the
   NE provider.

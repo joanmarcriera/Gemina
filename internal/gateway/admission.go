@@ -3,6 +3,7 @@ package gateway
 import (
 	"crypto/ed25519"
 	"sync"
+	"time"
 
 	"continuity-vpn/internal/entitlement"
 	"continuity-vpn/internal/protocol"
@@ -56,13 +57,20 @@ func (s *SessionStore) len() int {
 // where payments connect to the data path: an unadmitted session's key is never
 // registered, so its packets are rejected by the DataPlane as unknown.
 type Admitter struct {
-	service *entitlement.Service
-	store   *SessionStore
+	service   *entitlement.Service
+	store     *SessionStore
+	now       func() time.Time // injectable for tests
+	tolerance time.Duration
 }
 
 // NewAdmitter ties an entitlement service to a session store.
 func NewAdmitter(service *entitlement.Service, store *SessionStore) *Admitter {
-	return &Admitter{service: service, store: store}
+	return &Admitter{
+		service:   service,
+		store:     store,
+		now:       time.Now,
+		tolerance: clientcore.DefaultHandshakeTolerance,
+	}
 }
 
 // Admit checks the entitlement and, on success, registers the session key so the
@@ -83,8 +91,11 @@ func (a *Admitter) Admit(token string, id protocol.SessionID, key []byte) (entit
 // (registering the key only if admitted — fail-closed), and returns a ServerHello
 // signed with the gateway's Ed25519 identity for the client to authenticate.
 func (a *Admitter) Handshake(clientHello []byte, identityPriv ed25519.PrivateKey, dedupCapacity int) (serverHello []byte, claims entitlement.Claims, err error) {
-	id, clientEph, token, err := clientcore.DecodeClientHello(clientHello)
+	id, timestamp, clientEph, token, err := clientcore.DecodeClientHello(clientHello)
 	if err != nil {
+		return nil, entitlement.Claims{}, err
+	}
+	if err := clientcore.CheckHandshakeFresh(timestamp, a.now(), a.tolerance); err != nil {
 		return nil, entitlement.Claims{}, err
 	}
 
