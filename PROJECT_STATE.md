@@ -35,9 +35,22 @@ Present and unit/race tested:
 * `internal/platform/darwin` — snapshot boundary, conservative live BSD
   collector (flags + IPv4 presence only), evidence-derived link kinds with a
   single shared evidence vocabulary, and provisional command-backed live evidence
-  reduced from `networksetup`/`ioreg` to redacted tokens.
+  reduced from `networksetup`/`ioreg` to redacted tokens. Plus a **device-level**
+  USB-function source (`USBFunctionDeviceSource`) that detects an Android RNDIS
+  tether from `ioreg -r -c IOUSBHostInterface -l` by interface class
+  (224/1/3 control), **not** a vendor string, so it sees the tether function
+  before any host driver brings a NIC up. Verified against the live OnePlus
+  (2026-06-23). Fixed a latent shared-parser bug along the way: the ioreg block
+  splitter used `bufio.Scanner`, which silently truncated at its 64 KiB line
+  limit — a full USB `ioreg -l` dump has ~90 KiB lines — so it now splits on raw
+  newlines.
 * `internal/diagnostics` + `cmd/continuityctl darwin-evidence` — redacted JSON
-  Stage 1 evidence report labelled diagnostic-only-not-path-success.
+  Stage 1 evidence report labelled diagnostic-only-not-path-success. Now carries
+  a `device_functions` channel (present-but-unusable tether functions, with
+  `usable:false`/`host_driver_claimed:false`) plus a `tether-present-not-usable`
+  issue, so the report honestly says "tether function present but not yet usable"
+  instead of just "missing" — the signal a pre-purchase compatibility check
+  consumes. A present-but-unusable function never becomes a usable `Candidate`.
 * `internal/protocol` probe wire codec (`ProbePacket`, `PathTag`) — versioned
   fixed-size datagram carrying packet identity + coarse path tag, no host
   identifiers; round-trip and malformed-input tested.
@@ -49,11 +62,20 @@ Present and unit/race tested:
   over the internet. See `docs/dev/gateway-deploy.md`.
 * `internal/transport` `PathDialer` + `continuityctl probe` — binds a connected
   UDP socket to a chosen interface for egress via Darwin `IP_BOUND_IF`, so a
-  socket leaves a specific path regardless of the default route. Loopback
-  delivery test on darwin; portable validation tests; non-darwin stub. Proven
-  live: `en0`-bound reached the gateway, `lo0`-bound was correctly trapped
-  ("network is unreachable"). The client per-path *egress mechanism* now exists;
-  the simultaneous two-path proof still needs the phone + cabled rig.
+  socket leaves a specific path regardless of the default route. `probe` supports
+  dual-path (`-interface2`/`-path2`): the same identity over two interfaces.
+  Proven live: `en0`-bound reached the gateway, `lo0`-bound was correctly trapped
+  ("network is unreachable"); and a dual-path run over `en0` (Wi-Fi) + `en4`
+  (dock Ethernet) deduplicated correctly at the gateway. NB those two interfaces
+  share the same upstream router, so this proves the *machinery*, not two
+  independent WANs — the independent second WAN (phone 5G) still needs the
+  userspace RNDIS host driver, which is not built (the tether has live RNDIS USB
+  interfaces but no macOS NIC; confirmed 2026-06-21).
+* Gateway logging/throughput: per-packet decisions log at Debug (guarded, so
+  attribute strings are not built when disabled) with periodic Info summaries;
+  the default Info hot path is ~30 ns/op and allocation-free (was ~447 ns/op
+  logging every packet). The listener sets a 4 MiB read buffer for burst
+  tolerance. Set `CONTINUITY_GATEWAY_LOG_LEVEL=debug` for per-packet detail.
 
 Not implemented: VPN transport (encryption/framing for real traffic), production
 dedup integration, NetworkExtension packet handling, the simultaneous two-path
@@ -90,17 +112,32 @@ Git remote: `origin` = `git@github.com:joanmarcriera/continuity-vpn.git`
   boundary derives them from explicit evidence and command-backed sources only;
   direct SystemConfiguration / Network framework / IORegistry API collection is
   not implemented.
-* The local diagnostic reports the Android tether as a missing candidate even
-  when the phone is connected with tethering on. Root cause confirmed
-  2026-06-21: macOS ships no RNDIS host driver, so the phone never becomes a
-  `enX` NIC for the BSD-interface collector to see, and the IORegistry matcher
-  also requires the literal token `android` which this OnePlus
-  (`OnePlus`/`KALAMA`/`RNDIS …`) lacks. Fix tracked in `TASKS.md`.
-* In-app uplink acquisition is decided and de-risked (ADR 2026-06-21). A
-  userspace spike (`research/usb-rndis-spike/`) opened the phone's RNDIS
-  interfaces and completed `REMOTE_NDIS_INITIALIZE` (`status=0`, `medium=802.3`)
-  from an unprivileged process under SIP. The data plane and App-Sandbox
-  re-confirmation remain to build.
+* The local diagnostic no longer reports the Android tether as simply *missing*
+  when the phone is connected: as of 2026-06-23 a device-level USB-function
+  source detects the RNDIS tether by interface class and the report shows it as
+  `device_functions` + a `tether-present-not-usable` issue. The underlying
+  limitation remains — macOS ships no RNDIS host driver, so the phone never
+  becomes a usable `enX` NIC and there is still no usable `android-usb-tether`
+  candidate; the report is now honest about *why*. The interface-level
+  `blockHasAndroidUSBTetherEvidence` string matcher (vendor token `android`) is
+  superseded by the class-keyed device source for detection but is left as-is for
+  the host-driver-claimed case; see `TASKS.md`.
+* In-app uplink acquisition is decided and de-risked (ADR 2026-06-21), and the
+  RNDIS **data plane is now proven** (2026-06-23). The userspace spike
+  (`research/usb-rndis-spike/`) claims the phone's RNDIS interfaces, completes
+  `REMOTE_NDIS_INITIALIZE`, sets the packet filter, and round-trips a DHCP
+  DISCOVER/OFFER in `REMOTE_NDIS_PACKET_MSG` frames over the bulk pipes — L2
+  frames move both ways over the cellular tether from an unprivileged process
+  (no kext, no SIP, no root; verified live on the OnePlus 12R, redaction-clean).
+  This is the Route-B uplink and works on any Android (RNDIS is universal).
+  Remaining: hold the DHCP lease + prove real UDP egress to the oracle gateway,
+  then NEPacketTunnelProvider integration and App-Sandbox re-confirmation.
+* Route decided 2026-06-23 (owner): pursue the RNDIS data plane, not NCM, for
+  broad device support. NCM was investigated live and is two-sided — macOS claims
+  an NCM tether natively (no kext; proven `en10`) but OxygenOS root-locks USB
+  tethering to RNDIS, so NCM-with-cellular is device-dependent (Pixel/AOSP 14+
+  work natively; OnePlus does not). See the `ncm-tether-lower-friction-than-rndis`
+  memory and `android-usb-tether-function` skill.
 * The gateway exists, is tested, and is deployed, but there is still no
   *client-side* per-path UDP egress and no packet capture proving each path
   independently reaches it — so dual-path success is NOT yet claimed.
