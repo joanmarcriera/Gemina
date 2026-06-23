@@ -26,12 +26,18 @@ and **go-to-market** (open-core + hosted gateway). Next, in priority order:
   decrypts + dedups server-side, proven end-to-end in-process. No invented crypto
   (stdlib AEAD); key agreement (handshake) left as future work.
 * [~] Wire the proven transport into the shipping app via
-  `NEPacketTunnelProvider`. Transport brain + encryption + dedup built and tested
-  (`pkg/clientcore`, `internal/gateway.DataPlane`, race-clean). Architecture in
-  ADR-0005; Swift seam sketched (`DualPathTransport.swift`, builds). **Still
-  needed (owner/Xcode-gated, see `docs/dev/xcode-signing.md`):** the cgo C-shared
-  bridge, the real `NEPacketTunnelProvider` (packetFlow I/O + path sockets), the
-  session-key handshake, and batching.
+  `NEPacketTunnelProvider`. Transport brain + encryption + dedup + key agreement
+  (X25519/HKDF, ADR-0007) built and tested; the **cgo bridge**
+  (`bridge/continuitycore`, c-archive) and a guarded `ContinuityTunnelProvider`
+  skeleton exist. **Still needed (owner/Xcode-gated, `docs/dev/xcode-signing.md`):**
+  the real provider linking the bridge with packetFlow I/O + path sockets,
+  authenticating the handshake keys + their exchange, and batching.
+* [x] Monitoring/observability (2026-06-23): stdlib Prometheus `/metrics` on the
+  gateway (failover signal `continuity_packets_total{decision,path}` +
+  `continuity_rejected_total{reason}`, redaction-enforced), plus Grafana/alerts/
+  scrape assets and `observability/METRICS.md`. Design in
+  `docs/superpowers/specs/2026-06-23-monitoring-design.md`. Client-side metrics
+  defined for when the app lands.
 * [ ] Re-confirm the userspace USB claim succeeds inside an App-Sandbox context
   with `com.apple.security.device.usb` (the spike ran un-sandboxed). Gates the
   App Store route.

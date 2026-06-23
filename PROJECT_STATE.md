@@ -97,17 +97,28 @@ Built this cycle (all unit/race tested):
 * `internal/entitlement` — hosted-tier scaffold: signed entitlement tokens, a
   payment-provider interface with a fake impl, and an Open/Hosted gate so the
   paid hosted gateway is gated while self-hosting stays free. No real keys yet.
+* `pkg/clientcore` key agreement — X25519 ECDH + HKDF-SHA256 (ADR-0007), so the
+  AEAD key is derived, not pre-shared (forward-secret). Public-key
+  authentication against an active MITM remains.
+* `bridge/continuitycore` — the cgo C-shared bridge exposing the core to Swift
+  over a handle-based ABI (ADR-0005); builds as a darwin/arm64 c-archive.
+  `apps/macos` `ContinuityTunnelProvider` (guarded) wires packetFlow to the
+  relay; builds in SwiftPM.
+* `internal/metrics` + gateway `/metrics` — stdlib Prometheus registry; the
+  gateway exposes `continuity_packets_total{decision,path}` (the failover signal)
+  and `continuity_rejected_total{reason}`, redaction-enforced, on an opt-in
+  metrics address. Grafana/alerts/scrape assets + `observability/METRICS.md`.
 * Licence decided and applied: AGPL-3.0 gateway + Apache-2.0 client/core
   (`docs/legal/licensing.md`). Xcode/signing owner-action guide in
   `docs/dev/xcode-signing.md`.
 
-Not implemented: the cgo C-shared bridge + the real `NEPacketTunnelProvider`
-(packetFlow I/O + path sockets; needs full Xcode/signing), the session-key
-handshake (the core takes a pre-shared key), App-Sandbox re-confirmation of the
-USB claim, a real payment integration (Stripe/IAP + accounts), production dedup
-window sizing/rollover, real infrastructure resources, and direct
-SystemConfiguration / Network framework / IORegistry API collection (only
-command-backed collection exists).
+Not implemented: the real `NEPacketTunnelProvider` (packetFlow I/O + path
+sockets, linking the cgo bridge; needs full Xcode/signing), authenticating the
+handshake public keys + wiring their exchange, App-Sandbox re-confirmation of the
+USB claim, a real payment integration (Stripe/IAP + accounts), client-side
+metrics (no app yet), production dedup window sizing/rollover, real infrastructure
+resources, and direct SystemConfiguration / Network framework / IORegistry API
+collection (only command-backed collection exists).
 
 Research sources are present only in the Git-ignored `.research-src/`. No upstream
 implementation source has been imported into product directories.
