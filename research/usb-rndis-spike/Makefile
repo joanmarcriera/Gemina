@@ -8,9 +8,22 @@ LDFLAGS := -L$(BREW_PREFIX)/lib -lusb-1.0
 rndis_probe: rndis_probe.c
 	clang $(CFLAGS) $< -o $@ $(LDFLAGS)
 
-.PHONY: run clean
+rndis_dataplane: rndis_dataplane.c rndis_lib.c rndis_lib.h
+	clang $(CFLAGS) rndis_dataplane.c rndis_lib.c -o $@ $(LDFLAGS)
+
+# Pure unit tests: no libusb, no hardware.
+rndis_lib_test: rndis_lib_test.c rndis_lib.c rndis_lib.h
+	clang $(CFLAGS) rndis_lib_test.c rndis_lib.c -o $@
+
+.PHONY: run run-dataplane test clean
 run: rndis_probe
 	./rndis_probe
 
+run-dataplane: rndis_dataplane
+	./rndis_dataplane
+
+test: rndis_lib_test
+	./rndis_lib_test
+
 clean:
-	rm -f rndis_probe
+	rm -f rndis_probe rndis_dataplane rndis_lib_test
