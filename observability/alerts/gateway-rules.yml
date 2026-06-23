@@ -1,0 +1,45 @@
+# Prometheus alerting rules for the continuity gateway.
+#
+# Load via prometheus.yml `rule_files`. Thresholds are starting points — tune to
+# your traffic. All series use only coarse tokens (see ../METRICS.md), so alerts
+# never carry a host identifier.
+
+groups:
+  - name: continuity-gateway
+    rules:
+      - alert: GatewayDown
+        expr: up{job="continuity-gateway"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: Continuity gateway is not scrapeable
+          description: The gateway target has been down for 2 minutes.
+
+      # The headline reliability alarm: traffic is arriving (rejects or any
+      # packets seen) but no packet is being accepted as a first copy — the
+      # dedup/decode path is effectively delivering nothing.
+      - alert: NoFirstCopies
+        expr: |
+          sum(rate(continuity_packets_total{decision="first-copy"}[5m])) == 0
+          and sum(rate(continuity_packets_total[5m])) > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: Gateway accepting no first-copy packets
+          description: Datagrams are arriving but none are delivered as first copies for 5m — likely an outage.
+
+      - alert: HighRejectRate
+        expr: |
+          sum(rate(continuity_rejected_total[5m]))
+            / clamp_min(sum(rate(continuity_packets_total[5m])), 1) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Gateway rejecting most datagrams
+          description: Over half of datagrams have been rejected for 10m — malformed traffic, a version skew, or abuse.
+
+      # A single path going quiet while others carry traffic is normal failover,
+      # not an alert; it is surfaced on the dashboard rather than paged.
