@@ -3,9 +3,31 @@ package gateway
 import (
 	"bytes"
 	"testing"
+	"time"
 
 	"continuity-vpn/pkg/clientcore"
 )
+
+func TestHandshakeRejectsStaleClientHello(t *testing.T) {
+	idPriv, idPub, _ := clientcore.GenerateIdentity()
+	service, key := hostedService(t)
+	admitter := NewAdmitter(service, NewSessionStore())
+
+	// Pin the gateway's clock; craft a ClientHello stamped well outside tolerance.
+	gatewayNow := time.Unix(2_000_000_000, 0)
+	admitter.now = func() time.Time { return gatewayNow }
+	staleTS := gatewayNow.Add(-10 * time.Minute).Unix()
+
+	_, eph, _ := clientcore.GenerateKeyPair()
+	_ = idPub
+	stale, err := clientcore.EncodeClientHello(sessionID(0x5E), staleTS, eph, hostedToken(t, key))
+	if err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+	if _, _, err := admitter.Handshake(stale, idPriv, 64); err == nil {
+		t.Fatal("gateway accepted a stale ClientHello (replay window not enforced)")
+	}
+}
 
 func TestHandshakeEndToEndAdmitsAndCarriesTraffic(t *testing.T) {
 	idPriv, idPub, err := clientcore.GenerateIdentity()

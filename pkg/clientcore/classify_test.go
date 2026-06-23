@@ -5,7 +5,7 @@ import "testing"
 func TestClassifyDatagram(t *testing.T) {
 	_, eph, _ := GenerateKeyPair()
 
-	clientHello, _ := EncodeClientHello(sessionID(1), eph, "token")
+	clientHello, _ := EncodeClientHello(sessionID(1), 0, eph, "token")
 	if got := ClassifyDatagram(clientHello); got != KindClientHello {
 		t.Errorf("client hello classified as %v", got)
 	}
