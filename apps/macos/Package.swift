@@ -11,6 +11,11 @@ let package = Package(
     ],
     targets: [
         .target(name: "ContinuityVPNShared", path: "Shared"),
+        // C module exposing the Go transport core's ABI
+        // (bridge/include/continuitycore.h). The symbols are linked from the Go
+        // c-archive in the Xcode project; this target only carries the
+        // declarations so the Swift side compiles against them.
+        .target(name: "CContinuityCore", path: "CContinuityCore"),
         .target(
             name: "ContinuityVPNApp",
             dependencies: ["ContinuityVPNShared"],
@@ -18,7 +23,7 @@ let package = Package(
         ),
         .target(
             name: "ContinuityVPNPacketTunnelExtension",
-            dependencies: ["ContinuityVPNShared"],
+            dependencies: ["ContinuityVPNShared", "CContinuityCore"],
             path: "PacketTunnelExtension"
         )
     ]
