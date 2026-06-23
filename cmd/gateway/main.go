@@ -16,15 +16,21 @@ import (
 )
 
 const (
-	defaultAddr     = ":51820"
-	defaultCapacity = 8192
+	defaultAddr       = ":51820"
+	defaultCapacity   = 8192
+	defaultReadBuffer = 4 << 20 // 4 MiB: tolerate bursts of duplicate probes
 )
 
 func main() {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	level := slog.LevelInfo
+	if envOr("CONTINUITY_GATEWAY_LOG_LEVEL", "info") == "debug" {
+		level = slog.LevelDebug
+	}
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 
 	addr := envOr("CONTINUITY_GATEWAY_ADDR", defaultAddr)
 	capacity := envInt(logger, "CONTINUITY_GATEWAY_DEDUP_CAPACITY", defaultCapacity)
+	readBuffer := envInt(logger, "CONTINUITY_GATEWAY_READ_BUFFER", defaultReadBuffer)
 
 	server, err := gateway.NewServer(capacity, logger)
 	if err != nil {
@@ -36,6 +42,14 @@ func main() {
 	if err != nil {
 		logger.Error("listen", "addr", addr, "error", err.Error())
 		os.Exit(1)
+	}
+
+	// Enlarge the socket receive buffer so bursts are not silently dropped under
+	// load. Non-fatal: the kernel may clamp to a lower maximum.
+	if udp, ok := conn.(*net.UDPConn); ok {
+		if err := udp.SetReadBuffer(readBuffer); err != nil {
+			logger.Warn("set read buffer", "bytes", readBuffer, "error", err.Error())
+		}
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)

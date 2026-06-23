@@ -10,12 +10,16 @@ Wants=network-online.target
 # this unit; see scripts/deploy-dev-gateway.sh.
 Environment=GATEWAY_PORT=51820
 Environment=DEDUP_CAPACITY=8192
+# debug: per-packet decision logs are visible (diagnostic phase). Switch to
+# info for throughput/load tests so the gateway is not logging-bound.
+Environment=LOG_LEVEL=debug
 ExecStartPre=-/usr/bin/docker rm -f continuity-gateway
 ExecStart=/usr/bin/docker run --rm --name continuity-gateway \
   --read-only \
   -p ${GATEWAY_PORT}:51820/udp \
   -e CONTINUITY_GATEWAY_ADDR=:51820 \
   -e CONTINUITY_GATEWAY_DEDUP_CAPACITY=${DEDUP_CAPACITY} \
+  -e CONTINUITY_GATEWAY_LOG_LEVEL=${LOG_LEVEL} \
   continuity-gateway:latest
 ExecStop=/usr/bin/docker stop continuity-gateway
 Restart=always

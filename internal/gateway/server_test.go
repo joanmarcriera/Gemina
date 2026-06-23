@@ -27,7 +27,9 @@ func testProbe(t *testing.T, session byte, number protocol.PacketNumber, path pr
 
 func newTestServer(t *testing.T, buf *bytes.Buffer) *Server {
 	t.Helper()
-	logger := slog.New(slog.NewJSONHandler(buf, nil))
+	// Debug level so per-packet decision records are emitted for assertions
+	// (in production these are Debug; Info carries periodic summaries).
+	logger := slog.New(slog.NewJSONHandler(buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	server, err := NewServer(64, logger)
 	if err != nil {
 		t.Fatalf("NewServer: %v", err)
