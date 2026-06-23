@@ -58,9 +58,12 @@ RESULT: userspace RNDIS handshake COMPLETE
 | `rndis_lib.{c,h}` | Pure framing logic: RNDIS wrap/unwrap, DHCP build/parse, ARP, UDP/IP, the CVP1 probe. Hardware-independent. |
 | `rndis_lib_test.c` | Unit tests for the above (`make test`, no phone). |
 | `rndis_usb.{c,h}` | libusb I/O: claim the RNDIS function, INITIALIZE, packet filter, bulk send/recv. |
+| `rndis_uplink.{c,h}` | Bring the tether up to a usable IP uplink (lease + ARP) and send UDP. |
+| `rndis_net.{c,h}` | Gateway-from-env, random session, Wi-Fi socket bound via `IP_BOUND_IF`. |
 | `rndis_probe.c` | Control-plane viability (claim + INITIALIZE). |
 | `rndis_dataplane.c` | Data-plane proof (DHCP DISCOVER/OFFER round-trip). |
 | `rndis_egress.c` | Real UDP egress to the deployed gateway over cellular. |
+| `rndis_dualpath.c` | Stage-1 dual-path proof: Wi-Fi + cellular at once, with path-loss phases. |
 
 ## Run it
 
@@ -73,6 +76,9 @@ make run-dataplane         # data-plane DHCP round-trip
 # Real egress to the gateway over cellular. Pass the gateway address via env so
 # it is never compiled in; verify arrival in the gateway logs (ssh oracle).
 CONTINUITY_GATEWAY_IP=<gateway-ip> CONTINUITY_GATEWAY_PORT=51820 make run-egress
+
+# Stage-1 dual-path: same identity over Wi-Fi AND cellular at once + path-loss.
+CONTINUITY_GATEWAY_IP=<gateway-ip> CONTINUITY_WIFI_IFACE=en0 make run-dualpath
 ```
 
 If the phone is absent or not in tethering mode the probe prints `FAIL open`.
@@ -102,11 +108,17 @@ have killed the in-app approach (can we even open the interface?) is retired.
   Mac's LAN. Since the bytes leave the Mac only down the USB bulk pipe, this
   proves the phone is a real independent WAN reaching the gateway from an
   unprivileged process.
+- **Dual-path — PROVEN 2026-06-23.** `rndis_dualpath.c` sends the same identity
+  over Wi-Fi (`IP_BOUND_IF` socket) and the cellular RNDIS uplink at once. The
+  gateway logged 11 first-copy + 5 duplicate decisions for one session (correct
+  dedup), the host capture saw two distinct public WAN sources (home ISP +
+  cellular carrier), and Wi-Fi-only / cellular-only phases each still delivered
+  every identity — all five Stage-1 dual-path criteria met (`PROJECT_STATE.md`).
 - **App Sandbox entitlement.** The probes ran un-sandboxed. A Developer-ID
   notarised app needs the `com.apple.security.device.usb` entitlement; verify
   the claim still succeeds inside the app's sandbox.
 - **Into the stack.** Feed received frames into an `NEPacketTunnelProvider` so
-  the bonding/failover layer can route per-flow (RX in, TX out).
+  the bonding/failover layer can route per-flow real traffic (RX in, TX out).
 
 ## Provenance
 

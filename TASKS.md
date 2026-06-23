@@ -13,30 +13,29 @@ and reviewed.
 
 ## Next exact action
 
-The userspace RNDIS **data plane is proven** (2026-06-23,
-`research/usb-rndis-spike/rndis_dataplane.c`): claim → INITIALIZE → packet-filter
-→ DHCP DISCOVER/OFFER round-trip in `REMOTE_NDIS_PACKET_MSG` frames, verified
-live on the OnePlus 12R, no kext/SIP/root. Route B (RNDIS, works on any Android)
-is confirmed by the owner over NCM. Next, in order:
+**Stage-1 dual-path transport is PROVEN** (2026-06-23): the userspace spike
+sends one identity over Wi-Fi (IP_BOUND_IF en0) and the phone's cellular RNDIS
+uplink simultaneously; the gateway dedups to one delivery, the host capture saw
+two independent public WANs, and path-loss phases survive either path dropping.
+All five "Definition of Dual-Path Success" criteria met (see `PROJECT_STATE.md`).
+The transport *capability* is done; the work now splits into **productisation**
+and **go-to-market** (open-core + hosted gateway). Next, in priority order:
 
-* [x] Bring the RNDIS link up (`SET OID_GEN_CURRENT_PACKET_FILTER`) and prove a
-  round-trip packet over the tether (DHCP DISCOVER out / OFFER in). Done.
-* [x] Hold the lease (DHCP REQUEST/ACK) and prove **real UDP egress** to the
-  deployed oracle gateway through the RNDIS path (2026-06-23). `rndis_egress.c`:
-  lease held, gateway ARP-resolved, real CVP1 probes sent; the gateway logged
-  10 first-copy + 10 duplicate `android-usb-tether` decisions and a host tcpdump
-  saw them arrive from a cellular carrier public IP. Phone proven as an
-  independent WAN reaching the gateway, unprivileged.
-* [ ] Present the link to the stack via `NEPacketTunnelProvider` so routing can
-  bind a UDP socket to it (RX frames in, TX frames out).
+* [ ] Wire the proven transport into the shipping app via
+  `NEPacketTunnelProvider`: feed RNDIS RX frames in and TX out, bind a UDP socket
+  per path, run the dedup/failover above real flows (not just probes).
 * [ ] Re-confirm the userspace USB claim succeeds inside an App-Sandbox context
-  with `com.apple.security.device.usb` (the spike ran un-sandboxed).
-* [ ] Simultaneous Wi-Fi + cellular dual-path: send the same identity over en0
-  (Wi-Fi, OS socket) and the RNDIS path at once; show both reach the gateway and
-  dedup. (The Stage-1 dual-path gate; now unblocked by the proven RNDIS egress.)
+  with `com.apple.security.device.usb` (the spike ran un-sandboxed). Gates the
+  App Store route.
+* [ ] Add encryption/framing for real traffic (no invented crypto — adopt a
+  reviewed construction; capture provenance/licence per the conditions below).
+* [ ] Go-to-market in parallel: open-core repo prep + hosted-gateway tier (see
+  "Product model" below).
 
-See skill `userspace-rndis-dataplane` for the build/run/safety loop and RNDIS
-protocol reference.
+Proven foundations (done): RNDIS control handshake, data plane (DHCP round-trip),
+real UDP egress to the gateway over cellular, and simultaneous dual-path. Drivers
++ unit tests in `research/usb-rndis-spike/`; see skill
+`userspace-rndis-dataplane`.
 
 ### Detector gap found 2026-06-21 (fix alongside the above)
 
@@ -64,6 +63,26 @@ appears:
   `OnePlus`/`KALAMA`/`RNDIS …` and is missed. **Superseded for detection** by the
   class-keyed device source above. Left in place only for the
   host-driver-claimed (real `enX`) case; revisit when/if a host driver lands.
+
+### Product model: open-core + hosted gateway (owner direction 2026-06-23)
+
+FOSS client + gateway; revenue from a **paid hosted gateway** (our Oracle box)
+for users who don't want to self-host. See memory
+`product-model-open-core-hosted-gateway`. Open work:
+
+* [ ] Keep the gateway address **configurable** end-to-end (self-host vs hosted);
+  never hard-code it. The dual-path client and the RNDIS egress already take it
+  as config — hold this line through the app UI and the NE tunnel.
+* [ ] Make the gateway trivially self-hostable: document the single-container
+  deploy + the one port (UDP 51820); a `docker run` quickstart in the README.
+* [ ] Decide licences (client vs gateway) for a "pay to use our server" model —
+  avoid a licence that lets a competitor resell our hosted tier while keeping
+  contributor friction low. Fold into the legal/provenance review below.
+* [ ] Hosted tier: wire the entitlement/account/payment path (stubs exist) so
+  gating lives at the **hosted gateway**, not by crippling the OSS client.
+* [ ] Public GitHub repo prep: README with the value prop + self-host quickstart,
+  LICENSE/NOTICE, CONTRIBUTING, a landing page that sells the hosted tier and
+  routes users through the pre-purchase compatibility check.
 
 ### Packaging & clean footprint (App Store target — ADR 2026-06-21)
 
@@ -120,15 +139,13 @@ Protocol + scripts in `docs/dev/test-environment.md`. Standing practice:
 Overall proof, not complete until packet captures, gateway logs and path-loss
 evidence exist:
 
-* [~] Bind one UDP socket per path and prove per-interface egress. Mechanism
-  done: `internal/transport` `PathDialer` binds a UDP socket to a named
-  interface via Darwin `IP_BOUND_IF`/`IPV6_BOUND_IF`; `continuityctl probe`
-  drives it. Proven live (2026-06-21): a socket bound to `en0` reached the
-  deployed gateway, while the same bound to `lo0` returned "network is
-  unreachable" — confirming egress is bound at the socket layer, not by source
-  address. **Still needed for the full proof:** simultaneously bind socket A to
-  Wi-Fi and socket B to the Android tether (needs the phone + cabled-management
-  rig) and show both reach the gateway.
+* [x] Bind one UDP socket per path and prove per-interface egress, then prove
+  **simultaneous** Wi-Fi + cellular dual-path (2026-06-23). Go mechanism:
+  `internal/transport` `PathDialer` + `continuityctl probe` (IP_BOUND_IF). Full
+  real proof via the userspace spike `rndis_dualpath.c`: the same identity left
+  the Mac over Wi-Fi (IP_BOUND_IF en0) and over the phone's cellular RNDIS uplink
+  at once; the gateway-host capture saw two distinct public WAN sources (home ISP
+  + cellular carrier) and the gateway deduplicated to one delivery each.
 * [x] Send duplicated probes to one gateway process; deduplicate server-side.
   `internal/gateway` + `cmd/gateway` deployed to `oracle` as an arm64 container
   under systemd; on-host end-to-end test shows first-copy then duplicate
@@ -137,8 +154,13 @@ evidence exist:
   the Mac reaches the deployed gateway over the internet (timestamped capture,
   2026-06-21). Gotcha recorded: ingress **source** port range must be "All", not
   the listen port. See `docs/dev/gateway-deploy.md`.
-* [ ] Capture packet evidence showing each path independently reaches the gateway.
-* [ ] Path-loss test: either path can disappear without ending the logical session.
+* [x] Capture packet evidence showing each path independently reaches the gateway
+  (2026-06-23): gateway-host tcpdump saw two distinct public WAN sources — home
+  ISP (Wi-Fi) and cellular carrier (RNDIS) — for one session.
+* [x] Path-loss test: either path can disappear without ending the logical
+  session (2026-06-23). `rndis_dualpath.c` phases 2/3 sent over one path only
+  (Wi-Fi-only, then cellular-only); the gateway received every identity via the
+  surviving path.
 * [x] Add a dedup **fuzz test** (`internal/dedup`): model-based
   `FuzzWindowObserveModel` checks Observe against an independent FIFO model and
   the ring invariant (`count == len(seen)`, bounded length) across arbitrary

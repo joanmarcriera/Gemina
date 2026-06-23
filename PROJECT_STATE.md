@@ -9,16 +9,22 @@ lives in Git. Keep this file lean — do not grow an append-only log here.
 
 ## Current Stage and Objective
 
-Stage 1: dual-path UDP probe. Stage 0 exit criteria are met and reviewed.
+Stage 1: dual-path UDP probe — **transport capability proven 2026-06-23**
+(see "Definition of Dual-Path Success" below). Stage 0 exit criteria are met and
+reviewed.
 
-The probe so far proves packet identity, first-copy duplicate suppression, and
-fixture/command-driven Darwin path classification, exposed through a redacted
-`continuityctl darwin-evidence` diagnostic. It does **not** yet prove per-path
-UDP egress, gateway reachability, packet-capture evidence, path-loss survival,
-encryption or any VPN behaviour.
+The probe proves packet identity, first-copy duplicate suppression, and
+fixture/command-driven Darwin path classification via the redacted
+`continuityctl darwin-evidence` diagnostic. Beyond that, the userspace spike now
+proves the real thing: the same logical packet sent over Wi-Fi **and** the
+phone's cellular link (independent WANs) both reach the deployed gateway, are
+deduplicated to one delivery, and either path can drop without ending the
+session. It does **not** yet prove encryption or any VPN behaviour, nor is the
+dual-path transport wired through the shipping Swift app / NEPacketTunnelProvider.
 
-Next action is recorded at the top of `TASKS.md`: run the redacted Darwin
-evidence diagnostic with Android USB tethering connected.
+Next action is recorded at the top of `TASKS.md`: wire the proven dual-path
+transport into the product (NEPacketTunnelProvider) and add encryption; in
+parallel, the open-core + hosted-gateway go-to-market work.
 
 ## Current Implementation State
 
@@ -173,9 +179,26 @@ Git remote: `origin` = `git@github.com:joanmarcriera/continuity-vpn.git`
   ~49 ns/op, 0 allocs/op.
 * `gofmt -l internal/ cmd/` — no unformatted files.
 
-## Definition of Dual-Path Success (do not claim early)
+## Definition of Dual-Path Success — ACHIEVED 2026-06-23
 
-Do not claim dual-path success until later work proves that UDP socket A
-explicitly leaves through Wi-Fi, UDP socket B explicitly leaves through Android
-USB tethering, both reach the same gateway process, one logical packet is
-delivered once, and either path can disappear without ending the logical session.
+All five criteria are now met, with evidence (`research/usb-rndis-spike/`,
+`rndis_dualpath.c`):
+
+1. **Socket A leaves through Wi-Fi** — an OS UDP socket bound to `en0` via
+   `IP_BOUND_IF`; the gateway-host capture saw its probes arrive from the home
+   ISP public IP.
+2. **Socket B leaves through Android USB tethering** — the userspace RNDIS
+   uplink; its probes arrived from a cellular carrier public IP (no kext, no SIP,
+   no root). The two paths showed up as two distinct public WAN sources at the
+   gateway host.
+3. **Both reach the same gateway process** — the deployed `oracle` gateway.
+4. **One logical packet delivered once** — sending each identity over both paths,
+   the gateway logged 11 first-copy + 5 duplicate decisions (correct dedup;
+   first-copy split 8 wi-fi / 3 cellular, with 5 cellular copies deduplicated).
+5. **Either path can disappear without ending the session** — a Wi-Fi-only phase
+   and a cellular-only phase each delivered every identity via the surviving
+   path.
+
+Caveat: this is proven by the C spike (userspace RNDIS + bound socket), not yet
+wired through the shipping Swift app / `NEPacketTunnelProvider`. The transport
+*capability* is proven; product integration remains (see `TASKS.md`).
