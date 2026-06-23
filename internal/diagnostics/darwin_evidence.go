@@ -7,15 +7,32 @@ import (
 
 const DarwinEvidenceReportType = "stage-1-darwin-evidence"
 
+// IssueCodeTetherPresentNotUsable flags an uplink whose USB function is present
+// on the bus but is not yet a usable path (no host driver, so no NIC/IP/link).
+// It explains why an expected candidate is absent without faking one — the
+// signal a pre-purchase compatibility check consumes.
+const IssueCodeTetherPresentNotUsable = "tether-present-not-usable"
+
 type DarwinEvidenceReport struct {
-	Type                 string                `json:"type"`
-	Stage                string                `json:"stage"`
-	Claim                string                `json:"claim"`
-	ClassificationStatus string                `json:"classification_status"`
-	Complete             bool                  `json:"complete"`
-	Interfaces           []DiagnosticInterface `json:"interfaces"`
-	Candidates           []DiagnosticCandidate `json:"candidates"`
-	Issues               []DiagnosticIssue     `json:"issues"`
+	Type                 string                     `json:"type"`
+	Stage                string                     `json:"stage"`
+	Claim                string                     `json:"claim"`
+	ClassificationStatus string                     `json:"classification_status"`
+	Complete             bool                       `json:"complete"`
+	Interfaces           []DiagnosticInterface      `json:"interfaces"`
+	Candidates           []DiagnosticCandidate      `json:"candidates"`
+	DeviceFunctions      []DiagnosticDeviceFunction `json:"device_functions"`
+	Issues               []DiagnosticIssue          `json:"issues"`
+}
+
+// DiagnosticDeviceFunction reports a tether-capable USB function seen at the
+// device layer, before any network interface exists. Usable is false whenever no
+// host driver has claimed it, which keeps a present-but-unusable function from
+// being mistaken for a working path.
+type DiagnosticDeviceFunction struct {
+	Transport         string `json:"transport"`
+	HostDriverClaimed bool   `json:"host_driver_claimed"`
+	Usable            bool   `json:"usable"`
 }
 
 type DiagnosticInterface struct {
@@ -47,7 +64,7 @@ type DiagnosticIssue struct {
 	Count int    `json:"count,omitempty"`
 }
 
-func BuildDarwinEvidenceReport(snapshots []darwin.InterfaceSnapshot) DarwinEvidenceReport {
+func BuildDarwinEvidenceReport(snapshots []darwin.InterfaceSnapshot, deviceFunctions []darwin.USBTetherFunction) DarwinEvidenceReport {
 	observations := darwin.ObservationsFromSnapshots(snapshots)
 	classification := paths.Classify(observations)
 	complete := classification.Complete()
@@ -57,6 +74,9 @@ func BuildDarwinEvidenceReport(snapshots []darwin.InterfaceSnapshot) DarwinEvide
 		status = "complete"
 	}
 
+	issues := diagnosticIssues(classification.Issues)
+	issues = append(issues, deviceFunctionIssues(classification, deviceFunctions)...)
+
 	report := DarwinEvidenceReport{
 		Type:                 DarwinEvidenceReportType,
 		Stage:                "stage-1-probe",
@@ -65,10 +85,53 @@ func BuildDarwinEvidenceReport(snapshots []darwin.InterfaceSnapshot) DarwinEvide
 		Complete:             complete,
 		Interfaces:           diagnosticInterfaces(snapshots),
 		Candidates:           diagnosticCandidates(classification.Candidates),
-		Issues:               diagnosticIssues(classification.Issues),
+		DeviceFunctions:      diagnosticDeviceFunctions(deviceFunctions),
+		Issues:               issues,
 	}
 
 	return report
+}
+
+func diagnosticDeviceFunctions(functions []darwin.USBTetherFunction) []DiagnosticDeviceFunction {
+	items := make([]DiagnosticDeviceFunction, 0, len(functions))
+	for _, fn := range functions {
+		items = append(items, DiagnosticDeviceFunction{
+			Transport:         fn.Transport,
+			HostDriverClaimed: fn.HostDriverClaimed,
+			Usable:            fn.HostDriverClaimed,
+		})
+	}
+	return items
+}
+
+// deviceFunctionIssues explains, per present-but-unusable tether function, why a
+// usable candidate for its role is absent. It never fabricates a candidate; it
+// only adds an honest issue when the role has no usable candidate yet.
+func deviceFunctionIssues(classification paths.Classification, functions []darwin.USBTetherFunction) []DiagnosticIssue {
+	var issues []DiagnosticIssue
+	for _, fn := range functions {
+		if fn.HostDriverClaimed {
+			continue
+		}
+		role, ok := roleForTransport(fn.Transport)
+		if !ok || classification.Candidate(role) != nil {
+			continue
+		}
+		issues = append(issues, DiagnosticIssue{
+			Code: IssueCodeTetherPresentNotUsable,
+			Role: role.String(),
+		})
+	}
+	return issues
+}
+
+func roleForTransport(transport string) (paths.Role, bool) {
+	switch transport {
+	case darwin.EvidenceValueAndroidRNDIS:
+		return paths.RoleAndroidUSBTether, true
+	default:
+		return 0, false
+	}
 }
 
 func diagnosticInterfaces(snapshots []darwin.InterfaceSnapshot) []DiagnosticInterface {

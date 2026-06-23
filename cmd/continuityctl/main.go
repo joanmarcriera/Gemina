@@ -39,7 +39,12 @@ func runDarwinEvidence() error {
 		return err
 	}
 
+	deviceFunctions, err := darwin.LiveUSBTetherFunctions()
+	if err != nil {
+		return err
+	}
+
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetIndent("", "  ")
-	return encoder.Encode(diagnostics.BuildDarwinEvidenceReport(snapshots))
+	return encoder.Encode(diagnostics.BuildDarwinEvidenceReport(snapshots, deviceFunctions))
 }

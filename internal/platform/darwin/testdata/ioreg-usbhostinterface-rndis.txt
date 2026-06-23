@@ -1,0 +1,36 @@
++-o RNDIS Communications Control@0  <class IOUSBHostInterface, id 0xffffff0001>
+      "bInterfaceProtocol" = 3
+      "USB Product Name" = "redacted-android-phone"
+      "bInterfaceClass" = 224
+      "bInterfaceSubClass" = 1
+      "bInterfaceNumber" = 0
+      "bConfigurationValue" = 1
+      "USB Vendor Name" = "redacted-vendor"
++-o RNDIS Ethernet Data@1  <class IOUSBHostInterface, id 0xffffff0002>
+      "bInterfaceProtocol" = 0
+      "USB Product Name" = "redacted-android-phone"
+      "bInterfaceClass" = 10
+      "bInterfaceSubClass" = 0
+      "bInterfaceNumber" = 1
+      "bConfigurationValue" = 1
+      "USB Vendor Name" = "redacted-vendor"
++-o AppleUSBNCMControl@0  <class IOUSBHostInterface, id 0xffffff0003>
+      "bInterfaceProtocol" = 0
+      "USB Product Name" = "redacted-usb-dock"
+      "bInterfaceClass" = 2
+      "bInterfaceSubClass" = 13
+      "bInterfaceNumber" = 0
+      "bConfigurationValue" = 1
++-o AppleUSBNCMData@1  <class IOUSBHostInterface, id 0xffffff0004>
+      "bInterfaceProtocol" = 1
+      "USB Product Name" = "redacted-usb-dock"
+      "bInterfaceClass" = 10
+      "bInterfaceSubClass" = 0
+      "bInterfaceNumber" = 1
+      "bConfigurationValue" = 1
++-o IOUSBHostInterface@0  <class IOUSBHostInterface, id 0xffffff0005>
+      "bInterfaceProtocol" = 0
+      "USB Product Name" = "redacted-usb-hub"
+      "bInterfaceClass" = 9
+      "bInterfaceSubClass" = 0
+      "bConfigurationValue" = 1

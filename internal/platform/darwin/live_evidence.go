@@ -44,6 +44,13 @@ func LiveEvidenceInterfaceSnapshots() ([]InterfaceSnapshot, error) {
 	})
 }
 
+// LiveUSBTetherFunctions reports tether-capable USB functions present on the bus
+// from a live ioreg query. These are device-level signals (an unclaimed RNDIS
+// function is not a NIC), collected separately from interface snapshots.
+func LiveUSBTetherFunctions() ([]USBTetherFunction, error) {
+	return USBFunctionDeviceSource{Runner: OSCommandRunner{}}.TetherFunctions()
+}
+
 func (source CombinedInterfaceSource) Interfaces() ([]InterfaceRecord, error) {
 	if source.State == nil {
 		return nil, ErrNilInterfaceSource
@@ -171,9 +178,11 @@ func splitIORegistryBlocks(output string) []string {
 	var blocks []string
 	var current strings.Builder
 
-	scanner := bufio.NewScanner(strings.NewReader(output))
-	for scanner.Scan() {
-		line := scanner.Text()
+	// Split on raw newlines rather than bufio.Scanner: full `ioreg -l` output
+	// contains property blobs far larger than Scanner's 64 KiB line limit (an
+	// IOUSBHostInterface dump has individual lines ~90 KiB), at which Scanner
+	// silently stops — truncating the tree before later nodes are seen.
+	for _, line := range strings.Split(output, "\n") {
 		if strings.Contains(line, "+-o ") && current.Len() > 0 {
 			blocks = append(blocks, current.String())
 			current.Reset()
