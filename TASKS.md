@@ -21,9 +21,14 @@ All five "Definition of Dual-Path Success" criteria met (see `PROJECT_STATE.md`)
 The transport *capability* is done; the work now splits into **productisation**
 and **go-to-market** (open-core + hosted gateway). Next, in priority order:
 
-* [ ] Wire the proven transport into the shipping app via
-  `NEPacketTunnelProvider`: feed RNDIS RX frames in and TX out, bind a UDP socket
-  per path, run the dedup/failover above real flows (not just probes).
+* [~] Wire the proven transport into the shipping app via
+  `NEPacketTunnelProvider`. Transport brain built + tested: `pkg/clientcore`
+  Session frames outbound tunnel packets with identity and dedups inbound (CVD1
+  wire format, race-tested two-path delivery). Architecture decided in ADR-0005
+  (Go core over a narrow C boundary; provider owns packetFlow + the Wi-Fi socket
+  + the RNDIS uplink). Swift seam sketched (`DualPathTransport.swift`, builds).
+  **Still needed:** the cgo C-shared bridge, the real `NEPacketTunnelProvider`
+  with packetFlow I/O + sockets (needs full Xcode/signing), and batching.
 * [ ] Re-confirm the userspace USB claim succeeds inside an App-Sandbox context
   with `com.apple.security.device.usb` (the spike ran un-sandboxed). Gates the
   App Store route.
