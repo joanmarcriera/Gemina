@@ -133,8 +133,12 @@ bulk-OUT ZLP termination if a frame ever lands on a wMaxPacketSize multiple.
    path-loss survival — the Stage-1 gate (`rndis_dualpath.c`). Verified: gateway
    logged 11 first-copy + 5 duplicate for one session; host capture saw two
    independent public WANs (home ISP + cellular carrier).
-5. ▢ Feed RX frames into `NEPacketTunnelProvider` and TX from it, so the
-   bonding/failover layer routes per-flow real traffic.
+5. ◐ Feed RX frames into `NEPacketTunnelProvider` and TX from it. Transport brain
+   built + race-tested: `pkg/clientcore.Session` (duplicate/dedup, CVD1 wire);
+   integration decided in ADR-0005 (Go core over a narrow C-shared boundary;
+   provider owns packetFlow + the Wi-Fi socket + this RNDIS uplink); Swift seam
+   sketched (`apps/macos/.../DualPathTransport.swift`). Remaining: the cgo bridge
+   and the real provider (full Xcode/signing).
 6. ▢ Re-confirm the USB claim inside the App Sandbox with
    `com.apple.security.device.usb`.
 
