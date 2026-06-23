@@ -1,0 +1,194 @@
+package clientcore
+
+import (
+	"crypto/ed25519"
+	"crypto/rand"
+	"encoding/binary"
+	"errors"
+
+	"continuity-vpn/internal/protocol"
+)
+
+// randomSessionID fills id with cryptographically-random bytes, ensuring it is
+// non-zero (a zero session id is invalid).
+func randomSessionID(id *protocol.SessionID) error {
+	if _, err := rand.Read(id[:]); err != nil {
+		return err
+	}
+	id[0] |= 1
+	return nil
+}
+
+// On-wire handshake messages (CVH1). A two-message exchange establishes a
+// session before any data flows:
+//
+//	ClientHello (client -> gateway): session id, the client's ephemeral X25519
+//	  public key, and the client's entitlement token.
+//	ServerHello (gateway -> client): the gateway's ephemeral X25519 public key
+//	  and an Ed25519 signature over it (bound to the session) under the gateway's
+//	  pinned identity.
+//
+// Both sides then derive the session key by X25519 ECDH of their own ephemeral
+// private key with the peer's ephemeral public key (DeriveSessionKey). The client
+// authenticates the gateway by verifying the signature against the pinned
+// identity (ADR-0007); the gateway authenticates/admits the client by its token.
+const (
+	handshakeVersion = 1
+	msgClientHello   = 1
+	msgServerHello   = 2
+
+	x25519PubSize = 32
+	maxTokenLen   = 4096
+
+	clientHelloFixed = 6 + protocol.SessionIDSize + x25519PubSize + 2 // before token
+	serverHelloLen   = 6 + protocol.SessionIDSize + x25519PubSize + ed25519.SignatureSize
+)
+
+var handshakeMagic = [4]byte{'C', 'V', 'H', '1'}
+
+var (
+	errShortHandshake = errors.New("handshake message shorter than its header")
+	errHandshakeMagic = errors.New("handshake message has wrong magic")
+	errHandshakeVer   = errors.New("handshake message has unsupported version")
+	errHandshakeType  = errors.New("handshake message has the wrong type")
+	errHandshakeField = errors.New("handshake message has a malformed field")
+)
+
+func putHandshakeHeader(out []byte, msgType byte, id protocol.SessionID) {
+	copy(out[0:4], handshakeMagic[:])
+	out[4] = handshakeVersion
+	out[5] = msgType
+	copy(out[6:6+protocol.SessionIDSize], id[:])
+}
+
+func parseHandshakeHeader(b []byte, msgType byte) (protocol.SessionID, error) {
+	if len(b) < 6+protocol.SessionIDSize {
+		return protocol.SessionID{}, errShortHandshake
+	}
+	if [4]byte(b[0:4]) != handshakeMagic {
+		return protocol.SessionID{}, errHandshakeMagic
+	}
+	if b[4] != handshakeVersion {
+		return protocol.SessionID{}, errHandshakeVer
+	}
+	if b[5] != msgType {
+		return protocol.SessionID{}, errHandshakeType
+	}
+	var id protocol.SessionID
+	copy(id[:], b[6:6+protocol.SessionIDSize])
+	return id, nil
+}
+
+// EncodeClientHello frames a ClientHello.
+func EncodeClientHello(id protocol.SessionID, ephemeralPub []byte, token string) ([]byte, error) {
+	if len(ephemeralPub) != x25519PubSize {
+		return nil, errHandshakeField
+	}
+	if len(token) > maxTokenLen {
+		return nil, errHandshakeField
+	}
+	out := make([]byte, clientHelloFixed+len(token))
+	putHandshakeHeader(out, msgClientHello, id)
+	copy(out[6+protocol.SessionIDSize:], ephemeralPub)
+	binary.BigEndian.PutUint16(out[6+protocol.SessionIDSize+x25519PubSize:], uint16(len(token)))
+	copy(out[clientHelloFixed:], token)
+	return out, nil
+}
+
+// DecodeClientHello parses a ClientHello.
+func DecodeClientHello(b []byte) (id protocol.SessionID, ephemeralPub []byte, token string, err error) {
+	id, err = parseHandshakeHeader(b, msgClientHello)
+	if err != nil {
+		return protocol.SessionID{}, nil, "", err
+	}
+	if len(b) < clientHelloFixed {
+		return protocol.SessionID{}, nil, "", errShortHandshake
+	}
+	ephStart := 6 + protocol.SessionIDSize
+	eph := b[ephStart : ephStart+x25519PubSize]
+	tokenLen := int(binary.BigEndian.Uint16(b[ephStart+x25519PubSize:]))
+	if len(b) != clientHelloFixed+tokenLen || tokenLen > maxTokenLen {
+		return protocol.SessionID{}, nil, "", errHandshakeField
+	}
+	return id, append([]byte(nil), eph...), string(b[clientHelloFixed:]), nil
+}
+
+// EncodeServerHello frames a ServerHello.
+func EncodeServerHello(id protocol.SessionID, ephemeralPub, sig []byte) ([]byte, error) {
+	if len(ephemeralPub) != x25519PubSize || len(sig) != ed25519.SignatureSize {
+		return nil, errHandshakeField
+	}
+	out := make([]byte, serverHelloLen)
+	putHandshakeHeader(out, msgServerHello, id)
+	ephStart := 6 + protocol.SessionIDSize
+	copy(out[ephStart:], ephemeralPub)
+	copy(out[ephStart+x25519PubSize:], sig)
+	return out, nil
+}
+
+// DecodeServerHello parses a ServerHello.
+func DecodeServerHello(b []byte) (id protocol.SessionID, ephemeralPub, sig []byte, err error) {
+	id, err = parseHandshakeHeader(b, msgServerHello)
+	if err != nil {
+		return protocol.SessionID{}, nil, nil, err
+	}
+	if len(b) != serverHelloLen {
+		return protocol.SessionID{}, nil, nil, errHandshakeField
+	}
+	ephStart := 6 + protocol.SessionIDSize
+	eph := b[ephStart : ephStart+x25519PubSize]
+	signature := b[ephStart+x25519PubSize:]
+	return id, append([]byte(nil), eph...), append([]byte(nil), signature...), nil
+}
+
+// ClientHandshake is the client's in-flight handshake state between sending a
+// ClientHello and receiving the ServerHello.
+type ClientHandshake struct {
+	sessionID       protocol.SessionID
+	ephemeralPriv   []byte
+	gatewayIdentity ed25519.PublicKey
+}
+
+// BeginClientHandshake starts a handshake to a gateway whose Ed25519 identity is
+// pinned in gatewayIdentity, presenting the entitlement token. It returns the
+// ClientHello bytes to send and the state needed to Complete the handshake.
+func BeginClientHandshake(gatewayIdentity ed25519.PublicKey, token string) ([]byte, *ClientHandshake, error) {
+	if len(gatewayIdentity) != ed25519.PublicKeySize {
+		return nil, nil, errBadIdentityKey
+	}
+	var id protocol.SessionID
+	if err := randomSessionID(&id); err != nil {
+		return nil, nil, err
+	}
+	priv, pub, err := GenerateKeyPair()
+	if err != nil {
+		return nil, nil, err
+	}
+	hello, err := EncodeClientHello(id, pub, token)
+	if err != nil {
+		return nil, nil, err
+	}
+	return hello, &ClientHandshake{sessionID: id, ephemeralPriv: priv, gatewayIdentity: gatewayIdentity}, nil
+}
+
+// Complete consumes the gateway's ServerHello: it checks the session matches,
+// verifies the gateway signature against the pinned identity (defeating an active
+// MITM), derives the session key, and returns a ready initiator Session with the
+// given inbound dedup capacity.
+func (hs *ClientHandshake) Complete(serverHello []byte, dedupCapacity int) (*Session, error) {
+	id, gatewayEph, sig, err := DecodeServerHello(serverHello)
+	if err != nil {
+		return nil, err
+	}
+	if id != hs.sessionID {
+		return nil, errHandshakeField
+	}
+	if err := VerifyHandshake(hs.gatewayIdentity, gatewayEph, sig, id); err != nil {
+		return nil, err
+	}
+	key, err := DeriveSessionKey(hs.ephemeralPriv, gatewayEph, id)
+	if err != nil {
+		return nil, err
+	}
+	return NewSession(id, key, RoleInitiator, dedupCapacity)
+}

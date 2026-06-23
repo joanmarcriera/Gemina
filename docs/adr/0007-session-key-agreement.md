@@ -47,10 +47,14 @@ decrypt past sessions.
   a long-term **Ed25519** identity, the client **pins** its public key, and the
   gateway **signs its ephemeral X25519 key** (bound to the session) so a client
   rejects any MITM-substituted key. The client is authenticated to the gateway by
-  its entitlement token (`internal/entitlement`). What remains is the on-wire
-  handshake *message* that carries the ephemeral key + signature, and how the
-  client obtains the pinned identity (bundled for the hosted gateway; shown once
-  / via config for a self-hosted one).
+  its entitlement token (`internal/entitlement`). The on-wire handshake messages
+  now exist (`pkg/clientcore` ClientHello/ServerHello + `BeginClientHandshake`/
+  `Complete`; gateway side `Admitter.Handshake`): the client sends its ephemeral
+  key + token, the gateway derives the key, admits on the token, and returns its
+  signed ephemeral key; an end-to-end test runs the full mutual-auth + key
+  agreement + admission + encrypted-data path. What remains is how the client
+  obtains the pinned identity (bundled for the hosted gateway; shown once / via
+  config for a self-hosted one) and replay/timeout handling on the handshake.
 * The exchange that carries the public keys (a small handshake datagram before
   data, or in the connection setup) is still to be wired into the gateway and the
   NE provider.
