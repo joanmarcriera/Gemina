@@ -168,7 +168,12 @@ Unit-testable in Swift (once the Xcode project exists), no UI harness needed:
 - **Impact maths**: a sequence of path-state events → outage-absorbed / failovers
   / %-protected (pure function over an event log).
 The Go-side payloads (ShareReport, benchmark stats, diagnostics) are already
-tested.
+tested. **Implemented**: PathPolicy, ProtectionStatus, ConsentDefaults and Impact
+live in the `ContinuityVPNCore` SwiftPM target, verified headless by the
+`ContinuityVPNCoreCheck` executable (the Command Line Tools ship no
+XCTest/Swift-Testing; the checks port to a test target once Xcode is installed).
+The relay (`DualPathRelay`) consults the policy. "Data sent per path" is a
+separate running byte counter in the provider, not part of `computeImpact`.
 
 ## Day-one quality bar
 
