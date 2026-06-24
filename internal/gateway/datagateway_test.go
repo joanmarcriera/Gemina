@@ -50,6 +50,21 @@ func TestDataGatewayHandshakeThenDataWithMetrics(t *testing.T) {
 	}
 }
 
+func TestDataGatewayEchoesPing(t *testing.T) {
+	idPriv, _, _ := clientcore.GenerateIdentity()
+	service, _ := hostedService(t)
+	gw := NewDataGateway(idPriv, service, 64, nil)
+
+	reply, rec := gw.HandleDatagram(clientcore.EncodePing(0xDEADBEEF))
+	if rec.Kind != "ping" {
+		t.Fatalf("ping not recognised: %+v", rec)
+	}
+	isPong, nonce, err := clientcore.DecodePing(reply)
+	if err != nil || !isPong || nonce != 0xDEADBEEF {
+		t.Fatalf("echo wrong: pong=%v nonce=%x err=%v", isPong, nonce, err)
+	}
+}
+
 func TestDataGatewayRejectsUnentitledHandshake(t *testing.T) {
 	idPriv, idPub, _ := clientcore.GenerateIdentity()
 	service, _ := hostedService(t)
