@@ -48,3 +48,6 @@ skills-lock.json
 # by `go build`/`make`; rebuild it, do not commit it).
 /gateway
 /continuityctl
+
+# Generated Xcode project (regenerate with `xcodegen generate`)
+apps/macos/*.xcodeproj/
