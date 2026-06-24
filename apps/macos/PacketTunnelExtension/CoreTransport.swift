@@ -1,4 +1,7 @@
-import CContinuityCore
+#if canImport(CContinuityCore)
+import CContinuityCore // SwiftPM: the C module. In Xcode the symbols come from
+// the bridging header (Bridging-Header.h) instead, so the import is skipped.
+#endif
 import Foundation
 
 // CoreTransport is the Swift face of the Go transport core (pkg/clientcore) over
