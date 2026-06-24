@@ -1,3 +1,4 @@
+import ContinuityVPNCore
 import Foundation
 
 // Swift-side contract for the dual-path data plane (ADR-0005). These protocols
@@ -26,6 +27,11 @@ public protocol PathSender {
     func send(_ datagram: Data) throws
 }
 
+public enum RelayError: Error, Equatable {
+    /// The policy selected a path id that has no matching PathSender.
+    case noSenderForSelectedPath(String)
+}
+
 /// Drives the proven dual-path duplicate/deduplicate behaviour. It frames each
 /// outbound packet once and sends identical copies over every active path, and
 /// deduplicates inbound datagrams via the core — so one logical packet is
@@ -33,23 +39,36 @@ public protocol PathSender {
 public struct DualPathRelay {
     private let core: TransportCore
     private let paths: [PathSender]
+    private let policy: PathPolicy
 
-    public init(core: TransportCore, paths: [PathSender]) {
+    public init(core: TransportCore, paths: [PathSender], policy: PathPolicy = PathPolicy(mode: .auto)) {
         self.core = core
         self.paths = paths
+        self.policy = policy
     }
 
-    /// Duplicate one outbound tunnel packet across all active paths. Per-path
-    /// send failures are collected so one dead path does not stop the others.
-    public func sendOutbound(_ packet: Data) throws -> [String: Error] {
+    /// Frame one outbound tunnel packet and send it over the paths the policy
+    /// selects for the current path states (Duplicate sends over all; Failover/
+    /// Smart/Auto may send over one). Per-path send failures are collected so one
+    /// dead path does not stop the others.
+    public func sendOutbound(_ packet: Data, pathStates: [PathInfo], primaryUnstable: Bool) throws -> [String: Error] {
         let framed = try core.outbound(packet)
+        let selected = Set(policy.sendPaths(pathStates, primaryUnstable: primaryUnstable))
+        let senderNames = Set(paths.map(\.name))
+
         var failures: [String: Error] = [:]
-        for path in paths {
+        for path in paths where selected.contains(path.name) {
             do {
                 try path.send(framed)
             } catch {
                 failures[path.name] = error
             }
+        }
+        // Surface a selected path that has no sender rather than silently sending
+        // it over nothing — this means pathStates and `paths` disagree on naming,
+        // which the caller must fix (they should come from one source).
+        for missing in selected.subtracting(senderNames) {
+            failures[missing] = RelayError.noSenderForSelectedPath(missing)
         }
         return failures
     }

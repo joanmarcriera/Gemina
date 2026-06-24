@@ -1,4 +1,5 @@
 #if canImport(NetworkExtension)
+import ContinuityVPNCore
 import Foundation
 import NetworkExtension
 
@@ -23,6 +24,10 @@ enum TunnelError: Error {
 
 open class ContinuityTunnelProvider: NEPacketTunnelProvider {
     private var relay: DualPathRelay?
+    /// Current path states + primary health, maintained from the NE path monitor
+    /// and the benchmark pings; consulted by the policy on each outbound packet.
+    private var currentPathStates: [PathInfo] = []
+    private var primaryUnstable = false
 
     /// Build the relay: the transport core (cgo bridge) plus the active path
     /// senders. Overridden by a bootstrap subclass; the default refuses to start.
@@ -79,10 +84,13 @@ open class ContinuityTunnelProvider: NEPacketTunnelProvider {
     private func readOutboundLoop() {
         packetFlow.readPackets { [weak self] packets, _ in
             guard let self, let relay = self.relay else { return }
+            // currentPathStates / primaryUnstable are maintained from the NE path
+            // monitor + the benchmark pings; the policy uses them to choose how
+            // many paths to send each packet over (Duplicate / Failover / Smart).
             for packet in packets {
-                // Per-path send failures are surfaced by the relay; one dead path
-                // must not stop the other (that is the whole point).
-                _ = try? relay.sendOutbound(packet)
+                _ = try? relay.sendOutbound(packet,
+                                            pathStates: self.currentPathStates,
+                                            primaryUnstable: self.primaryUnstable)
             }
             self.readOutboundLoop()
         }
