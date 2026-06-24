@@ -13,6 +13,18 @@ and reviewed.
 
 ## Next exact action
 
+**BLOCKED on Apple (resume ~2026-06-26):** the macOS app build/sign pipeline is
+proven — Phase 1 ran; Phase 2 (app + NetworkExtension + Go core) is
+headless-verified `BUILD SUCCEEDED`. The only blocker is the **paid Apple
+Developer Program membership activating** (NE is unavailable to a free Personal
+Team). Resume steps are in the `apple-developer-membership-pending` memory and the
+`macos-app-xcode-build` skill: confirm membership Active → refresh Xcode accounts
+→ set Team → Run → then **Phase 3** (the real `NEPacketTunnelProvider`: the two
+path sockets, `makeRelay`, the on-wire handshake from Swift, live status). The
+no-NE `ContinuityDev.xcodeproj` runs on the Personal Team meanwhile for UI work.
+
+---
+
 **Stage-1 dual-path transport is PROVEN** (2026-06-23): the userspace spike
 sends one identity over Wi-Fi (IP_BOUND_IF en0) and the phone's cellular RNDIS
 uplink simultaneously; the gateway dedups to one delivery, the host capture saw

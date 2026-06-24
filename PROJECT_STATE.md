@@ -116,6 +116,17 @@ Built this cycle (all unit/race tested):
 * `internal/entitlement` Stripe — `StripeProvider` (stdlib net/http, no SDK):
   checkout creation + real webhook signature verification (HMAC, constant-time,
   replay-tolerance). Drops into `entitlement.Service`. Real keys/accounts remain.
+* `apps/macos` is now an **Xcode project** (XcodeGen, `project.yml`): a menu-bar
+  app (`AppUI`, `MenuBarExtra`) + the `ContinuityTunnel` NetworkExtension packet
+  tunnel + the logic frameworks, with the Go core linked as a cgo c-archive
+  (bridging header + pre-build script). Phase 1 (menu-bar app) **ran** on the
+  owner's Mac; Phase 2 (app + NE + Go core) is **headless-verified** (`xcodebuild
+  … BUILD SUCCEEDED`). Blocked only on the **paid Apple Developer membership
+  activating** (Network Extensions are unavailable to a free Personal Team) —
+  waiting ~48h (resume ~2026-06-26). `project-dev.yml` builds a no-NE variant that
+  runs on the Personal Team meanwhile. Build/sign recipe + gotchas in the
+  `macos-app-xcode-build` skill. Next: Phase 3, the real `NEPacketTunnelProvider`
+  (sockets, makeRelay, handshake over the wire, live status).
 * `apps/macos` Swift↔Go link + app logic — `CContinuityCore` C target +
   `CoreTransport.swift` (cgo bridge), and `ContinuityVPNCore` (pure Swift):
   `PathPolicy` (Duplicate/Failover/Smart/Auto + preferred path; the relay honours
