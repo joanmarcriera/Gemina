@@ -1,0 +1,59 @@
+# Personal-team dev variant: the menu-bar app WITHOUT the Network Extension, so it
+# builds and runs on a free Apple "Personal Team" while the paid Developer Program
+# membership (needed for the Network Extensions capability) activates.
+#
+#   cd apps/macos && xcodegen generate --spec project-dev.yml
+#   open ContinuityDev.xcodeproj   # set your (personal) Team, Run
+#
+# Use the full project.yml once your Developer Program membership is Active.
+
+name: ContinuityDev
+
+options:
+  bundleIdPrefix: com.joanmarcriera
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_STRICT_CONCURRENCY: complete
+
+targets:
+  ContinuityVPNShared:
+    type: framework
+    platform: macOS
+    sources: [Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.shared
+        GENERATE_INFOPLIST_FILE: "YES"
+
+  ContinuityVPNCore:
+    type: framework
+    platform: macOS
+    sources: [Core]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.core
+        GENERATE_INFOPLIST_FILE: "YES"
+
+  ContinuityDev:
+    type: application
+    platform: macOS
+    sources: [AppUI]
+    dependencies:
+      - target: ContinuityVPNCore
+        embed: true
+      - target: ContinuityVPNShared
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.dev
+        GENERATE_INFOPLIST_FILE: "YES"
+        INFOPLIST_KEY_LSUIElement: "YES"
+        CODE_SIGN_ENTITLEMENTS: Resources/Continuity-dev.entitlements
