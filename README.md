@@ -3,11 +3,17 @@
 **Keep calls and SSH sessions alive when one network blips — by sending your traffic over two uplinks at once.**
 
 Continuity VPN is a macOS reliability tool. It duplicates your protected traffic
-over **two uplinks simultaneously** — your home or office Wi-Fi *and* an Android
-phone's USB tethering (cellular) — sends both copies to a single gateway, and the
-gateway delivers the first valid copy while discarding the duplicate. If one link
-drops mid-call, the other is already carrying the same packets, so the session
-does not notice.
+over **two independent connections at once** — your Wi-Fi *and* a second
+connection of your choice (your phone's cellular over USB — iPhone or Android — a
+second broadband line, or an LTE/USB-Wi-Fi dongle) — sends both copies to a single
+gateway, and the gateway delivers the first valid copy while discarding the
+duplicate. If one link drops mid-call, the other is already carrying the same
+packets, so the session does not notice.
+
+The two connections just need to be **independent** (different paths to the
+internet). On macOS, an iPhone or a Pixel/AOSP phone appears as a network
+interface natively; other Android phones are driven by the app's bundled
+userspace driver — no root on the phone, no kernel extension on the Mac.
 
 This is a **reliability** product, not a bandwidth-aggregation one. It does not
 combine the speed of both links; it keeps your connection up. It is open source
@@ -30,7 +36,7 @@ the session going with no reconnection.
 flowchart LR
     Mac[macOS client]
     Mac -->|copy A| WiFi[Wi-Fi uplink]
-    Mac -->|copy B| Phone[Android USB tether<br/>cellular uplink]
+    Mac -->|copy B| Phone[Second connection<br/>phone cellular / 2nd line]
     WiFi --> GW[Gateway<br/>UDP 51820]
     Phone --> GW
     GW -->|first copy delivered<br/>duplicate discarded| Net[Internet]
@@ -111,11 +117,15 @@ saves you from running the container yourself.
 ## Compatibility
 
 * **macOS** client. Apple Silicon is the primary target.
-* **Any Android phone with USB tethering.** The app drives the phone's USB tether
-  from userspace — no root on the phone, and no kernel extension or SIP changes on
-  the Mac. Some phones (for example Pixel and AOSP 14+) also work via macOS's
-  native CDC-NCM host driver.
+* **Any second independent connection** as the second path: your phone's cellular
+  over USB (**iPhone** Personal Hotspot and **Pixel/AOSP** phones appear as a
+  network interface natively; **other Android** phones are driven by the app's
+  bundled userspace driver — no root, no kernel extension, no SIP changes), a
+  second broadband line, or an LTE/USB-Wi-Fi dongle.
 * No special hardware and no second SIM beyond your normal phone plan.
+
+See the community [`COMPATIBILITY.md`](COMPATIBILITY.md) catalogue, and run
+`continuityctl preflight -share` to check your own setup and contribute a report.
 
 Run `continuityctl preflight` to confirm a given Mac + Android combination is
 supported before you commit: it returns a plain verdict (for example *supported*,

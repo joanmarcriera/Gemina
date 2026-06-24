@@ -67,6 +67,23 @@ func (r CompatibilityReport) Summary() string {
 	return string(r.Verdict) + ": " + r.NextStep
 }
 
+// ShareReport renders a compact, copy-pasteable block for the community
+// compatibility catalogue. It carries only the coarse technical facts the
+// catalogue needs (verdict, macOS version, tether mode) — never a bsd name, IP,
+// MAC or serial — and explicitly invites the user to add their own phone model
+// when submitting, so we never auto-collect a device identifier.
+func (r CompatibilityReport) ShareReport() string {
+	return strings.Join([]string{
+		"Continuity VPN compatibility report (redacted — safe to share)",
+		"  verdict:        " + string(r.Verdict),
+		"  macOS:          " + r.MacOSVersion,
+		"  android tether: " + r.AndroidTether.Mode,
+		"  --- you fill these in when submitting to the catalogue ---",
+		"  phone model:    (e.g. OnePlus 12R, Pixel 8 — your call what to share)",
+		"  notes:          ",
+	}, "\n")
+}
+
 // BuildCompatibilityReport derives the verdict from live device evidence plus the
 // macOS version string (as from `sw_vers -productVersion`). It is pure so the
 // whole matrix is unit-testable without hardware.

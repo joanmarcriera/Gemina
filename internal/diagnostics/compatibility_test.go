@@ -134,6 +134,32 @@ func TestBuildCompatibilityReport(t *testing.T) {
 	}
 }
 
+func TestCompatibilityReportShareIsRedactedAndCatalogueReady(t *testing.T) {
+	report := BuildCompatibilityReport(
+		[]darwin.InterfaceSnapshot{usableWiFi()},
+		[]darwin.USBTetherFunction{rndisFunction()},
+		"14.5",
+	)
+	share := report.ShareReport()
+
+	// Carries the coarse, non-identifying technical facts a catalogue needs.
+	for _, want := range []string{"supported", "14.5", "app-driver-rndis"} {
+		if !strings.Contains(share, want) {
+			t.Errorf("share report missing %q in:\n%s", want, share)
+		}
+	}
+	// Invites the user to add their own device — we never auto-collect it.
+	if !strings.Contains(strings.ToLower(share), "phone model") {
+		t.Errorf("share report does not prompt for the user's device:\n%s", share)
+	}
+	// Must never carry a bsd name or other identifier the report happens to hold.
+	for _, forbidden := range []string{"redacted-wifi", "redacted-android-usb"} {
+		if strings.Contains(share, forbidden) {
+			t.Fatalf("share report leaked %q: %s", forbidden, share)
+		}
+	}
+}
+
 func TestCompatibilityReportSummaryIsHumanAndCarriesNextStep(t *testing.T) {
 	report := BuildCompatibilityReport(
 		[]darwin.InterfaceSnapshot{usableWiFi()},
