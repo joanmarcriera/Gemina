@@ -34,6 +34,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.shared
+        GENERATE_INFOPLIST_FILE: "YES"
 
   ContinuityVPNCore:
     type: framework
@@ -43,6 +44,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.core
+        GENERATE_INFOPLIST_FILE: "YES"
 
   Continuity:
     type: application
