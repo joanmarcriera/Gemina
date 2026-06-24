@@ -18,6 +18,7 @@ import (
 func runPreflight(args []string, out io.Writer) error {
 	fs := flag.NewFlagSet("preflight", flag.ContinueOnError)
 	asJSON := fs.Bool("json", false, "print the full JSON report instead of a one-line summary")
+	share := fs.Bool("share", false, "print a redacted, copy-pasteable report for the compatibility catalogue")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -36,17 +37,22 @@ func runPreflight(args []string, out io.Writer) error {
 	}
 
 	report := diagnostics.BuildCompatibilityReport(snapshots, deviceFunctions, version)
-	return writePreflight(out, report, *asJSON)
+	return writePreflight(out, report, *asJSON, *share)
 }
 
 // writePreflight renders the report. Separated from the live collection so the
 // output shape is unit-testable.
-func writePreflight(out io.Writer, report diagnostics.CompatibilityReport, asJSON bool) error {
-	if asJSON {
+func writePreflight(out io.Writer, report diagnostics.CompatibilityReport, asJSON, share bool) error {
+	switch {
+	case asJSON:
 		encoder := json.NewEncoder(out)
 		encoder.SetIndent("", "  ")
 		return encoder.Encode(report)
+	case share:
+		_, err := fmt.Fprintln(out, report.ShareReport())
+		return err
+	default:
+		_, err := fmt.Fprintln(out, report.Summary())
+		return err
 	}
-	_, err := fmt.Fprintln(out, report.Summary())
-	return err
 }
