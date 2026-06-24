@@ -116,10 +116,15 @@ Built this cycle (all unit/race tested):
 * `internal/entitlement` Stripe — `StripeProvider` (stdlib net/http, no SDK):
   checkout creation + real webhook signature verification (HMAC, constant-time,
   replay-tolerance). Drops into `entitlement.Service`. Real keys/accounts remain.
-* `apps/macos` Swift↔Go link — `CContinuityCore` SwiftPM C target (vendored ABI
-  header) + `CoreTransport.swift` implementing `TransportCore` via the cgo bridge;
-  `swift build` green. The path sockets + handshake-over-the-wire in Swift remain
-  Xcode-runtime work.
+* `apps/macos` Swift↔Go link + app logic — `CContinuityCore` C target +
+  `CoreTransport.swift` (cgo bridge), and `ContinuityVPNCore` (pure Swift):
+  `PathPolicy` (Duplicate/Failover/Smart/Auto + preferred path; the relay honours
+  it), `ProtectionStatus`, consent defaults (free opt-in / paid opt-out), and the
+  `Impact` maths (outage absorbed, failovers survived). Verified headless by
+  `ContinuityVPNCoreCheck` (no Xcode needed); `swift build` green. The SwiftUI
+  views (menu bar, Settings, onboarding), the path sockets, and the
+  handshake-over-the-wire remain Xcode-runtime work. App design spec:
+  `docs/superpowers/specs/2026-06-24-macos-app-experience-design.md`.
 * Monetisation study (`docs/product/monetisation-apple-study.md`): keep Stripe as
   the rail (a free macOS companion to a paid web service can skip App Store IAP);
   IAP, if ever used, is 15% (Small Business Program).
