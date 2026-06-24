@@ -9,6 +9,7 @@ const (
 	KindData
 	KindClientHello
 	KindServerHello
+	KindPing
 )
 
 func (k DatagramKind) String() string {
@@ -19,6 +20,8 @@ func (k DatagramKind) String() string {
 		return "client-hello"
 	case KindServerHello:
 		return "server-hello"
+	case KindPing:
+		return "ping"
 	default:
 		return "unknown"
 	}
@@ -34,6 +37,8 @@ func ClassifyDatagram(b []byte) DatagramKind {
 	switch magic {
 	case dataMagic:
 		return KindData
+	case pingMagic:
+		return KindPing
 	case handshakeMagic:
 		if len(b) < 6 {
 			return KindUnknown

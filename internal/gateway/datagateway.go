@@ -82,6 +82,13 @@ func (g *DataGateway) HandleDatagram(datagram []byte) (reply []byte, rec DataRec
 		return g.handleHandshake(datagram)
 	case clientcore.KindData:
 		return nil, g.handleData(datagram)
+	case clientcore.KindPing:
+		// Echo a pong for latency/loss measurement (continuityctl benchmark).
+		// The pong is the same size as the ping, so there is no amplification.
+		if isPong, nonce, err := clientcore.DecodePing(datagram); err == nil && !isPong {
+			return clientcore.EncodePong(nonce), DataRecord{Kind: "ping"}
+		}
+		return nil, DataRecord{Kind: "ping"}
 	default:
 		g.dataPackets.Inc("rejected")
 		return nil, DataRecord{Kind: "unknown"}
