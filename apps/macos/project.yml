@@ -2,9 +2,8 @@
 #   cd apps/macos && xcodegen generate
 # Then open Continuity.xcodeproj in Xcode, select your Team, and Run.
 #
-# Phase 1 (this file): a runnable status-led menu-bar app + the shared logic
-# frameworks. Phase 2 adds the Network Extension (packet tunnel) and links the Go
-# c-archive — added once Phase 1 builds and runs.
+# Phase 1: the status-led menu-bar app + shared logic frameworks.
+# Phase 2 (this file): the Network Extension (packet tunnel) linking the Go core.
 #
 # Change the bundle id prefix below to your own namespace (a domain you own
 # reversed, e.g. app.continuityvpn — or keep this if you have no domain yet).
@@ -46,6 +45,43 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.core
         GENERATE_INFOPLIST_FILE: "YES"
 
+  ContinuityTunnel:
+    type: app-extension
+    platform: macOS
+    sources:
+      - PacketTunnelExtension
+    dependencies:
+      - target: ContinuityVPNCore
+        embed: false
+      - target: ContinuityVPNShared
+        embed: false
+    preBuildScripts:
+      - name: Build Go transport c-archive
+        basedOnDependencyAnalysis: false
+        script: |
+          set -euo pipefail
+          export PATH="/opt/homebrew/bin:/usr/local/go/bin:$PATH"
+          # Match the app's deployment target so the linker does not warn.
+          export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-14.0}"
+          export CGO_CFLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+          cd "$SRCROOT/../.."
+          go build -buildmode=c-archive \
+            -o "$SRCROOT/build/libcontinuitycore.a" ./bridge/continuitycore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.tunnel
+        CODE_SIGN_ENTITLEMENTS: Resources/ContinuityTunnel.entitlements
+        SWIFT_OBJC_BRIDGING_HEADER: PacketTunnelExtension/Bridging-Header.h
+        HEADER_SEARCH_PATHS: $(SRCROOT)/CContinuityCore/include
+        LIBRARY_SEARCH_PATHS: $(SRCROOT)/build
+        OTHER_LDFLAGS: "-lcontinuitycore -lresolv -framework CoreFoundation -framework Security"
+    info:
+      path: Resources/ContinuityTunnel-Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.networkextension.packet-tunnel
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ContinuityTunnelProvider
+
   Continuity:
     type: application
     platform: macOS
@@ -55,6 +91,8 @@ targets:
       - target: ContinuityVPNCore
         embed: true
       - target: ContinuityVPNShared
+        embed: true
+      - target: ContinuityTunnel
         embed: true
     settings:
       base:
