@@ -81,10 +81,30 @@ the first copy of each packet identity and `"decision":"duplicate"` for the late
 copy arriving over the second path. No client source address ever appears in the
 logs — the handler is never given it.
 
+## Important: do not run the gateway at home
+
+The gateway must sit on a **well-connected, independent network — not on your home
+or office line.** Here is why. The client duplicates your protected traffic and
+sends *both* copies to the gateway. If the gateway is on your home connection,
+both copies converge on that single home WAN, so:
+
+* you lose the whole point — there is no longer a second independent path at the
+  gateway end; if the home line blips, both copies are lost;
+* your home **upload** bandwidth (usually small and asymmetric) becomes the
+  bottleneck for all your duplicated traffic;
+* you add a hop through your home before traffic reaches the internet.
+
+Run the gateway on a small cloud VPS instead (any provider; a tiny instance is
+plenty for a UDP relay). That gives it an independent, well-provisioned uplink —
+which is exactly what the dual-path design needs. **Our hosted gateway is simply
+the zero-effort version of this**: a maintained, monitored VPS endpoint in a
+datacentre, so you do not have to provision, secure and update one yourself.
+
 ## Self-host vs hosted: the trade-off
 
 Both options use the same open-source client and gateway. The only difference is
-who runs the server.
+who runs the server (and, per the note above, self-hosting means a cheap VPS,
+not your home box).
 
 **Self-host** when you want:
 

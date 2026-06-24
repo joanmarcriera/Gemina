@@ -15,7 +15,7 @@ func TestWritePreflightSummaryMode(t *testing.T) {
 	}, nil, "14.5")
 
 	var buf bytes.Buffer
-	if err := writePreflight(&buf, report, false); err != nil {
+	if err := writePreflight(&buf, report, false, false); err != nil {
 		t.Fatalf("writePreflight: %v", err)
 	}
 	out := buf.String()
@@ -31,7 +31,7 @@ func TestWritePreflightJSONMode(t *testing.T) {
 	report := diagnostics.BuildCompatibilityReport(nil, nil, "14.5")
 
 	var buf bytes.Buffer
-	if err := writePreflight(&buf, report, true); err != nil {
+	if err := writePreflight(&buf, report, true, false); err != nil {
 		t.Fatalf("writePreflight: %v", err)
 	}
 	out := buf.String()
