@@ -1,0 +1,63 @@
+# XcodeGen spec for the macOS app. Generate the project with:
+#   cd apps/macos && xcodegen generate
+# Then open Continuity.xcodeproj in Xcode, select your Team, and Run.
+#
+# Phase 1 (this file): a runnable status-led menu-bar app + the shared logic
+# frameworks. Phase 2 adds the Network Extension (packet tunnel) and links the Go
+# c-archive — added once Phase 1 builds and runs.
+#
+# Change the bundle id prefix below to your own namespace (a domain you own
+# reversed, e.g. app.continuityvpn — or keep this if you have no domain yet).
+
+name: Continuity
+
+options:
+  bundleIdPrefix: com.joanmarcriera
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_STRICT_CONCURRENCY: complete
+
+targets:
+  ContinuityVPNShared:
+    type: framework
+    platform: macOS
+    sources:
+      - Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.shared
+
+  ContinuityVPNCore:
+    type: framework
+    platform: macOS
+    sources:
+      - Core
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.core
+
+  Continuity:
+    type: application
+    platform: macOS
+    sources:
+      - AppUI
+    dependencies:
+      - target: ContinuityVPNCore
+        embed: true
+      - target: ContinuityVPNShared
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity
+        GENERATE_INFOPLIST_FILE: "YES"
+        # Menu-bar (agent) app: no Dock icon, no main window.
+        INFOPLIST_KEY_LSUIElement: "YES"
+        CODE_SIGN_ENTITLEMENTS: Resources/Continuity.entitlements
