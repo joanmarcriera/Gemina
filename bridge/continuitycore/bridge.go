@@ -46,6 +46,45 @@ func cc_session_new(sessionID *C.uint8_t, key *C.uint8_t, role C.int, capacity C
 	return C.uint64_t(createSession(id, keyBytes, r, int(capacity)))
 }
 
+// cc_handshake_begin starts a client handshake to a gateway whose Ed25519 identity
+// public key is the 32 bytes at gatewayPub, presenting the NUL-terminated token.
+// On success it writes the ClientHello into out (capacity outCap), sets *hsHandle
+// to a non-zero in-flight handshake handle, and returns the ClientHello length.
+// On failure it returns a negative error code (-2 buffer too small, -3 core error)
+// and sets *hsHandle to 0. gatewayPub and token are copied; the caller may free
+// them after the call. Send the ClientHello bytes to the gateway, then pass the
+// ServerHello reply and *hsHandle to cc_handshake_complete.
+//
+//export cc_handshake_begin
+func cc_handshake_begin(gatewayPub *C.uint8_t, token *C.char, out *C.uint8_t, outCap C.int, hsHandle *C.uint64_t) C.int {
+	pub := C.GoBytes(unsafe.Pointer(gatewayPub), 32)
+	tok := C.GoString(token)
+	dst := make([]byte, int(outCap))
+
+	n, h := beginHandshake(pub, tok, dst)
+	*hsHandle = C.uint64_t(h)
+	if n < 0 {
+		return C.int(n)
+	}
+	if n > 0 {
+		C.memcpy(unsafe.Pointer(out), unsafe.Pointer(&dst[0]), C.size_t(n))
+	}
+	return C.int(n)
+}
+
+// cc_handshake_complete consumes the gateway's ServerHello (serverHelloLen bytes at
+// serverHello) for the in-flight handshake named by hsHandle. It verifies the
+// gateway signature against the pinned identity, derives the session key, and
+// returns a non-zero session handle for cc_outbound/cc_inbound, or 0 on any error
+// (unknown handle, malformed or forged ServerHello). The handshake handle is
+// consumed on every call, so it must not be reused. The wire bytes are copied.
+//
+//export cc_handshake_complete
+func cc_handshake_complete(hsHandle C.uint64_t, serverHello *C.uint8_t, serverHelloLen C.int, dedupCapacity C.int) C.uint64_t {
+	wire := C.GoBytes(unsafe.Pointer(serverHello), serverHelloLen)
+	return C.uint64_t(completeHandshake(uint64(hsHandle), wire, int(dedupCapacity)))
+}
+
 // cc_outbound frames+encrypts payloadLen bytes at payload for the session named
 // by handle, writing the framed datagram into the out buffer (capacity outCap).
 // It returns the number of bytes written into out, or a negative error code:

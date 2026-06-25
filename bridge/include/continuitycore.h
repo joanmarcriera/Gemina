@@ -52,6 +52,44 @@ extern "C" {
 extern uint64_t cc_session_new(uint8_t *sessionID, uint8_t *key, int role, int capacity);
 
 /*
+ * cc_handshake_begin starts a client handshake to a gateway (ADR-0007). It does
+ * the key agreement and wire framing in Go so the host never re-implements the
+ * crypto; the host only pumps the two messages over its socket.
+ *
+ *   gatewayPub  pointer to exactly 32 bytes — the gateway's pinned Ed25519
+ *               identity public key
+ *   token       NUL-terminated entitlement token presented to the gateway
+ *   out         caller buffer that receives the ClientHello to send
+ *   outCap      capacity of out in bytes
+ *   hsHandle    set to a non-zero in-flight handshake handle on success, else 0
+ *
+ * Returns the ClientHello length written into out, or a negative CC_ERR_* code
+ * (CC_ERR_BUFFER_SIZE if out is too small, CC_ERR_CORE on a core failure). Send
+ * the ClientHello to the gateway, then pass its ServerHello reply together with
+ * *hsHandle to cc_handshake_complete. Both inputs are copied.
+ */
+extern int cc_handshake_begin(uint8_t *gatewayPub, char *token,
+                              uint8_t *out, int outCap, uint64_t *hsHandle);
+
+/*
+ * cc_handshake_complete consumes the gateway's ServerHello for the in-flight
+ * handshake named by hsHandle. It verifies the gateway signature against the
+ * pinned identity, derives the session key, and returns a session handle ready
+ * for cc_outbound / cc_inbound.
+ *
+ *   hsHandle        in-flight handle from cc_handshake_begin
+ *   serverHello     pointer to serverHelloLen received ServerHello bytes (copied)
+ *   serverHelloLen  length of serverHello in bytes
+ *   capacity        inbound dedup-window capacity for the new session
+ *
+ * Returns a non-zero session handle on success, or 0 on any error (unknown
+ * handle, malformed or forged ServerHello). The handshake handle is consumed on
+ * every call, success or failure, so it must not be reused.
+ */
+extern uint64_t cc_handshake_complete(uint64_t hsHandle, uint8_t *serverHello,
+                                      int serverHelloLen, int capacity);
+
+/*
  * cc_outbound frames and encrypts a payload for transmission.
  *
  *   handle      session handle from cc_session_new
