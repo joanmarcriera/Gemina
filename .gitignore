@@ -44,6 +44,12 @@ DerivedData/
 # (.codex/ and .codex-* are already excluded near the top of this file.)
 skills-lock.json
 
+# Local skill symlinks into the ignored .agents/ tree (broken on a clean
+# checkout — they are local tooling, not product source).
+.claude/skills/bash-defensive-patterns
+.claude/skills/golang-patterns
+.claude/skills/golang-testing
+
 # Built artefacts that must never be published (the gateway binary is produced
 # by `go build`/`make`; rebuild it, do not commit it).
 /gateway
