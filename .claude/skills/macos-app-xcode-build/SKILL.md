@@ -70,6 +70,59 @@ security find-identity -v -p codesigning
 
 Grep the output for `error:|BUILD FAILED|BUILD SUCCEEDED|warning:.*macOS version`.
 
+## Signing the full app + Network Extension (PROVEN 2026-06-25)
+
+The paid Apple Developer Program is **active**. The signed build works
+end-to-end. Recipe:
+
+**Team IDs — there are two, do not confuse them:**
+- **`D427C2J4RG`** = the paid team (`teamType: Individual`,
+  `isFreeProvisioningTeam: false`). **This is the one to pass as
+  `DEVELOPMENT_TEAM`.**
+- `476YVP24U6` = the old free Personal Team / the existing keychain cert
+  ("Apple Development: joanmarcriera@gmail.com"). Xcode reconciles that cert
+  against the `D427C2J4RG` profiles, so signing succeeds even though the cert's
+  team string differs.
+
+**One owner GUI step is required first** (CLI alone cannot do it): the Apple ID
+must be signed into Xcode → Settings → Accounts (GUI + 2FA), and the paid team
+selected in the project's Signing & Capabilities on **both** the `Continuity` app
+target AND the `ContinuityTunnel` extension target. That registers the team in
+Xcode's provisioning store and fetches the two profiles (app + tunnel) into
+`~/Library/Developer/Xcode/UserData/Provisioning Profiles/`. After that the build
+is fully headless:
+
+```bash
+cd apps/macos
+xcodebuild -project Continuity.xcodeproj -scheme Continuity \
+  -destination 'platform=macOS' -allowProvisioningUpdates \
+  DEVELOPMENT_TEAM=D427C2J4RG clean build      # -> ** BUILD SUCCEEDED **
+```
+
+**Verify the signature + that the NE entitlement actually made it in:**
+
+```bash
+DD=$(xcodebuild -project apps/macos/Continuity.xcodeproj -scheme Continuity \
+  -showBuildSettings 2>/dev/null | awk -F' = ' '/ BUILT_PRODUCTS_DIR /{print $2}')
+APP="$DD/Continuity.app"; APPEX="$APP/Contents/PlugIns/ContinuityTunnel.appex"
+codesign --verify --deep --strict --verbose=2 "$APP"     # valid on disk + DR
+codesign -dv "$APP" 2>&1 | grep TeamIdentifier            # -> D427C2J4RG
+codesign -d --entitlements - --xml "$APPEX" | plutil -p - | \
+  grep -i 'networkextension\|packet-tunnel'                # -> packet-tunnel-provider
+```
+
+The `packet-tunnel-provider` entitlement on a signed `.appex` is the definitive
+proof the paid membership is active — a free team is refused this capability.
+
+**Gotcha that burned time:** before the account is signed into Xcode AND the team
+picked in the GUI, `xcodebuild` fails with **"No Account for Team …"**. That is a
+missing account *session*, NOT a membership verdict — don't misread it as "not
+enrolled yet". The CLI cannot establish the session; only the GUI sign-in can.
+
+`DEVELOPMENT_TEAM` is deliberately **not** committed in `project.yml` (open-core
+repo — avoid leaking a personal team ID). Pass it on the command line, or put it
+in a gitignored xcconfig.
+
 ## Linking the Go core (the hard-won recipe)
 
 The extension links `bridge/continuitycore` built as a c-archive. In `project.yml`
@@ -98,13 +151,12 @@ the `ContinuityTunnel` target:
 
 ## Gotchas (each cost real time)
 
-1. **Network Extensions require the PAID Apple Developer Program — active.** A
-   free **Personal Team** fails with: *"Personal development teams … do not
-   support the Network Extensions capability."* Enrolment takes hours up to
-   ~24–48h to go Active. Until then, build/run the **no-NE** variant
-   (`ContinuityDev.xcodeproj` from `project-dev.yml`) on the Personal Team.
-   Confirm membership at developer.apple.com/account; refresh Xcode via
-   Settings → Accounts → Download Manual Profiles.
+1. **Network Extensions require the PAID Apple Developer Program — active.**
+   ✅ Resolved 2026-06-25: membership is Active (team `D427C2J4RG`) and the NE
+   signs. See "Signing the full app + Network Extension" above for the recipe. A
+   free **Personal Team** is refused with *"Personal development teams … do not
+   support the Network Extensions capability."*; the no-NE `ContinuityDev`
+   variant (`project-dev.yml`) remains the fallback for pure UI iteration.
 2. **Framework targets need `GENERATE_INFOPLIST_FILE: "YES"`** or the app's embed
    step fails: *"Framework … did not contain an Info.plist."*
 3. **Command Line Tools ship no XCTest / Swift-Testing.** `swift test` fails with
@@ -133,8 +185,10 @@ the `ContinuityTunnel` target:
 - **Phase 1 — done & run:** the menu-bar app (`AppUI/ContinuityApp.swift`,
   `MenuBarExtra`) renders `ProtectionStatus` over preview data. Built, signed, ran
   on the Personal Team.
-- **Phase 2 — built & headless-verified:** the NE extension embedded + the Go core
-  linked. Blocked from signing only by the pending paid membership.
+- **Phase 2 — DONE & SIGNED (2026-06-25):** the NE extension embedded + the Go
+  core linked, app + `.appex` code-signed with the paid team `D427C2J4RG`, NE
+  carrying the `packet-tunnel-provider` entitlement. Verified with `codesign
+  --verify --strict`. See the signing section above.
 - **Phase 3 — next:** implement the real `NEPacketTunnelProvider` —
   `makeRelay()` building the two `PathSender`s (a Wi-Fi `IP_BOUND_IF` socket + the
   userspace RNDIS uplink from `research/usb-rndis-spike/`), driving the on-wire
