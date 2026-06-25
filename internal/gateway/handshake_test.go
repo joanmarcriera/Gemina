@@ -24,7 +24,7 @@ func TestHandshakeRejectsStaleClientHello(t *testing.T) {
 	if err != nil {
 		t.Fatalf("encode: %v", err)
 	}
-	if _, _, err := admitter.Handshake(stale, idPriv, 64); err == nil {
+	if _, _, _, err := admitter.Handshake(stale, idPriv, 64); err == nil {
 		t.Fatal("gateway accepted a stale ClientHello (replay window not enforced)")
 	}
 }
@@ -46,7 +46,7 @@ func TestHandshakeEndToEndAdmitsAndCarriesTraffic(t *testing.T) {
 	}
 
 	// Gateway admits and answers.
-	serverHello, claims, err := admitter.Handshake(hello, idPriv, 64)
+	serverHello, claims, _, err := admitter.Handshake(hello, idPriv, 64)
 	if err != nil {
 		t.Fatalf("gateway handshake: %v", err)
 	}
@@ -76,7 +76,7 @@ func TestHandshakeRejectsUnentitledClient(t *testing.T) {
 
 	// No token in hosted mode -> rejected; nothing registered.
 	hello, _, _ := clientcore.BeginClientHandshake(idPub, "")
-	if _, _, err := admitter.Handshake(hello, idPriv, 64); err == nil {
+	if _, _, _, err := admitter.Handshake(hello, idPriv, 64); err == nil {
 		t.Fatal("gateway admitted a client with no entitlement token")
 	}
 	if got := len(store.keys); got != 0 {
@@ -91,7 +91,7 @@ func TestHandshakeClientRejectsWrongGatewayIdentity(t *testing.T) {
 	admitter := NewAdmitter(service, NewSessionStore())
 
 	hello, hs, _ := clientcore.BeginClientHandshake(wrongPub, hostedToken(t, key))
-	serverHello, _, err := admitter.Handshake(hello, idPriv, 64)
+	serverHello, _, _, err := admitter.Handshake(hello, idPriv, 64)
 	if err != nil {
 		t.Fatalf("gateway handshake: %v", err)
 	}

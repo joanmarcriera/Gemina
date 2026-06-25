@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-06-21
+Last updated: 2026-06-25
 
 This file is the single ordered source of truth for outstanding work. Durable
 narrative history lives in `PROJECT_STATE.md` and Git; architectural choices live
@@ -8,20 +8,33 @@ in `DECISIONS.md`; the long-range epics live in
 `docs/product/project-specification.md`. Do not re-list tasks in other files —
 link here instead.
 
-Current stage: **Stage 1 — dual-path UDP probe.** Stage 0 exit criteria are met
-and reviewed.
+Current stage: **Stage 2 — real tunnel.** Stage 1 (dual-path probe) is PROVEN;
+Stage 0 exit criteria are met and reviewed.
 
 ## Next exact action
 
-**BLOCKED on Apple (resume ~2026-06-26):** the macOS app build/sign pipeline is
-proven — Phase 1 ran; Phase 2 (app + NetworkExtension + Go core) is
-headless-verified `BUILD SUCCEEDED`. The only blocker is the **paid Apple
-Developer Program membership activating** (NE is unavailable to a free Personal
-Team). Resume steps are in the `apple-developer-membership-pending` memory and the
-`macos-app-xcode-build` skill: confirm membership Active → refresh Xcode accounts
-→ set Team → Run → then **Phase 3** (the real `NEPacketTunnelProvider`: the two
-path sockets, `makeRelay`, the on-wire handshake from Swift, live status). The
-no-NE `ContinuityDev.xcodeproj` runs on the Personal Team meanwhile for UI work.
+**Apple UNBLOCKED (2026-06-25):** the paid Developer Program is Active (team
+`D427C2J4RG`); the app + Network Extension code-sign with the `packet-tunnel-provider`
+entitlement (Phase 2 done & signed). The handshake is now exposed over the cgo
+bridge (`cc_handshake_begin`/`cc_handshake_complete`, commit `fdf6f81`).
+
+**Stage-2 server core landed (2026-06-25):** the gateway is now a real exit node —
+the new `internal/exit` package (allocator, IPv4 parse, expiring path-set, router
+with reverse-path filter + return-path duplication, Linux TUN, NAT health-check),
+wired into `DataGateway` (egress on delivered first-copy, return loop, lease on
+admit), env-gated in `cmd/gateway` (`CONTINUITY_GATEWAY_EXIT=on`). Replay upgraded
+from the FIFO ring to a per-session RFC 6479 sliding-window bitmap
+(`internal/dedup/replay.go`) that distinguishes a *stale* replay from a never-seen
+packet. Proven by an in-process loopback exit test + the Linux on-hardware rig
+(`tests/end-to-end/rig_linux.go`).
+
+**Next, in order:** (1) deliver the assigned tunnel IP to the client in-band
+(extended ServerHello/config channel) — the one wire step before the on-hardware
+demo; (2) the on-hardware Stage-2 demo (curl/SSH through tunnel surviving a path
+cut); (3) the macOS **Phase 3** `NEPacketTunnelProvider` — Wi-Fi single-path first
+(`makeRelay`, the Wi-Fi `IP_BOUND_IF` `PathSender`, driving the handshake over the
+wire from Swift via the new bridge ABI), then layer the RNDIS uplink. Tracked as
+GitHub issues #3–#10.
 
 ---
 
@@ -231,8 +244,11 @@ evidence exist:
   FIFO-order test and steady-state benchmark.
 * [x] Centralise Darwin evidence key/value vocabulary into shared constants so
   producers and consumers cannot drift; fold the duplicated Wi-Fi helper.
-* [ ] Note for the real sequence space: `protocol.PacketNumber == 0` is currently
-  invalid, which interacts with the "safe on rollover" requirement.
+* [x] Real sequence space (2026-06-25): the data-plane session now uses the
+  RFC 6479 sliding-window `dedup.ReplayWindow` (keyed on `PacketNumber`), which
+  treats `n == 0` as invalid and is fuzzed against a reference model plus a
+  near-2⁶⁴ rollover simulation. (The Stage-1 probe `server.go` keeps the FIFO
+  `Window`, which still needs path attribution.)
 
 ## Stage 0 hardening — carry-over, complete before the first Stage 1 *merge*
 

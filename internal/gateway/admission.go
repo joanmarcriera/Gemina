@@ -89,37 +89,39 @@ func (a *Admitter) Admit(token string, id protocol.SessionID, key []byte) (entit
 // client's ClientHello, derives the session key from a fresh gateway ephemeral
 // key and the client's ephemeral key, admits the client by its entitlement token
 // (registering the key only if admitted — fail-closed), and returns a ServerHello
-// signed with the gateway's Ed25519 identity for the client to authenticate.
-func (a *Admitter) Handshake(clientHello []byte, identityPriv ed25519.PrivateKey, dedupCapacity int) (serverHello []byte, claims entitlement.Claims, err error) {
+// signed with the gateway's Ed25519 identity for the client to authenticate. The
+// admitted session id is returned so the caller can allocate a tunnel-IP lease
+// for the exit path.
+func (a *Admitter) Handshake(clientHello []byte, identityPriv ed25519.PrivateKey, dedupCapacity int) (serverHello []byte, claims entitlement.Claims, id protocol.SessionID, err error) {
 	id, timestamp, clientEph, token, err := clientcore.DecodeClientHello(clientHello)
 	if err != nil {
-		return nil, entitlement.Claims{}, err
+		return nil, entitlement.Claims{}, protocol.SessionID{}, err
 	}
 	if err := clientcore.CheckHandshakeFresh(timestamp, a.now(), a.tolerance); err != nil {
-		return nil, entitlement.Claims{}, err
+		return nil, entitlement.Claims{}, protocol.SessionID{}, err
 	}
 
 	gatewayEphPriv, gatewayEphPub, err := clientcore.GenerateKeyPair()
 	if err != nil {
-		return nil, entitlement.Claims{}, err
+		return nil, entitlement.Claims{}, protocol.SessionID{}, err
 	}
 	key, err := clientcore.DeriveSessionKey(gatewayEphPriv, clientEph, id)
 	if err != nil {
-		return nil, entitlement.Claims{}, err
+		return nil, entitlement.Claims{}, protocol.SessionID{}, err
 	}
 
 	// Admit before revealing the signed ServerHello; on rejection the key is not
 	// registered and the DataPlane will refuse the session's packets.
 	claims, err = a.Admit(token, id, key)
 	if err != nil {
-		return nil, entitlement.Claims{}, err
+		return nil, entitlement.Claims{}, protocol.SessionID{}, err
 	}
 
 	sig := clientcore.SignHandshake(identityPriv, gatewayEphPub, id)
 	serverHello, err = clientcore.EncodeServerHello(id, gatewayEphPub, sig)
 	if err != nil {
 		a.store.Forget(id) // unwind the registration if we cannot answer
-		return nil, entitlement.Claims{}, err
+		return nil, entitlement.Claims{}, protocol.SessionID{}, err
 	}
-	return serverHello, claims, nil
+	return serverHello, claims, id, nil
 }

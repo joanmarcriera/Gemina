@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-06-21
+Last updated: 2026-06-25
 
 This is the durable cross-session handover. It records current state, risks,
 blockers and the last validation run. The outstanding task list lives in
@@ -9,22 +9,29 @@ lives in Git. Keep this file lean — do not grow an append-only log here.
 
 ## Current Stage and Objective
 
-Stage 1: dual-path UDP probe — **transport capability proven 2026-06-23**
-(see "Definition of Dual-Path Success" below). Stage 0 exit criteria are met and
-reviewed.
+Stage 2: real tunnel. Stage 1 (dual-path UDP probe) is **proven (2026-06-23)** and
+Stage 0 exit criteria are met and reviewed.
 
-The probe proves packet identity, first-copy duplicate suppression, and
-fixture/command-driven Darwin path classification via the redacted
-`continuityctl darwin-evidence` diagnostic. Beyond that, the userspace spike now
-proves the real thing: the same logical packet sent over Wi-Fi **and** the
-phone's cellular link (independent WANs) both reach the deployed gateway, are
-deduplicated to one delivery, and either path can drop without ending the
-session. It does **not** yet prove encryption or any VPN behaviour, nor is the
-dual-path transport wired through the shipping Swift app / NEPacketTunnelProvider.
+Stage 1 proved packet identity, first-copy duplicate suppression, and
+fixture/command-driven Darwin path classification, and the userspace spike proved
+the real thing on hardware: the same logical packet sent over Wi-Fi **and** the
+phone's cellular link (independent WANs) both reach the deployed gateway, dedup to
+one delivery, and either path can drop without ending the session.
 
-Next action is recorded at the top of `TASKS.md`: wire the proven dual-path
-transport into the product (NEPacketTunnelProvider) and add encryption; in
-parallel, the open-core + hosted-gateway go-to-market work.
+Stage 2 has now turned the gateway into a real exit node (2026-06-25): the new
+`internal/exit` package forwards decrypted inner packets to a TUN device and
+routes return traffic back over a client's known source endpoints (reverse-path
+filtered, return-path duplicated), wired into `DataGateway` and env-gated in
+`cmd/gateway` (`CONTINUITY_GATEWAY_EXIT=on`). Replay protection was upgraded from
+the feasibility FIFO ring to a per-session **RFC 6479 sliding-window bitmap**
+(`internal/dedup/replay.go`) that distinguishes a *stale* replay from a never-seen
+packet. The handshake is exposed over the cgo bridge so Swift can drive it.
+
+Remaining before the on-hardware Stage-2 demo: deliver the assigned tunnel IP to
+the client **in-band** (one wire step). Then the macOS **Phase 3**
+`NEPacketTunnelProvider` (Wi-Fi single-path first, then RNDIS). Apple is unblocked
+(paid program Active, team `D427C2J4RG`; NE signs). Outstanding work is at the top
+of `TASKS.md` and as GitHub issues #3–#10.
 
 ## Current Implementation State
 
@@ -32,10 +39,19 @@ Present and unit/race tested:
 
 * `internal/protocol` — probe packet identity (`SessionID`, `PacketNumber`,
   `PacketID`).
-* `internal/dedup` — bounded first-copy suppression backed by an O(1) ring
-  buffer; benchmarked. This is a feasibility window, **not** production replay
-  protection: it is in-memory, process-local, FIFO-evicted (an evicted ID seen
-  again is re-accepted), and does not survive gateway restart.
+* `internal/dedup` — two windows. The **FIFO ring `Window`** (O(1), benchmarked)
+  remains the Stage-1 probe `server.go` dedup (it needs per-path attribution). The
+  data-plane session now uses the **RFC 6479 sliding-window `ReplayWindow`**
+  (`replay.go`): per-session, keyed on the monotonic `PacketNumber`, it classifies
+  first-copy / duplicate / **stale**, is O(1) and zero-alloc in steady state, and
+  is fuzzed against a reference model + a near-2⁶⁴ rollover. It is still in-memory
+  and per-session (a session resets on gateway restart by design — a fresh
+  handshake yields a fresh SessionID+key, so no old packet decrypts).
+* `internal/exit` — the Stage-2 server exit engine (stdlib only): per-session
+  tunnel-IP `Allocator`, inner-packet IPv4 parse, expiring `PathSet` of source
+  endpoints, and a `Router` (reverse-path filter on egress, return-path
+  duplication), plus a build-tagged Linux TUN device and a NAT/ip_forward health
+  check. Unit/race tested with fakes; cross-compiles for linux/arm64 and darwin.
 * `internal/paths` — Wi-Fi / Android USB tethering candidate classification from
   typed observations, with no hard-coded BSD interface names.
 * `internal/platform/darwin` — snapshot boundary, conservative live BSD
