@@ -1,0 +1,14 @@
+# Grafana datasource provisioning: the Prometheus instance in this stack.
+# Reached by container name on the private network. uid is fixed so the
+# provisioned dashboard can reference it deterministically.
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
