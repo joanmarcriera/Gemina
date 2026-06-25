@@ -249,6 +249,11 @@ evidence exist:
   treats `n == 0` as invalid and is fuzzed against a reference model plus a
   near-2⁶⁴ rollover simulation. (The Stage-1 probe `server.go` keeps the FIFO
   `Window`, which still needs path attribution.)
+* [x] SessionID/key single-use invariant (2026-06-25, issue #7):
+  `SessionStore.register` refuses to overwrite an admitted id and `Admitter.Admit`
+  returns `ErrSessionReused`, so a reused SessionID can never be rebound into a
+  fresh session. Documented in `docs/security/stage-2-session-security.md`;
+  covered by `TestAdmitterRejectsReusedSessionID`.
 
 ## Stage 0 hardening — carry-over, complete before the first Stage 1 *merge*
 
