@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"crypto/ed25519"
+	"errors"
 	"sync"
 	"time"
 
@@ -9,6 +10,15 @@ import (
 	"continuity-vpn/internal/protocol"
 	"continuity-vpn/pkg/clientcore"
 )
+
+// ErrSessionReused is returned when admission is attempted for a SessionID the
+// gateway has already admitted. A SessionID/key pair is single-use for the
+// gateway's lifetime: a fresh handshake mints a fresh random SessionID and
+// derives a fresh key, so a repeated SessionID is either a duplicate handshake
+// or an attempt to rebind a live session to an attacker-chosen key. Re-admission
+// is refused fail-closed, so a reused id can never be decrypted into a fresh
+// session. See docs/security/stage-2-session-security.md.
+var ErrSessionReused = errors.New("session id already admitted")
 
 // SessionStore holds the keys of admitted sessions and resolves them for the
 // DataPlane. It implements KeyResolver, so the data plane only ever decrypts
@@ -31,10 +41,19 @@ func (s *SessionStore) SessionKey(id protocol.SessionID) ([]byte, bool) {
 	return k, ok
 }
 
-func (s *SessionStore) put(id protocol.SessionID, key []byte) {
+// register stores key under id for a newly admitted session and reports whether
+// the id was free. It refuses to overwrite an existing id, enforcing that a
+// SessionID/key pair is single-use for the gateway's lifetime: a reused id is
+// never rebound to a fresh key. The test-and-set is atomic under the lock, so
+// two concurrent handshakes for the same id cannot both register.
+func (s *SessionStore) register(id protocol.SessionID, key []byte) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if _, exists := s.keys[id]; exists {
+		return false
+	}
 	s.keys[id] = append([]byte(nil), key...)
+	return true
 }
 
 // Forget removes a session's key, e.g. when it ends or its entitlement lapses.
@@ -75,13 +94,17 @@ func NewAdmitter(service *entitlement.Service, store *SessionStore) *Admitter {
 
 // Admit checks the entitlement and, on success, registers the session key so the
 // DataPlane will accept the session's packets. It returns the admitted claims.
-// On any error the key is NOT registered, so admission is fail-closed.
+// On any error the key is NOT registered, so admission is fail-closed. Admission
+// of an already-admitted SessionID is refused with ErrSessionReused, keeping a
+// SessionID/key pair single-use for the gateway's lifetime.
 func (a *Admitter) Admit(token string, id protocol.SessionID, key []byte) (entitlement.Claims, error) {
 	claims, err := a.service.Admit(token)
 	if err != nil {
 		return entitlement.Claims{}, err
 	}
-	a.store.put(id, key)
+	if !a.store.register(id, key) {
+		return entitlement.Claims{}, ErrSessionReused
+	}
 	return claims, nil
 }
 
