@@ -42,12 +42,12 @@ type Session struct {
 
 	mu     sync.Mutex
 	next   protocol.PacketNumber
-	window *dedup.Window
+	window *dedup.ReplayWindow // RFC 6479 sliding-window anti-replay; self-synchronised
 }
 
 // NewSession creates a session with the given identity, 32-byte key, role and
-// inbound dedup-window capacity (the number of recent packet identities
-// remembered for suppression).
+// inbound dedup-window width (the span of recent packet numbers remembered for
+// replay suppression).
 func NewSession(id protocol.SessionID, key []byte, role Role, dedupCapacity int) (*Session, error) {
 	if id.IsZero() {
 		return nil, errBadIdentity
@@ -56,7 +56,7 @@ func NewSession(id protocol.SessionID, key []byte, role Role, dedupCapacity int)
 	if err != nil {
 		return nil, err
 	}
-	window, err := dedup.NewWindow(dedupCapacity)
+	window, err := dedup.NewReplayWindow(dedupCapacity)
 	if err != nil {
 		return nil, err
 	}
@@ -83,26 +83,37 @@ func (s *Session) Outbound(payload []byte) ([]byte, error) {
 
 // Inbound authenticates and decrypts a received datagram, then reports whether
 // this is the first copy of its logical packet (deliver the returned payload) or
-// a duplicate (drop it). A datagram that fails authentication is rejected before
-// it can touch the dedup window, so a forged identity cannot suppress a real
-// packet. path is an opaque label for dedup bookkeeping/attribution.
+// a duplicate/stale copy (drop it). A datagram that fails authentication is
+// rejected before it can touch the replay window, so a forged identity cannot
+// suppress a real packet. path is retained in the signature for attribution and
+// logging by callers; the number-keyed replay window does not use it.
 func (s *Session) Inbound(wire []byte, path string) (payload []byte, first bool, err error) {
-	id, dir, off, err := parseHeader(wire)
+	payload, decision, err := s.InboundClassified(wire, path)
 	if err != nil {
 		return nil, false, err
 	}
+	return payload, decision == dedup.ReplayFirstCopy, nil
+}
+
+// InboundClassified is identical to Inbound but returns the full ReplayDecision
+// so callers that need to distinguish stale replays from in-window duplicates
+// can act accordingly (e.g. the gateway data plane may log stale packets
+// separately for abuse-detection purposes).
+func (s *Session) InboundClassified(wire []byte, path string) (payload []byte, decision dedup.ReplayDecision, err error) {
+	id, dir, off, err := parseHeader(wire)
+	if err != nil {
+		return nil, dedup.ReplayInvalid, err
+	}
 	if dir != s.role.peerDir() {
-		return nil, false, errBadDirection
+		return nil, dedup.ReplayInvalid, errBadDirection
 	}
 
 	plaintext, err := s.sealer.open(dir, id, wire[:off], wire[off:])
 	if err != nil {
-		return nil, false, err
+		return nil, dedup.ReplayInvalid, err
 	}
 
-	s.mu.Lock()
-	result := s.window.Observe(id, dedup.PathID(path))
-	s.mu.Unlock()
-
-	return plaintext, result.Decision == dedup.DecisionFirstCopy, nil
+	// ReplayWindow is self-synchronised; no outer lock needed for Observe.
+	d := s.window.Observe(id.Number)
+	return plaintext, d, nil
 }

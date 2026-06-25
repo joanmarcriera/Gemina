@@ -8,10 +8,12 @@ import (
 	"crypto/ed25519"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/signal"
 	"strconv"
@@ -19,6 +21,7 @@ import (
 	"time"
 
 	"continuity-vpn/internal/entitlement"
+	"continuity-vpn/internal/exit"
 	"continuity-vpn/internal/gateway"
 	"continuity-vpn/internal/metrics"
 )
@@ -125,6 +128,15 @@ func runDataGateway(logger *slog.Logger, addr string, capacity, readBuffer int) 
 		_ = udp.SetReadBuffer(readBuffer)
 	}
 
+	// Optional internet exit path (Stage 2). Off by default so the data gateway
+	// stays a decrypt+dedup endpoint unless the operator provisions a TUN.
+	if envOr("CONTINUITY_GATEWAY_EXIT", "off") == "on" {
+		if err := setupExit(dg, conn, logger); err != nil {
+			logger.Error("enable exit path", "error", err.Error())
+			os.Exit(1)
+		}
+	}
+
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 	if metricsAddr := os.Getenv("CONTINUITY_GATEWAY_METRICS_ADDR"); metricsAddr != "" {
@@ -136,6 +148,49 @@ func runDataGateway(logger *slog.Logger, addr string, capacity, readBuffer int) 
 		logger.Error("serve", "error", err.Error())
 		os.Exit(1)
 	}
+}
+
+// connSink delivers framed return datagrams over the gateway's UDP socket. It
+// implements exit.Sink so the return path can reach a client's source endpoints.
+type connSink struct{ conn net.PacketConn }
+
+func (s connSink) SendTo(datagram []byte, dst netip.AddrPort) error {
+	_, err := s.conn.WriteTo(datagram, net.UDPAddrFromAddrPort(dst))
+	return err
+}
+
+// setupExit provisions the TUN device, address allocator, path set and router,
+// then enables the exit path on dg. The TUN device requires Linux and privileges
+// (CAP_NET_ADMIN); on other platforms OpenTUN returns a clear error.
+func setupExit(dg *gateway.DataGateway, conn net.PacketConn, logger *slog.Logger) error {
+	poolStr := envOr("CONTINUITY_GATEWAY_POOL", "10.99.0.0/16")
+	pool, err := netip.ParsePrefix(poolStr)
+	if err != nil {
+		return fmt.Errorf("CONTINUITY_GATEWAY_POOL %q: %w", poolStr, err)
+	}
+	alloc, err := exit.NewAllocator(pool)
+	if err != nil {
+		return err
+	}
+
+	tunName := envOr("CONTINUITY_GATEWAY_TUN", "continuity0")
+	mtu := envInt(logger, "CONTINUITY_GATEWAY_TUN_MTU", 1280)
+	dev, err := exit.OpenTUN(tunName, mtu)
+	if err != nil {
+		return fmt.Errorf("open tun %q: %w", tunName, err)
+	}
+
+	// The kernel does the NAT; we only health-assert it so a misconfigured host
+	// surfaces a loud warning instead of silently dropping all egress.
+	if err := exit.AssertIPForward(); err != nil {
+		logger.Warn("ip forwarding not enabled; egress will not route until fixed", "error", err.Error())
+	}
+
+	paths := exit.NewPathSet(2 * time.Minute)
+	router := exit.NewRouter(alloc, paths, dev, dg, connSink{conn}, dg)
+	dg.EnableExit(router)
+	logger.Info("exit path enabled", "tun", tunName, "mtu", mtu, "pool", poolStr)
+	return nil
 }
 
 // startMetricsServer serves GET /metrics (Prometheus text format) on addr until

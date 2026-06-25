@@ -88,6 +88,14 @@ contain **no IP addresses and no host identifiers**: the source address of
 incoming traffic is deliberately kept out of the logging path, and logs record
 only redacted, coarse decisions rather than identifiable detail.
 
+When the gateway also forwards your traffic to the internet (the exit path), it
+must remember, **for the lifetime of your session only**, which network endpoints
+your two uplinks are currently arriving from, so it can send return traffic back
+over both. This per-session source-endpoint state is held **in memory only**,
+**expires** shortly after a path goes quiet, is **never written to logs**, and is
+**never used as a metric label**. It is the minimum needed to route replies and is
+discarded when the session ends.
+
 ## What the hosted service does **not** collect
 
 By design, we do **not**:
