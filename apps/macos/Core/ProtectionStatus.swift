@@ -30,7 +30,7 @@ public func protectionStatus(paths: [PathInfo], paused: Bool, connecting: Bool) 
 
     let upCount = paths.filter(\.up).count
     switch (paths.count, upCount) {
-    case (_, let n) where n >= 2:
+    case (_, let numUp) where numUp >= 2:
         return .protected
     case (let configured, 1) where configured >= 2:
         return .degraded

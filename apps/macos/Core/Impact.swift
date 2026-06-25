@@ -54,7 +54,7 @@ public func computeImpact(segments: [ImpactSegment]) -> ImpactStats {
         stats.sessionDuration += segment.duration
 
         switch segment.upCount {
-        case let n where n >= 2:
+        case let upCount where upCount >= 2:
             stats.protectedDuration += segment.duration
             inSurvivedDrop = false
             currentDropRun = 0

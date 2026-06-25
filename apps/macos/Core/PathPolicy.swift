@@ -73,8 +73,8 @@ public struct PathPolicy: Sendable, Equatable {
     /// The preferred path if it is up; otherwise the first up unmetered path;
     /// otherwise the first up path.
     private func choosePrimary(_ up: [PathInfo]) -> PathInfo {
-        if let id = preferredID, let p = up.first(where: { $0.id == id }) {
-            return p
+        if let id = preferredID, let primary = up.first(where: { $0.id == id }) {
+            return primary
         }
         return up.first(where: { !$0.metered }) ?? up[0]
     }

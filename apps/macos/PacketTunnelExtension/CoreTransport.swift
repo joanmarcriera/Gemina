@@ -49,10 +49,10 @@ public final class CoreTransport: TransportCore {
 
         var created: UInt64 = 0
         sessionID.withUnsafeBytes { sid in
-            key.withUnsafeBytes { k in
+            key.withUnsafeBytes { keyBytes in
                 created = cc_session_new(
                     UnsafeMutablePointer(mutating: sid.bindMemory(to: UInt8.self).baseAddress),
-                    UnsafeMutablePointer(mutating: k.bindMemory(to: UInt8.self).baseAddress),
+                    UnsafeMutablePointer(mutating: keyBytes.bindMemory(to: UInt8.self).baseAddress),
                     role.rawValue,
                     dedupCapacity
                 )
@@ -67,10 +67,10 @@ public final class CoreTransport: TransportCore {
     public func outbound(_ payload: Data) throws -> Data {
         // Header + AEAD tag headroom above the plaintext length.
         var out = [UInt8](repeating: 0, count: payload.count + 64)
-        let written: Int32 = payload.withUnsafeBytes { p in
+        let written: Int32 = payload.withUnsafeBytes { payloadBytes in
             cc_outbound(
                 handle,
-                UnsafeMutablePointer(mutating: p.bindMemory(to: UInt8.self).baseAddress),
+                UnsafeMutablePointer(mutating: payloadBytes.bindMemory(to: UInt8.self).baseAddress),
                 Int32(payload.count),
                 &out,
                 Int32(out.count)
@@ -83,11 +83,11 @@ public final class CoreTransport: TransportCore {
     public func inbound(_ wire: Data, path: String) throws -> (payload: Data, deliver: Bool) {
         var out = [UInt8](repeating: 0, count: max(wire.count, 1))
         var deliver: Int32 = 0
-        let written: Int32 = wire.withUnsafeBytes { w in
+        let written: Int32 = wire.withUnsafeBytes { wireBytes in
             path.withCString { cPath in
                 cc_inbound(
                     handle,
-                    UnsafeMutablePointer(mutating: w.bindMemory(to: UInt8.self).baseAddress),
+                    UnsafeMutablePointer(mutating: wireBytes.bindMemory(to: UInt8.self).baseAddress),
                     Int32(wire.count),
                     UnsafeMutablePointer(mutating: cPath),
                     &out,
