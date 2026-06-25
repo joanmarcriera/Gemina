@@ -1,0 +1,66 @@
+# Continuity gateway monitoring stack: Prometheus + Grafana.
+#
+# Scrapes the gateway's /metrics endpoint and renders the failover dashboard.
+# Both services are bound to localhost only — reach Grafana through an SSH
+# tunnel (see README.md), never a public port. No new cloud ingress rule is
+# required, and no host identifier is ever published.
+#
+# The gateway container must be attached to the same `continuity-mon` network
+# and started with CONTINUITY_GATEWAY_METRICS_ADDR=:9090 (see
+# deploy/systemd/continuity-gateway.service). Prometheus then reaches it by
+# container name on the private network — the metrics port is never published
+# to the host.
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    container_name: continuity-prometheus
+    restart: unless-stopped
+    user: nobody
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.listen-address=:9090
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../../observability/alerts/gateway-rules.yml:/etc/prometheus/alerts/gateway-rules.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      # Localhost only; for inspection via SSH tunnel. Not externally reachable.
+      - "127.0.0.1:9091:9090"
+    networks:
+      - continuity-mon
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    container_name: continuity-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      # Required — provided via deploy/monitoring/.env (never committed).
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in deploy/monitoring/.env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      # Served behind an SSH tunnel at http://localhost:3000.
+      GF_SERVER_ROOT_URL: http://localhost:3000
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana
+    ports:
+      # Localhost only; reach via: ssh -L 3000:localhost:3000 oracle
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - continuity-mon
+
+networks:
+  # Shared with the gateway container; created out-of-band by the deploy script.
+  continuity-mon:
+    external: true
+
+volumes:
+  prometheus-data:
+  grafana-data:
