@@ -4,6 +4,7 @@ import (
 	"errors"
 	"sync"
 
+	"continuity-vpn/internal/dedup"
 	"continuity-vpn/internal/protocol"
 	"continuity-vpn/pkg/clientcore"
 )
@@ -56,6 +57,32 @@ func (d *DataPlane) Handle(datagram []byte, path string) (payload []byte, first 
 		return nil, false, err
 	}
 	return session.Inbound(datagram, path)
+}
+
+// HandleClassified is identical to Handle but returns the full ReplayDecision
+// rather than a boolean, allowing the caller to distinguish stale replays (which
+// may warrant separate logging) from in-window duplicates.
+func (d *DataPlane) HandleClassified(datagram []byte, path string) (payload []byte, decision dedup.ReplayDecision, err error) {
+	id, err := clientcore.SessionIDFromDatagram(datagram)
+	if err != nil {
+		return nil, dedup.ReplayInvalid, err
+	}
+	session, err := d.sessionFor(id)
+	if err != nil {
+		return nil, dedup.ReplayInvalid, err
+	}
+	return session.InboundClassified(datagram, path)
+}
+
+// FrameReturn encrypts payload as a reply to the session identified by id. The
+// gateway's responder session seals the packet so the initiator (client) can
+// decrypt it. Returns ErrUnknownSession if no key has been registered for id.
+func (d *DataPlane) FrameReturn(id protocol.SessionID, payload []byte) ([]byte, error) {
+	session, err := d.sessionFor(id)
+	if err != nil {
+		return nil, err
+	}
+	return session.Outbound(payload)
 }
 
 func (d *DataPlane) sessionFor(id protocol.SessionID) (*clientcore.Session, error) {
