@@ -25,30 +25,40 @@ check(Set(PathPolicy(mode: .duplicate).sendPaths([wifi, phone], primaryUnstable:
 check(PathPolicy(mode: .failover, preferredID: "wifi").sendPaths([wifi, phone], primaryUnstable: false) == ["wifi"],
       "failover sends over primary only")
 let wifiDown = PathInfo(id: "wifi", up: false, metered: false)
-check(PathPolicy(mode: .failover, preferredID: "wifi").sendPaths([wifiDown, phone], primaryUnstable: false) == ["phone"],
+check(PathPolicy(mode: .failover, preferredID: "wifi")
+        .sendPaths([wifiDown, phone], primaryUnstable: false) == ["phone"],
       "failover falls back when primary down")
 let smart = PathPolicy(mode: .smart, preferredID: "wifi")
 check(smart.sendPaths([wifi, phone], primaryUnstable: false) == ["wifi"], "smart: primary only when stable")
 check(Set(smart.sendPaths([wifi, phone], primaryUnstable: true)) == ["wifi", "phone"], "smart: duplicate when unstable")
 let auto = PathPolicy(mode: .auto, preferredID: "wifi")
-check(Set(auto.sendPaths([wifi, line2], primaryUnstable: false)) == ["wifi", "line2"], "auto: duplicate when all unmetered")
+check(Set(auto.sendPaths([wifi, line2], primaryUnstable: false)) == ["wifi", "line2"],
+      "auto: duplicate when all unmetered")
 check(auto.sendPaths([wifi, phone], primaryUnstable: false) == ["wifi"], "auto: smart when metered (stable)")
-check(Set(auto.sendPaths([wifi, phone], primaryUnstable: true)) == ["wifi", "phone"], "auto: smart when metered (unstable)")
+check(Set(auto.sendPaths([wifi, phone], primaryUnstable: true)) == ["wifi", "phone"],
+      "auto: smart when metered (unstable)")
 check(PathPolicy(mode: .duplicate).sendPaths([wifi], primaryUnstable: false) == ["wifi"], "single path used alone")
 
 // ProtectionStatus
-func two(_ a: Bool, _ b: Bool) -> [PathInfo] {
-    [PathInfo(id: "a", up: a, metered: false), PathInfo(id: "b", up: b, metered: true)]
+func two(_ upA: Bool, _ upB: Bool) -> [PathInfo] {
+    [PathInfo(id: "a", up: upA, metered: false), PathInfo(id: "b", up: upB, metered: true)]
 }
 check(protectionStatus(paths: two(true, true), paused: false, connecting: false) == .protected, "status protected")
 check(protectionStatus(paths: two(true, false), paused: false, connecting: false) == .degraded, "status degraded")
-check(protectionStatus(paths: two(false, true), paused: false, connecting: false) == .degraded, "status degraded is symmetric")
-let three1 = [PathInfo(id: "a", up: true, metered: false), PathInfo(id: "b", up: false, metered: false), PathInfo(id: "c", up: false, metered: true)]
-check(protectionStatus(paths: three1, paused: false, connecting: false) == .degraded, "status degraded with 3 configured, 1 up")
+check(protectionStatus(paths: two(false, true), paused: false, connecting: false) == .degraded,
+      "status degraded is symmetric")
+let three1 = [
+    PathInfo(id: "a", up: true, metered: false),
+    PathInfo(id: "b", up: false, metered: false),
+    PathInfo(id: "c", up: false, metered: true),
+]
+check(protectionStatus(paths: three1, paused: false, connecting: false) == .degraded,
+      "status degraded with 3 configured, 1 up")
 check(protectionStatus(paths: two(false, false), paused: false, connecting: false) == .down, "status down")
 check(protectionStatus(paths: [wifi], paused: false, connecting: false) == .atRisk, "status at risk")
 check(protectionStatus(paths: two(true, true), paused: true, connecting: false) == .paused, "status paused wins")
-check(protectionStatus(paths: two(true, true), paused: false, connecting: true) == .connecting, "status connecting wins")
+check(protectionStatus(paths: two(true, true), paused: false, connecting: true) == .connecting,
+      "status connecting wins")
 check(protectionStatus(paths: [], paused: false, connecting: false) == .off, "status off when none configured")
 
 // Consent
@@ -56,18 +66,18 @@ check(defaultShareEnabled(tier: .free) == false, "free tier is opt-in")
 check(defaultShareEnabled(tier: .hosted) == true, "paid tier is opt-out")
 
 // Impact
-let s = computeImpact(segments: [
+let impact = computeImpact(segments: [
     .init(duration: 10, upCount: 2),
     .init(duration: 5, upCount: 1),
     .init(duration: 20, upCount: 2),
     .init(duration: 3, upCount: 1),
 ])
-check(s.sessionDuration == 38, "impact session duration")
-check(s.protectedDuration == 30, "impact protected duration")
-check(s.outageAbsorbed == 8, "impact outage absorbed")
-check(s.failoversSurvived == 2, "impact failovers survived")
-check(s.longestDropSurvived == 5, "impact longest drop survived")
-check(abs(s.protectedFraction - 30.0 / 38.0) < 0.0001, "impact protected fraction")
+check(impact.sessionDuration == 38, "impact session duration")
+check(impact.protectedDuration == 30, "impact protected duration")
+check(impact.outageAbsorbed == 8, "impact outage absorbed")
+check(impact.failoversSurvived == 2, "impact failovers survived")
+check(impact.longestDropSurvived == 5, "impact longest drop survived")
+check(abs(impact.protectedFraction - 30.0 / 38.0) < 0.0001, "impact protected fraction")
 
 let merged = computeImpact(segments: [
     .init(duration: 4, upCount: 2),
