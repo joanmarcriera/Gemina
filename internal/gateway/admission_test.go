@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 	"time"
 
@@ -65,6 +66,42 @@ func TestAdmitterHostedModeRequiresValidToken(t *testing.T) {
 	got, ok := store.SessionKey(id)
 	if !ok || !bytes.Equal(got, sessKey) {
 		t.Fatal("valid admission did not register the session key")
+	}
+}
+
+func TestAdmitterRejectsReusedSessionID(t *testing.T) {
+	store := NewSessionStore()
+	a := NewAdmitter(&entitlement.Service{Mode: entitlement.ModeOpen}, store)
+	dp := NewDataPlane(store, 64)
+
+	id := sessionID(0x05)
+	firstKey := bytes.Repeat([]byte{0x55}, 32)
+	if _, err := a.Admit("", id, firstKey); err != nil {
+		t.Fatalf("first admit: %v", err)
+	}
+
+	// Re-admitting the same SessionID with a fresh key is refused fail-closed: a
+	// SessionID/key pair is single-use for the gateway's lifetime.
+	freshKey := bytes.Repeat([]byte{0x66}, 32)
+	if _, err := a.Admit("", id, freshKey); !errors.Is(err, ErrSessionReused) {
+		t.Fatalf("reused session id not refused: err=%v", err)
+	}
+
+	// The originally admitted key is untouched...
+	got, ok := store.SessionKey(id)
+	if !ok || !bytes.Equal(got, firstKey) {
+		t.Fatal("reuse attempt overwrote the admitted session key")
+	}
+
+	// ...so traffic sealed under the rebind-rejected key cannot decrypt into the
+	// session — the reused id is never admitted into a fresh session.
+	attacker, err := clientcore.NewSession(id, freshKey, clientcore.RoleInitiator, 64)
+	if err != nil {
+		t.Fatalf("attacker session: %v", err)
+	}
+	wire, _ := attacker.Outbound([]byte("forged"))
+	if _, _, err := dp.Handle(wire, "wifi"); err == nil {
+		t.Fatal("data plane accepted a packet sealed under a rebind-rejected key")
 	}
 }
 
