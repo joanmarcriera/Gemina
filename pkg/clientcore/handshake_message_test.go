@@ -27,17 +27,41 @@ func TestServerHelloRoundTrip(t *testing.T) {
 	id := sessionID(0x3D)
 	_, ephPub, _ := GenerateKeyPair()
 	sig := bytes.Repeat([]byte{0x5A}, 64)
+	assignedIP := [4]byte{10, 99, 0, 2}
 
-	hello, err := EncodeServerHello(id, ephPub, sig)
+	hello, err := EncodeServerHello(id, ephPub, sig, assignedIP)
 	if err != nil {
 		t.Fatalf("encode: %v", err)
 	}
-	gotID, gotEph, gotSig, err := DecodeServerHello(hello)
+	gotID, gotEph, gotSig, gotIP, err := DecodeServerHello(hello)
 	if err != nil {
 		t.Fatalf("decode: %v", err)
 	}
 	if gotID != id || !bytes.Equal(gotEph, ephPub) || !bytes.Equal(gotSig, sig) {
 		t.Fatal("server hello round-trip mismatch")
+	}
+	if gotIP != assignedIP {
+		t.Fatalf("assigned IP round-trip mismatch: got %v want %v", gotIP, assignedIP)
+	}
+}
+
+// A zero AssignedIPv4 means "unassigned" (e.g. the gateway exit is off); it must
+// still round-trip cleanly and be distinguishable from a real lease.
+func TestServerHelloUnassignedIPRoundTrips(t *testing.T) {
+	id := sessionID(0x3E)
+	_, ephPub, _ := GenerateKeyPair()
+	sig := bytes.Repeat([]byte{0x5A}, 64)
+
+	hello, err := EncodeServerHello(id, ephPub, sig, [4]byte{})
+	if err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+	_, _, _, gotIP, err := DecodeServerHello(hello)
+	if err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if gotIP != ([4]byte{}) {
+		t.Fatalf("unassigned IP should be zero, got %v", gotIP)
 	}
 }
 
@@ -45,7 +69,7 @@ func TestDecodeRejectsMalformed(t *testing.T) {
 	if _, _, _, _, err := DecodeClientHello([]byte("short")); err == nil {
 		t.Fatal("accepted short client hello")
 	}
-	if _, _, _, err := DecodeServerHello([]byte("short")); err == nil {
+	if _, _, _, _, err := DecodeServerHello([]byte("short")); err == nil {
 		t.Fatal("accepted short server hello")
 	}
 	id := sessionID(1)
@@ -79,7 +103,7 @@ func TestClientHandshakeCompletesAndKeysMatch(t *testing.T) {
 		t.Fatalf("gateway derive: %v", err)
 	}
 	sig := SignHandshake(idPriv, gwEphPub, id)
-	serverHello, _ := EncodeServerHello(id, gwEphPub, sig)
+	serverHello, _ := EncodeServerHello(id, gwEphPub, sig, [4]byte{})
 
 	session, err := hs.Complete(serverHello, 64)
 	if err != nil {
@@ -110,7 +134,7 @@ func TestClientHandshakeRejectsForgedGateway(t *testing.T) {
 	_ = gwEphPriv
 	_, _ = DeriveSessionKey(gwEphPriv, clientEph, id)
 	forgedSig := SignHandshake(attackerPriv, gwEphPub, id) // signed by the attacker
-	serverHello, _ := EncodeServerHello(id, gwEphPub, forgedSig)
+	serverHello, _ := EncodeServerHello(id, gwEphPub, forgedSig, [4]byte{})
 
 	if _, err := hs.Complete(serverHello, 64); err == nil {
 		t.Fatal("client completed a handshake with a forged gateway signature")
@@ -126,7 +150,7 @@ func TestClientHandshakeRejectsSessionMismatch(t *testing.T) {
 	gwEphPriv, gwEphPub, _ := GenerateKeyPair()
 	_, _ = DeriveSessionKey(gwEphPriv, clientEph, other)
 	sig := SignHandshake(idPriv, gwEphPub, other)
-	serverHello, _ := EncodeServerHello(other, gwEphPub, sig)
+	serverHello, _ := EncodeServerHello(other, gwEphPub, sig, [4]byte{})
 
 	if _, err := hs.Complete(serverHello, 64); err == nil {
 		t.Fatal("client accepted a server hello for a different session")
