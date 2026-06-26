@@ -22,6 +22,18 @@ public enum CoreTransportError: Error {
     case unknown(Int32)
 }
 
+extension CoreTransportError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .sessionCreateFailed: return "Failed to create the transport session."
+        case .badHandle: return "Invalid transport session handle."
+        case .bufferTooSmall: return "Output buffer too small for the framed packet."
+        case .coreRejected: return "The transport core rejected the packet."
+        case .unknown(let code): return "Transport core error (code \(code))."
+        }
+    }
+}
+
 // Negative return codes from the C ABI (see continuitycore.h).
 private func coreError(_ code: Int32) -> CoreTransportError {
     switch code {
@@ -38,6 +50,11 @@ public final class CoreTransport: TransportCore {
         case initiator = 0
         case responder = 1
     }
+
+    /// Bytes reserved above the plaintext length for the frame header + AEAD tag.
+    /// Sized with generous headroom; `cc_outbound` returns `bufferTooSmall` (-2) if
+    /// a future framing change ever exceeds it, so this is a safe over-allocation.
+    private static let frameOverhead = 64
 
     private let handle: UInt64
 
@@ -65,8 +82,7 @@ public final class CoreTransport: TransportCore {
     deinit { cc_session_free(handle) }
 
     public func outbound(_ payload: Data) throws -> Data {
-        // Header + AEAD tag headroom above the plaintext length.
-        var out = [UInt8](repeating: 0, count: payload.count + 64)
+        var out = [UInt8](repeating: 0, count: payload.count + Self.frameOverhead)
         let written: Int32 = payload.withUnsafeBytes { payloadBytes in
             cc_outbound(
                 handle,
