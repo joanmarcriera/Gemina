@@ -182,7 +182,8 @@ check_raw_ipv4() {
 		   ':(exclude)LICENSE' \
 		   ':(exclude)*_test.go' \
 		   ':(exclude)*/testdata/*' \
-		   ':(exclude)**/testdata/*' 2>/dev/null \
+		   ':(exclude)**/testdata/*' \
+		   ':(exclude)tests/*' 2>/dev/null \
 		| grep -Ev '192\.0\.2\.|198\.51\.100\.|203\.0\.113\.' \
 		| grep -Ev '127\.0\.0\.1|0\.0\.0\.0|255\.255\.255\.255' \
 		|| true)"
