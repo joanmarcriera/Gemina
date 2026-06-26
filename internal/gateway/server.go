@@ -26,7 +26,16 @@ const maxDatagram = 1500
 // progress.
 const summaryEvery = 1000
 
-// Decision is the outcome of handling one datagram.
+// Decision is the outcome of handling one datagram at the gateway layer. It
+// covers the full pipeline: probe parsing and dedup. DecisionRejected (the zero
+// value) represents datagrams that fail protocol parsing before dedup is
+// attempted; there is no equivalent in dedup.Decision, whose zero value is
+// DecisionInvalid for an invalid id/path.
+//
+// Intentionally distinct from dedup.Decision (FIFO dedup layer, zero=Invalid)
+// and dedup.ReplayDecision (RFC 6479 anti-replay, adds ReplayStale). The three
+// types operate at different abstraction levels and have different zero values;
+// a shared type would couple unrelated layers.
 type Decision uint8
 
 const (

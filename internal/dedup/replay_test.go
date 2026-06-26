@@ -3,6 +3,7 @@ package dedup
 import (
 	"errors"
 	"math"
+	"math/bits"
 	"sync"
 	"testing"
 
@@ -327,4 +328,14 @@ func (m *replayModel) observe(n protocol.PacketNumber) ReplayDecision {
 		m.highest = n
 	}
 	return ReplayFirstCopy
+}
+
+// bitsSet returns the count of set bits across all words; used in tests to
+// verify that the window never leaks or double-counts positions.
+func (w *ReplayWindow) bitsSet() int {
+	var total int
+	for _, wd := range w.words {
+		total += bits.OnesCount64(wd)
+	}
+	return total
 }
