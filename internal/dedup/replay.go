@@ -1,13 +1,20 @@
 package dedup
 
 import (
-	"math/bits"
 	"sync"
 
 	"continuity-vpn/internal/protocol"
 )
 
-// ReplayDecision is the outcome of a ReplayWindow.Observe call.
+// ReplayDecision is the outcome of a ReplayWindow.Observe call. It is specific
+// to RFC 6479 / WireGuard-style sequence-number anti-replay and adds
+// ReplayStale (packet number has fallen below the window floor) — a concept
+// that neither dedup.Decision (FIFO dedup, no ordering) nor gateway.Decision
+// (datagram-pipeline outcome) express.
+//
+// Intentionally distinct from dedup.Decision and gateway.Decision. All three
+// operate at different abstraction levels and have different zero values; a
+// shared type would couple unrelated layers.
 type ReplayDecision uint8
 
 const (
@@ -208,14 +215,4 @@ func (w *ReplayWindow) setBit(n protocol.PacketNumber) {
 func (w *ReplayWindow) testBit(n protocol.PacketNumber) bool {
 	pos := uint64(n) % uint64(w.width)
 	return w.words[pos/64]&(uint64(1)<<(pos%64)) != 0
-}
-
-// bitsSet returns the count of set bits across all words; used only in tests to
-// verify that the window never leaks or double-counts positions.
-func (w *ReplayWindow) bitsSet() int {
-	var total int
-	for _, wd := range w.words {
-		total += bits.OnesCount64(wd)
-	}
-	return total
 }
