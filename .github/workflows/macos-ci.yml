@@ -7,11 +7,9 @@ on:
       - "apps/macos/**"
       - ".swiftlint.yml"
       - ".github/workflows/macos-ci.yml"
+  # No path filter on pull_request: the swift job is required by branch
+  # protection, so it must report a status on every PR (see go-ci.yml).
   pull_request:
-    paths:
-      - "apps/macos/**"
-      - ".swiftlint.yml"
-      - ".github/workflows/macos-ci.yml"
 
 jobs:
   swift:
