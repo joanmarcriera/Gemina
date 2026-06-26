@@ -24,7 +24,7 @@ func simulateGateway(t *testing.T, identityPriv ed25519.PrivateKey, clientHello 
 		t.Fatalf("gateway key pair: %v", err)
 	}
 	sig := clientcore.SignHandshake(identityPriv, gwPub, sid)
-	hello, err := clientcore.EncodeServerHello(sid, gwPub, sig)
+	hello, err := clientcore.EncodeServerHello(sid, gwPub, sig, [4]byte{})
 	if err != nil {
 		t.Fatalf("gateway EncodeServerHello: %v", err)
 	}

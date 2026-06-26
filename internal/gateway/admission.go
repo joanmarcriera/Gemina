@@ -141,7 +141,8 @@ func (a *Admitter) Handshake(clientHello []byte, identityPriv ed25519.PrivateKey
 	}
 
 	sig := clientcore.SignHandshake(identityPriv, gatewayEphPub, id)
-	serverHello, err = clientcore.EncodeServerHello(id, gatewayEphPub, sig)
+	// A1: no IP is assigned here yet; A2 wires the exit lease into the ServerHello.
+	serverHello, err = clientcore.EncodeServerHello(id, gatewayEphPub, sig, [4]byte{})
 	if err != nil {
 		a.store.Forget(id) // unwind the registration if we cannot answer
 		return nil, entitlement.Claims{}, protocol.SessionID{}, err

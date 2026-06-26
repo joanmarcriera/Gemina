@@ -10,7 +10,7 @@ func TestClassifyDatagram(t *testing.T) {
 		t.Errorf("client hello classified as %v", got)
 	}
 
-	serverHello, _ := EncodeServerHello(sessionID(1), eph, make([]byte, 64))
+	serverHello, _ := EncodeServerHello(sessionID(1), eph, make([]byte, 64), [4]byte{})
 	if got := ClassifyDatagram(serverHello); got != KindServerHello {
 		t.Errorf("server hello classified as %v", got)
 	}

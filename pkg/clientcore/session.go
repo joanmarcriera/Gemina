@@ -40,9 +40,21 @@ type Session struct {
 	role   Role
 	sealer *sealer
 
+	// assignedIPv4 is the gateway-leased tunnel address learned from the
+	// ServerHello during the client handshake (zero for a responder session or
+	// when the gateway assigned none). It is read-only after construction.
+	assignedIPv4 [4]byte
+
 	mu     sync.Mutex
 	next   protocol.PacketNumber
 	window *dedup.ReplayWindow // RFC 6479 sliding-window anti-replay; self-synchronised
+}
+
+// AssignedIPv4 returns the gateway-leased tunnel IPv4 address for this session,
+// or the zero value if none was assigned. The packet-tunnel provider uses it to
+// build the interface's NEPacketTunnelNetworkSettings.
+func (s *Session) AssignedIPv4() [4]byte {
+	return s.assignedIPv4
 }
 
 // NewSession creates a session with the given identity, 32-byte key, role and
