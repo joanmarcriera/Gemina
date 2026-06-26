@@ -60,13 +60,21 @@ const (
 	msgClientHello   = 1
 	msgServerHello   = 2
 
-	x25519PubSize = 32
-	maxTokenLen   = 4096
+	x25519PubSize    = 32
+	maxTokenLen      = 4096
+	assignedIPv4Size = 4
 
 	// ClientHello: header + session id + 8-byte timestamp + ephemeral key +
 	// 2-byte token length, then the token.
 	clientHelloFixed = 6 + protocol.SessionIDSize + 8 + x25519PubSize + 2 // before token
-	serverHelloLen   = 6 + protocol.SessionIDSize + x25519PubSize + ed25519.SignatureSize
+	// ServerHello: header + session id + ephemeral key + signature + the
+	// gateway-assigned tunnel IPv4 (4 bytes, appended after the signature).
+	// The IPv4 is NOT covered by the gateway signature (which binds only the
+	// ephemeral key to the session, ADR-0007); tampering with it can only break
+	// the client's own tunnel-IP config (a denial of service a network attacker
+	// can already cause), never the AEAD-authenticated data plane. A zero value
+	// means "unassigned" (e.g. the gateway exit is disabled).
+	serverHelloLen = 6 + protocol.SessionIDSize + x25519PubSize + ed25519.SignatureSize + assignedIPv4Size
 )
 
 var handshakeMagic = [4]byte{'C', 'V', 'H', '1'}
@@ -144,8 +152,9 @@ func DecodeClientHello(b []byte) (id protocol.SessionID, timestamp int64, epheme
 	return id, timestamp, append([]byte(nil), eph...), string(b[clientHelloFixed:]), nil
 }
 
-// EncodeServerHello frames a ServerHello.
-func EncodeServerHello(id protocol.SessionID, ephemeralPub, sig []byte) ([]byte, error) {
+// EncodeServerHello frames a ServerHello. assignedIPv4 is the gateway-leased
+// tunnel address for the client (zero = unassigned).
+func EncodeServerHello(id protocol.SessionID, ephemeralPub, sig []byte, assignedIPv4 [4]byte) ([]byte, error) {
 	if len(ephemeralPub) != x25519PubSize || len(sig) != ed25519.SignatureSize {
 		return nil, errHandshakeField
 	}
@@ -153,23 +162,29 @@ func EncodeServerHello(id protocol.SessionID, ephemeralPub, sig []byte) ([]byte,
 	putHandshakeHeader(out, msgServerHello, id)
 	ephStart := 6 + protocol.SessionIDSize
 	copy(out[ephStart:], ephemeralPub)
-	copy(out[ephStart+x25519PubSize:], sig)
+	sigStart := ephStart + x25519PubSize
+	copy(out[sigStart:], sig)
+	copy(out[sigStart+ed25519.SignatureSize:], assignedIPv4[:])
 	return out, nil
 }
 
-// DecodeServerHello parses a ServerHello.
-func DecodeServerHello(b []byte) (id protocol.SessionID, ephemeralPub, sig []byte, err error) {
+// DecodeServerHello parses a ServerHello, returning the gateway's ephemeral key,
+// its signature, and the assigned tunnel IPv4 (zero = unassigned).
+func DecodeServerHello(b []byte) (id protocol.SessionID, ephemeralPub, sig []byte, assignedIPv4 [4]byte, err error) {
 	id, err = parseHandshakeHeader(b, msgServerHello)
 	if err != nil {
-		return protocol.SessionID{}, nil, nil, err
+		return protocol.SessionID{}, nil, nil, [4]byte{}, err
 	}
 	if len(b) != serverHelloLen {
-		return protocol.SessionID{}, nil, nil, errHandshakeField
+		return protocol.SessionID{}, nil, nil, [4]byte{}, errHandshakeField
 	}
 	ephStart := 6 + protocol.SessionIDSize
 	eph := b[ephStart : ephStart+x25519PubSize]
-	signature := b[ephStart+x25519PubSize:]
-	return id, append([]byte(nil), eph...), append([]byte(nil), signature...), nil
+	sigStart := ephStart + x25519PubSize
+	signature := b[sigStart : sigStart+ed25519.SignatureSize]
+	var ip [4]byte
+	copy(ip[:], b[sigStart+ed25519.SignatureSize:])
+	return id, append([]byte(nil), eph...), append([]byte(nil), signature...), ip, nil
 }
 
 // ClientHandshake is the client's in-flight handshake state between sending a
@@ -207,7 +222,7 @@ func BeginClientHandshake(gatewayIdentity ed25519.PublicKey, token string) ([]by
 // MITM), derives the session key, and returns a ready initiator Session with the
 // given inbound dedup capacity.
 func (hs *ClientHandshake) Complete(serverHello []byte, dedupCapacity int) (*Session, error) {
-	id, gatewayEph, sig, err := DecodeServerHello(serverHello)
+	id, gatewayEph, sig, assignedIPv4, err := DecodeServerHello(serverHello)
 	if err != nil {
 		return nil, err
 	}
@@ -221,5 +236,10 @@ func (hs *ClientHandshake) Complete(serverHello []byte, dedupCapacity int) (*Ses
 	if err != nil {
 		return nil, err
 	}
-	return NewSession(id, key, RoleInitiator, dedupCapacity)
+	session, err := NewSession(id, key, RoleInitiator, dedupCapacity)
+	if err != nil {
+		return nil, err
+	}
+	session.assignedIPv4 = assignedIPv4
+	return session, nil
 }
