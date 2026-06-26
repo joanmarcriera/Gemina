@@ -1,3 +1,4 @@
-# GitHub "Sponsor" button funding sources. Add a custom: URL (e.g. a Lemon
-# Squeezy "buy me a coffee" / hosted-gateway checkout) when one is live.
+# GitHub "Sponsor" button funding sources for Gemina.
 github: [joanmarcriera]
+# Seshat donations — Lemon Squeezy checkout.
+custom: ["https://marcriera.lemonsqueezy.com/checkout/buy/e71c4ce2-f423-4bb6-9883-268e2324035d"]
