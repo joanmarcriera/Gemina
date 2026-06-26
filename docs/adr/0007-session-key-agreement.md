@@ -22,7 +22,7 @@ Derive the per-session key with an **X25519 ECDH** exchange followed by
 
 * Each endpoint generates an ephemeral X25519 key pair and sends its public key.
 * Both compute `shared = ECDH(myPriv, peerPub)` (symmetric) and then
-  `key = HKDF-SHA256(secret = shared, salt = sessionID, info = "continuity-vpn
+  `key = HKDF-SHA256(secret = shared, salt = sessionID, info = "gemina
   session key v1", len = 32)`. Salting by the session id binds the key to the
   session and separates keys across sessions between the same parties.
 * The key is role-independent; nonce direction separation (ADR-0006) handles the

@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"continuity-vpn/internal/diagnostics"
-	"continuity-vpn/internal/platform/darwin"
+	"github.com/joanmarcriera/gemina/internal/diagnostics"
+	"github.com/joanmarcriera/gemina/internal/platform/darwin"
 )
 
 func TestWritePreflightSummaryMode(t *testing.T) {

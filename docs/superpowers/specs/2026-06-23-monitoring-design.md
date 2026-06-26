@@ -38,7 +38,7 @@ HTTP <metrics-addr> ── /metrics ────────┘   (counters/gaug
   first-copy / duplicate / rejected) increments series. The data plane updates an
   active-sessions gauge.
 - `cmd/gateway` starts a second HTTP listener on
-  `CONTINUITY_GATEWAY_METRICS_ADDR` (off when unset) serving `GET /metrics`.
+  `GEMINA_GATEWAY_METRICS_ADDR` (off when unset) serving `GET /metrics`.
 
 ## Metric vocabulary (redaction-safe)
 
@@ -47,10 +47,10 @@ serial.
 
 | Metric | Type | Labels | Meaning |
 |---|---|---|---|
-| `continuity_packets_total` | counter | `decision`, `path` | the hero: first-copy/duplicate/rejected per path |
-| `continuity_rejected_total` | counter | `reason` | malformed / unknown-session / auth-failure |
-| `continuity_active_sessions` | gauge | — | live data-plane sessions |
-| `continuity_build_info` | gauge | `version` | always 1; build label |
+| `gemina_packets_total` | counter | `decision`, `path` | the hero: first-copy/duplicate/rejected per path |
+| `gemina_rejected_total` | counter | `reason` | malformed / unknown-session / auth-failure |
+| `gemina_active_sessions` | gauge | — | live data-plane sessions |
+| `gemina_build_info` | gauge | `version` | always 1; build label |
 
 - `decision ∈ {first-copy, duplicate, rejected}`
 - `path ∈ {wi-fi, android-usb-tether, unknown}`

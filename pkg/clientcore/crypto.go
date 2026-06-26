@@ -6,7 +6,7 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // Packet encryption for the data plane. Each session has a 32-byte key and uses

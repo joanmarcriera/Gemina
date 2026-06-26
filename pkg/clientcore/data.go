@@ -4,10 +4,10 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
-// Continuity VPN data-plane wire format. A data packet carries a variable
+// Gemina VPN data-plane wire format. A data packet carries a variable
 // encrypted payload (one tunnelled IP packet) after a fixed header. The header
 // is cleartext and authenticated (it is the AEAD additional data) so the gateway
 // can deduplicate by identity without decrypting; it carries no host

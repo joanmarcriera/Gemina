@@ -8,17 +8,17 @@ import (
 
 func TestCounterIncAndRender(t *testing.T) {
 	reg := NewRegistry()
-	packets := reg.Counter("continuity_packets_total", "probe decisions", "decision", "path")
+	packets := reg.Counter("gemina_packets_total", "probe decisions", "decision", "path")
 	packets.Inc("first-copy", "wi-fi")
 	packets.Inc("first-copy", "wi-fi")
 	packets.Add(3, "duplicate", "android-usb-tether")
 
 	out := reg.Render()
 	wantLines := []string{
-		"# HELP continuity_packets_total probe decisions",
-		"# TYPE continuity_packets_total counter",
-		`continuity_packets_total{decision="first-copy",path="wi-fi"} 2`,
-		`continuity_packets_total{decision="duplicate",path="android-usb-tether"} 3`,
+		"# HELP gemina_packets_total probe decisions",
+		"# TYPE gemina_packets_total counter",
+		`gemina_packets_total{decision="first-copy",path="wi-fi"} 2`,
+		`gemina_packets_total{decision="duplicate",path="android-usb-tether"} 3`,
 	}
 	for _, line := range wantLines {
 		if !strings.Contains(out, line) {
@@ -29,17 +29,17 @@ func TestCounterIncAndRender(t *testing.T) {
 
 func TestGaugeSet(t *testing.T) {
 	reg := NewRegistry()
-	g := reg.Gauge("continuity_active_sessions", "live sessions")
+	g := reg.Gauge("gemina_active_sessions", "live sessions")
 	g.Set(5)
 	g.Inc()
 	g.Dec()
 	g.Dec()
 
 	out := reg.Render()
-	if !strings.Contains(out, "# TYPE continuity_active_sessions gauge") {
+	if !strings.Contains(out, "# TYPE gemina_active_sessions gauge") {
 		t.Errorf("missing gauge TYPE: %s", out)
 	}
-	if !strings.Contains(out, "continuity_active_sessions 4") {
+	if !strings.Contains(out, "gemina_active_sessions 4") {
 		t.Errorf("gauge value wrong: %s", out)
 	}
 }

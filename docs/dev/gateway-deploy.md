@@ -14,9 +14,9 @@ GATEWAY_HOST=oracle GATEWAY_PORT=51820 scripts/deploy-dev-gateway.sh
 
 This is the release path — re-run it to ship a new build. It:
 
-1. rsyncs first-party source to `oracle:/opt/continuity-vpn` (never `.research-src`);
+1. rsyncs first-party source to `oracle:/opt/gemina` (never `.research-src`);
 2. builds the image natively (arm64) from `deploy/docker/gateway.Dockerfile`;
-3. installs/refreshes `deploy/systemd/continuity-gateway.service` and restarts it;
+3. installs/refreshes `deploy/systemd/gemina-gateway.service` and restarts it;
 4. opens the port in the host firewall (firewalld).
 
 The service is enabled, so it restarts on boot and on crash (`Restart=always`).
@@ -53,7 +53,7 @@ On-box (bypasses the VCN — proves the deployed container itself works):
 
 ```bash
 ssh oracle   # then send a few probes to localhost:51820 and read the logs
-sudo journalctl -u continuity-gateway.service -n 20 --no-pager
+sudo journalctl -u gemina-gateway.service -n 20 --no-pager
 ```
 
 End-to-end from your machine (requires the VCN rule above):
@@ -75,12 +75,12 @@ cannot leak into logs or journald. Keep it that way if you add fields.
 
 ## Footprint on the host
 
-* Image `continuity-gateway:latest` (distroless, non-root, read-only rootfs).
-* systemd unit `/etc/systemd/system/continuity-gateway.service`.
-* Source tree under `/opt/continuity-vpn`.
+* Image `gemina-gateway:latest` (distroless, non-root, read-only rootfs).
+* systemd unit `/etc/systemd/system/gemina-gateway.service`.
+* Source tree under `/opt/gemina`.
 * Host firewall: one UDP port.
 
-To remove: `sudo systemctl disable --now continuity-gateway.service`, remove the
-unit file, `sudo docker rmi continuity-gateway:latest`, remove
-`/opt/continuity-vpn`, and `sudo firewall-cmd --remove-port=<port>/udp
+To remove: `sudo systemctl disable --now gemina-gateway.service`, remove the
+unit file, `sudo docker rmi gemina-gateway:latest`, remove
+`/opt/gemina`, and `sudo firewall-cmd --remove-port=<port>/udp
 --permanent --reload`.

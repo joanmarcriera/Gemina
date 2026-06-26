@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"continuity-vpn/internal/paths"
+	"github.com/joanmarcriera/gemina/internal/paths"
 )
 
 func TestCollectInterfaceSnapshotsMapsNetworkState(t *testing.T) {

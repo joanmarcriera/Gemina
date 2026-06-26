@@ -75,10 +75,10 @@ make run-dataplane         # data-plane DHCP round-trip
 
 # Real egress to the gateway over cellular. Pass the gateway address via env so
 # it is never compiled in; verify arrival in the gateway logs (ssh oracle).
-CONTINUITY_GATEWAY_IP=<gateway-ip> CONTINUITY_GATEWAY_PORT=51820 make run-egress
+GEMINA_GATEWAY_IP=<gateway-ip> GEMINA_GATEWAY_PORT=51820 make run-egress
 
 # Stage-1 dual-path: same identity over Wi-Fi AND cellular at once + path-loss.
-CONTINUITY_GATEWAY_IP=<gateway-ip> CONTINUITY_WIFI_IFACE=en0 make run-dualpath
+GEMINA_GATEWAY_IP=<gateway-ip> GEMINA_WIFI_IFACE=en0 make run-dualpath
 ```
 
 If the phone is absent or not in tethering mode the probe prints `FAIL open`.

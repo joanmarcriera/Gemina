@@ -5,7 +5,7 @@ import (
 	"crypto/rand"
 	"errors"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // Gateway authentication for the key agreement (ADR-0007). DeriveSessionKey gives

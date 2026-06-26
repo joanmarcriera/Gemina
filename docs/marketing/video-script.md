@@ -1,6 +1,6 @@
-# Continuity VPN — Video Walkthrough Script & Recording Guide
+# Gemina VPN — Video Walkthrough Script & Recording Guide
 
-> **Honest pre-release framing.** Continuity VPN is a macOS *reliability* tool: it
+> **Honest pre-release framing.** Gemina VPN is a macOS *reliability* tool: it
 > sends your traffic over **two uplinks at once** — your Wi-Fi *and* an Android
 > phone's cellular link via USB tethering — and the gateway delivers the first
 > copy of each packet while discarding the duplicate, so a link dropping
@@ -10,7 +10,7 @@
 > and self-hostable**, with an optional paid hosted gateway.
 >
 > **This video must show the REAL, proven things — not a fake app.** Today the
-> dual-path transport is proven via command-line tools (`continuityctl`, the
+> dual-path transport is proven via command-line tools (`geminactl`, the
 > userspace RNDIS spike) and the gateway's redacted logs and Prometheus metrics.
 > Encryption and the shipping macOS app UI are still in development. Do **not**
 > stage a polished app UI, and do **not** invent numbers — read every figure off
@@ -40,7 +40,7 @@ Voiceover is in British English. Captions/lower-thirds are short on-screen text.
 > and your call drops. The session's gone, and you're dialling back in."
 
 **Captions / lower-thirds**
-- Opening title: **Continuity VPN**
+- Opening title: **Gemina VPN**
 - Lower-third: *One Wi-Fi blip. Whole session lost.*
 
 ---
@@ -54,7 +54,7 @@ Voiceover is in British English. Captions/lower-thirds are short on-screen text.
 - Highlight the gateway label: *first copy delivered, duplicate discarded.*
 
 **Voiceover**
-> "Continuity VPN takes a different approach. Instead of relying on one link, it
+> "Gemina VPN takes a different approach. Instead of relying on one link, it
 > sends every packet **twice** — once over your Wi-Fi, once over an Android
 > phone's cellular tether. The gateway keeps the first copy of each packet and
 > throws the duplicate away. If one link drops, the other is already carrying the
@@ -77,20 +77,20 @@ This is the heart of the video. Everything here is real and recordable today.
 - Terminal, large readable font. Phone connected, USB tethering on, Wi-Fi up.
 - Run:
   ```
-  continuityctl preflight
+  geminactl preflight
   ```
 - Show the plain verdict line (for example **supported**) and the one-line
-  "what to change" guidance. Optionally flash `continuityctl preflight -json`
+  "what to change" guidance. Optionally flash `geminactl preflight -json`
   to show the machine-readable report the app/website will consume — but prefer
   the human verdict on camera.
 
 **Voiceover**
-> "First, does your gear even work? One command — `continuityctl preflight` —
+> "First, does your gear even work? One command — `geminactl preflight` —
 > checks this Mac and this Android together and gives a plain verdict. No
 > guesswork."
 
 **Captions / lower-thirds**
-- *`continuityctl preflight` → a plain "supported" verdict.*
+- *`geminactl preflight` → a plain "supported" verdict.*
 
 > **Honesty note for the editor:** if, on your hardware, preflight reports the
 > tether as *present but not yet usable* (macOS ships no RNDIS host driver, so the
@@ -107,14 +107,14 @@ This is the heart of the video. Everything here is real and recordable today.
     `android-usb-tether`. (Source address never reaches the handler; these logs
     are redaction-clean by design.)
   - **Right:** the gateway's Prometheus **/metrics** page in a browser or via
-    `curl`, showing `continuity_packets_total{decision="first-copy",path="wi-fi"}`
+    `curl`, showing `gemina_packets_total{decision="first-copy",path="wi-fi"}`
     and `…{path="android-usb-tether"}` counters ticking up, plus the matching
     `duplicate` series. Optionally a Grafana panel of per-path delivery.
 - Start the dual-path run (the proven path is the userspace spike):
   ```
-  CONTINUITY_GATEWAY_IP=<gateway-ip> CONTINUITY_WIFI_IFACE=en0 make run-dualpath
+  GEMINA_GATEWAY_IP=<gateway-ip> GEMINA_WIFI_IFACE=en0 make run-dualpath
   ```
-  (run from `research/usb-rndis-spike/`), or the `continuityctl probe` dual-path
+  (run from `research/usb-rndis-spike/`), or the `geminactl probe` dual-path
   form for the machinery. Let the editor read the **actual** counts off the
   screen — do not pre-write numbers into the script.
 
@@ -126,7 +126,7 @@ This is the heart of the video. Everything here is real and recordable today.
 
 **Captions / lower-thirds**
 - *Gateway logs: `first-copy` / `duplicate`, per path.*
-- *`/metrics`: `continuity_packets_total{decision,path}` — the failover signal.*
+- *`/metrics`: `gemina_packets_total{decision,path}` — the failover signal.*
 - *Both links delivering. Duplicates dropped.*
 
 #### 3c — Live failover: unplug Wi-Fi, session continues (1:35–1:55)
@@ -163,8 +163,8 @@ This is the heart of the video. Everything here is real and recordable today.
   gateway:
   ```
   docker run --rm --read-only -p 51820:51820/udp \
-    -e CONTINUITY_GATEWAY_ADDR=:51820 \
-    ghcr.io/example/continuity-gateway:latest
+    -e GEMINA_GATEWAY_ADDR=:51820 \
+    ghcr.io/example/gemina-gateway:latest
   ```
 - Show a line in the client config pointing at `gateway.example.com:51820` to
   make the "gateway address is always configurable" point.
@@ -190,14 +190,14 @@ This is the heart of the video. Everything here is real and recordable today.
   encryption in progress.**
 
 **Voiceover**
-> "Continuity VPN is pre-release: the dual-path transport is proven, and the
+> "Gemina VPN is pre-release: the dual-path transport is proven, and the
 > macOS app and encryption are in active development. If you've ever lost a call
 > to a flaky network, star the repo and join the waitlist — and follow along as
 > we ship."
 
 **Captions / lower-thirds**
 - *★ Star on GitHub · Join the waitlist*
-- *github.com/joanmarcriera/continuity-vpn*
+- *github.com/joanmarcriera/gemina*
 - *Pre-release. Honest about what's proven.*
 
 ---
@@ -210,7 +210,7 @@ Same story, condensed. Vertical or square crop works; keep captions burned in
 | Time | On-screen | Voiceover / caption |
 |---|---|---|
 | 0:00–0:05 | Call freezes as Wi-Fi blips; "Reconnecting…" | "A Wi-Fi blip just killed your call." |
-| 0:05–0:13 | Two-arrow diagram: Wi-Fi + phone tether → one gateway | "Continuity VPN sends every packet twice — Wi-Fi *and* your phone's cellular. The gateway keeps the first copy." |
+| 0:05–0:13 | Two-arrow diagram: Wi-Fi + phone tether → one gateway | "Gemina VPN sends every packet twice — Wi-Fi *and* your phone's cellular. The gateway keeps the first copy." |
 | 0:13–0:28 | Gateway `/metrics` + JSON logs: both paths' `first-copy` counters climbing; then Wi-Fi pulled → `wi-fi` series flatlines, `android-usb-tether` keeps going | "Watch: both links delivering, duplicates dropped. Pull the Wi-Fi — the session keeps running on cellular. No reconnect." |
 | 0:28–0:38 | GitHub repo + `docker run` one-liner | "Open source. Self-host the gateway in one container, or use the hosted one." |
 | 0:38–0:45 | End card + status badge | "Pre-release: transport proven, app in progress. Star the repo, join the waitlist." |
@@ -228,7 +228,7 @@ self-host or hosted` → `Pre-release · join the waitlist`
 |---|---|---|---|---|
 | 1 | Dropped call | 0:00–0:20 | Real call/SSH session freezes as Wi-Fi blips; "Reconnecting…" | QuickTime/OBS Mac screen capture |
 | 2 | The idea | 0:20–0:45 | Two-arrow diagram (Wi-Fi + Android tether → one gateway → internet); "first copy delivered, duplicate discarded" | Animation / README mermaid diagram, screen-recorded or exported still |
-| 3a | Preflight | 0:45–1:05 | Terminal: `continuityctl preflight` → plain verdict + one fix; optional `-json` flash | OBS terminal capture (large font) |
+| 3a | Preflight | 0:45–1:05 | Terminal: `geminactl preflight` → plain verdict + one fix; optional `-json` flash | OBS terminal capture (large font) |
 | 3b | Both paths + dedup | 1:05–1:35 | Split: gateway JSON logs (`first-copy`/`duplicate`, `wi-fi`/`android-usb-tether`) **and** `/metrics` counters climbing; optional Grafana panel | SSH to gateway (`ssh oracle`) in terminal; browser/`curl` for `/metrics`; `make run-dualpath` driving traffic |
 | 3c | Live failover | 1:35–1:55 | Wi-Fi turned off → `wi-fi` series flatlines, `android-usb-tether` keeps climbing, sessions hold; Wi-Fi back on → resumes | Same gateway capture + Mac menu-bar Wi-Fi toggle on camera |
 | 4 | Open source / deploy | 1:55–2:20 | GitHub repo; `docker run` gateway one-liner; client pointed at `gateway.example.com:51820` | Browser + terminal capture |
@@ -289,7 +289,7 @@ an IP, MAC, port, serial or session id). These are safe to show in full.
 
 Blur, crop, or avoid showing:
 - [ ] **Real IP addresses** — your home/ISP public IP, the gateway's real IP, any
-      LAN addresses. Pass the gateway IP via env (`CONTINUITY_GATEWAY_IP=…`) so it
+      LAN addresses. Pass the gateway IP via env (`GEMINA_GATEWAY_IP=…`) so it
       is never compiled in, and keep it off-screen; show `gateway.example.com` as
       a placeholder in any client config.
 - [ ] **The phone's carrier and its cellular public IP** — do not show `tcpdump`
@@ -332,10 +332,10 @@ bar.
 
 ### Long description (YouTube / blog)
 
-> **Continuity VPN — keep your calls and SSH sessions alive when one network
+> **Gemina VPN — keep your calls and SSH sessions alive when one network
 > blips.**
 >
-> Continuity VPN is an open-source macOS *reliability* tool. It sends your traffic
+> Gemina VPN is an open-source macOS *reliability* tool. It sends your traffic
 > over **two uplinks at once** — your Wi-Fi *and* an Android phone's cellular link
 > over USB tethering — to a single gateway. The gateway delivers the first copy of
 > each packet and discards the duplicate, so if one link drops mid-session, the
@@ -346,7 +346,7 @@ bar.
 > change on the Mac**. **Open source and self-hostable** — run the gateway as one
 > small container on one UDP port — with an optional paid hosted gateway planned.
 >
-> In this video we show the **real, proven** transport: `continuityctl preflight`
+> In this video we show the **real, proven** transport: `geminactl preflight`
 > giving a plain "supported" verdict, the gateway's redacted logs and Prometheus
 > `/metrics` showing both paths delivering and duplicates being deduplicated, and
 > a live failover — pull the Wi-Fi and the session keeps running on cellular.
@@ -356,12 +356,12 @@ bar.
 > are in active development. No staged UI, no invented numbers — every figure is
 > read live off the gateway.
 >
-> ★ Star the repo: https://github.com/joanmarcriera/continuity-vpn
+> ★ Star the repo: https://github.com/joanmarcriera/gemina
 > Join the waitlist: <waitlist link>
 
 ### Short caption (X / LinkedIn)
 
-> A Wi-Fi blip shouldn't kill your call. Continuity VPN sends every packet over
+> A Wi-Fi blip shouldn't kill your call. Gemina VPN sends every packet over
 > Wi-Fi **and** your Android's cellular at once; the gateway keeps the first copy,
 > drops the duplicate. Pull the Wi-Fi mid-session — it keeps running. Open source,
 > self-hostable. Pre-release (transport proven, app in progress). ★ + waitlist 👇
@@ -372,7 +372,7 @@ bar.
 |---|---|
 | 0:00 | The problem: one blip, dropped call |
 | 0:20 | The idea: send every packet twice |
-| 0:45 | Live proof: `continuityctl preflight` |
+| 0:45 | Live proof: `geminactl preflight` |
 | 1:05 | Live proof: both paths delivering + dedup (logs & metrics) |
 | 1:35 | Live proof: pull Wi-Fi, session survives on cellular |
 | 1:55 | Open source: self-host or hosted gateway |
@@ -383,7 +383,7 @@ bar.
 ### Recording-day checklist (tear-off)
 
 - [ ] Phone connected, USB tethering on; Wi-Fi up; gateway reachable (`ssh oracle`).
-- [ ] Gateway running with `/metrics` enabled (`CONTINUITY_GATEWAY_METRICS_ADDR`).
+- [ ] Gateway running with `/metrics` enabled (`GEMINA_GATEWAY_METRICS_ADDR`).
 - [ ] Do Not Disturb on; neutral terminal profile; scrollback cleared; large font.
 - [ ] Gateway IP via env, kept off-screen; `gateway.example.com` placeholder in configs.
 - [ ] Dry-run the failover (Wi-Fi off/on) once so the metrics move cleanly on the take.

@@ -3,7 +3,7 @@ package dedup
 import (
 	"sync"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // ReplayDecision is the outcome of a ReplayWindow.Observe call. It is specific

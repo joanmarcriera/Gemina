@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 func testProbe(t *testing.T, session byte, number protocol.PacketNumber, path protocol.PathTag) []byte {

@@ -1,6 +1,6 @@
 package darwin
 
-import "continuity-vpn/internal/paths"
+import "github.com/joanmarcriera/gemina/internal/paths"
 
 type EvidenceSource uint8
 

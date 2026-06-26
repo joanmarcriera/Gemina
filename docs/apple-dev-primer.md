@@ -1,6 +1,6 @@
 # Apple development, in plain English (for this project)
 
-A map of the Apple-specific concepts behind the continuity-vpn macOS app, written
+A map of the Apple-specific concepts behind the gemina macOS app, written
 for someone who knows software but not the Apple ecosystem. You don't need to
 memorise this — it's here so the words Claude and Xcode throw at you make sense.
 
@@ -30,15 +30,15 @@ one more gate: **notarization**. That's the whole game.
   - *Developer ID Application* — for shipping a downloadable app to other people.
     (We'll create this at release time.)
 - **Bundle identifier** — the app's unique name in reverse-DNS, e.g.
-  `com.joanmarcriera.continuity`. The extension has its own:
-  `…continuity.tunnel`.
+  `com.joanmarcriera.gemina`. The extension has its own:
+  `…gemina.tunnel`.
 - **Entitlement** — a single permission the app declares it needs (e.g. "run a VPN
   tunnel", "talk to USB", "share data with my extension"). Listed in a
   `.entitlements` file. Our key one is the **Network Extension** entitlement.
 - **Capability** — the Apple-portal side of an entitlement: you enable a capability
   for your app's identifier, Apple agrees, and that flows into a profile.
 - **Provisioning profile** — Apple's signed permission slip that says "team
-  `D427C2J4RG` may run app `com.joanmarcriera.continuity` with these
+  `D427C2J4RG` may run app `com.joanmarcriera.gemina` with these
   entitlements on these machines". Xcode fetches these automatically; you saw two
   get downloaded today (one for the app, one for the extension).
 - **Code signing** — the build step that wraps the cert + entitlements + a hash of
@@ -56,7 +56,7 @@ one more gate: **notarization**. That's the whole game.
 
 This app routes network traffic, so it ships a **Network Extension** — specifically
 a **packet-tunnel provider**. macOS treats VPN-like code as privileged: it runs in
-its **own sandboxed process** (`ContinuityTunnel.appex`) that the system launches
+its **own sandboxed process** (`GeminaTunnel.appex`) that the system launches
 on demand, and the **user must approve the VPN configuration once** in System
 Settings before it can run. This is the capability a free account can't have, and
 it's why "is the membership active?" was the blocking question.

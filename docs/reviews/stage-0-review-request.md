@@ -2,7 +2,7 @@
 
 Date: 2026-06-19
 
-Repository: `joanmarcriera/continuity-vpn`
+Repository: `joanmarcriera/gemina`
 
 Review evidence baseline commit: `1e3b461`
 
@@ -13,8 +13,8 @@ CI evidence commits:
 
 Review tracking:
 
-* Engineering review: https://github.com/joanmarcriera/continuity-vpn/issues/1
-* Legal/provenance review: https://github.com/joanmarcriera/continuity-vpn/issues/2
+* Engineering review: https://github.com/joanmarcriera/gemina/issues/1
+* Legal/provenance review: https://github.com/joanmarcriera/gemina/issues/2
 
 ## Purpose
 

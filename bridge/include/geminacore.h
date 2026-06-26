@@ -1,9 +1,9 @@
 /*
- * continuitycore.h — narrow C ABI for the Go transport core.
+ * geminacore.h — narrow C ABI for the Go transport core.
  *
  * This is the stable, hand-authored boundary the macOS NEPacketTunnelProvider
  * (Swift) links against to drive pkg/clientcore.Session. It mirrors the symbols
- * exported by bridge/continuitycore (cgo //export) and is the contract the Swift
+ * exported by bridge/geminacore (cgo //export) and is the contract the Swift
  * side should import; the cgo-generated header is a build artefact and is not
  * checked in.
  *
@@ -20,8 +20,8 @@
  * one of the negative codes below on failure.
  */
 
-#ifndef CONTINUITYCORE_H
-#define CONTINUITYCORE_H
+#ifndef GEMINACORE_H
+#define GEMINACORE_H
 
 #include <stdint.h>
 
@@ -131,4 +131,4 @@ extern void cc_session_free(uint64_t handle);
 }
 #endif
 
-#endif /* CONTINUITYCORE_H */
+#endif /* GEMINACORE_H */

@@ -7,8 +7,8 @@ An Xcode project was not generated during Stage 0 because NetworkExtension signi
 
 ## Manual Xcode Creation Steps
 
-1. Create a macOS App target named `ContinuityVPN`.
-2. Add a Packet Tunnel Extension target named `ContinuityVPNPacketTunnelExtension`.
+1. Create a macOS App target named `GeminaVPN`.
+2. Add a Packet Tunnel Extension target named `GeminaVPNPacketTunnelExtension`.
 3. Add a shared Swift framework or package target for code under `Shared/`.
 4. Link the app and extension to the shared target.
 5. Add NetworkExtension entitlements only after the Apple Developer Team ID and signing approach are approved.

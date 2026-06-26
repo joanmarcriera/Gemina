@@ -3,8 +3,8 @@ package clientcore
 import (
 	"sync"
 
-	"continuity-vpn/internal/dedup"
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/dedup"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // Role is the endpoint's position in a session. The two endpoints share a key

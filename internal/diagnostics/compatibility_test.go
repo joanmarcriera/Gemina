@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"continuity-vpn/internal/paths"
-	"continuity-vpn/internal/platform/darwin"
+	"github.com/joanmarcriera/gemina/internal/paths"
+	"github.com/joanmarcriera/gemina/internal/platform/darwin"
 )
 
 func usableWiFi() darwin.InterfaceSnapshot {

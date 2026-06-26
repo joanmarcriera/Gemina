@@ -12,8 +12,8 @@
 #include <unistd.h>
 
 int gateway_from_env(uint8_t ip[4], int *port) {
-    const char *ip_s = getenv("CONTINUITY_GATEWAY_IP");
-    const char *port_s = getenv("CONTINUITY_GATEWAY_PORT");
+    const char *ip_s = getenv("GEMINA_GATEWAY_IP");
+    const char *port_s = getenv("GEMINA_GATEWAY_PORT");
     if (!ip_s)
         return -1;
     int a, b, c, d;

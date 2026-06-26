@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // DefaultHandshakeTolerance bounds how far a ClientHello timestamp may be from

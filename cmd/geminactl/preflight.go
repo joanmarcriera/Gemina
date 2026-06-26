@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"continuity-vpn/internal/diagnostics"
-	"continuity-vpn/internal/platform/darwin"
+	"github.com/joanmarcriera/gemina/internal/diagnostics"
+	"github.com/joanmarcriera/gemina/internal/platform/darwin"
 )
 
 // runPreflight is the onboarding/pre-purchase compatibility check: it gathers

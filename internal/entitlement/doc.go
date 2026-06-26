@@ -1,6 +1,6 @@
 // Package entitlement gates the optional paid hosted gateway tier.
 //
-// The continuity-vpn client and gateway are open source and self-hostable for
+// The gemina client and gateway are open source and self-hostable for
 // free; revenue comes only from an optional paid hosted gateway. This package
 // therefore gates the hosted tier only: a self-hosted gateway runs the Service
 // in ModeOpen, where Admit always succeeds and no token is required, while the

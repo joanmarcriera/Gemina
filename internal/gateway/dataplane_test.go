@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"testing"
 
-	"continuity-vpn/internal/protocol"
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/internal/protocol"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 type staticKeys map[protocol.SessionID][]byte

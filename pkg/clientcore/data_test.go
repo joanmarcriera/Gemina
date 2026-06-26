@@ -3,7 +3,7 @@ package clientcore
 import (
 	"testing"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 func TestSessionIDFromDatagram(t *testing.T) {

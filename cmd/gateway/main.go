@@ -20,10 +20,10 @@ import (
 	"syscall"
 	"time"
 
-	"continuity-vpn/internal/entitlement"
-	"continuity-vpn/internal/exit"
-	"continuity-vpn/internal/gateway"
-	"continuity-vpn/internal/metrics"
+	"github.com/joanmarcriera/gemina/internal/entitlement"
+	"github.com/joanmarcriera/gemina/internal/exit"
+	"github.com/joanmarcriera/gemina/internal/gateway"
+	"github.com/joanmarcriera/gemina/internal/metrics"
 )
 
 const (
@@ -34,18 +34,18 @@ const (
 
 func main() {
 	level := slog.LevelInfo
-	if envOr("CONTINUITY_GATEWAY_LOG_LEVEL", "info") == "debug" {
+	if envOr("GEMINA_GATEWAY_LOG_LEVEL", "info") == "debug" {
 		level = slog.LevelDebug
 	}
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}))
 
-	addr := envOr("CONTINUITY_GATEWAY_ADDR", defaultAddr)
-	capacity := envInt(logger, "CONTINUITY_GATEWAY_DEDUP_CAPACITY", defaultCapacity)
-	readBuffer := envInt(logger, "CONTINUITY_GATEWAY_READ_BUFFER", defaultReadBuffer)
+	addr := envOr("GEMINA_GATEWAY_ADDR", defaultAddr)
+	capacity := envInt(logger, "GEMINA_GATEWAY_DEDUP_CAPACITY", defaultCapacity)
+	readBuffer := envInt(logger, "GEMINA_GATEWAY_READ_BUFFER", defaultReadBuffer)
 
 	// "data" runs the real gateway (authenticated handshake + encrypted data plane
 	// + admission); "probe" (default) runs the Stage-1 dedup probe server.
-	if envOr("CONTINUITY_GATEWAY_MODE", "probe") == "data" {
+	if envOr("GEMINA_GATEWAY_MODE", "probe") == "data" {
 		runDataGateway(logger, addr, capacity, readBuffer)
 		return
 	}
@@ -75,7 +75,7 @@ func main() {
 
 	// Optional Prometheus metrics endpoint. Off unless an address is configured,
 	// so the default footprint is unchanged and self-hosters opt in.
-	if metricsAddr := os.Getenv("CONTINUITY_GATEWAY_METRICS_ADDR"); metricsAddr != "" {
+	if metricsAddr := os.Getenv("GEMINA_GATEWAY_METRICS_ADDR"); metricsAddr != "" {
 		startMetricsServer(ctx, metricsAddr, server.Metrics(), logger)
 	}
 
@@ -98,7 +98,7 @@ func main() {
 // hosted for the paid tier), and serves the authenticated handshake + encrypted
 // data plane, exposing the same redacted /metrics.
 func runDataGateway(logger *slog.Logger, addr string, capacity, readBuffer int) {
-	identityPath := envOr("CONTINUITY_GATEWAY_IDENTITY", "gateway-identity.key")
+	identityPath := envOr("GEMINA_GATEWAY_IDENTITY", "gateway-identity.key")
 	priv, created, err := gateway.LoadOrCreateIdentity(identityPath)
 	if err != nil {
 		logger.Error("gateway identity", "path", identityPath, "error", err.Error())
@@ -108,10 +108,10 @@ func runDataGateway(logger *slog.Logger, addr string, capacity, readBuffer int) 
 	logger.Info("gateway identity", "path", identityPath, "created", created, "public_key", pub)
 
 	service := &entitlement.Service{Mode: entitlement.ModeOpen}
-	if envOr("CONTINUITY_GATEWAY_TIER", "open") == "hosted" {
-		key := os.Getenv("CONTINUITY_GATEWAY_ENTITLEMENT_KEY")
+	if envOr("GEMINA_GATEWAY_TIER", "open") == "hosted" {
+		key := os.Getenv("GEMINA_GATEWAY_ENTITLEMENT_KEY")
 		if key == "" {
-			logger.Error("hosted mode needs CONTINUITY_GATEWAY_ENTITLEMENT_KEY")
+			logger.Error("hosted mode needs GEMINA_GATEWAY_ENTITLEMENT_KEY")
 			os.Exit(1)
 		}
 		service = &entitlement.Service{Mode: entitlement.ModeHosted, Key: []byte(key)}
@@ -130,7 +130,7 @@ func runDataGateway(logger *slog.Logger, addr string, capacity, readBuffer int) 
 
 	// Optional internet exit path (Stage 2). Off by default so the data gateway
 	// stays a decrypt+dedup endpoint unless the operator provisions a TUN.
-	if envOr("CONTINUITY_GATEWAY_EXIT", "off") == "on" {
+	if envOr("GEMINA_GATEWAY_EXIT", "off") == "on" {
 		if err := setupExit(dg, conn, logger); err != nil {
 			logger.Error("enable exit path", "error", err.Error())
 			os.Exit(1)
@@ -139,7 +139,7 @@ func runDataGateway(logger *slog.Logger, addr string, capacity, readBuffer int) 
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
-	if metricsAddr := os.Getenv("CONTINUITY_GATEWAY_METRICS_ADDR"); metricsAddr != "" {
+	if metricsAddr := os.Getenv("GEMINA_GATEWAY_METRICS_ADDR"); metricsAddr != "" {
 		startMetricsServer(ctx, metricsAddr, dg.Metrics(), logger)
 	}
 
@@ -163,18 +163,18 @@ func (s connSink) SendTo(datagram []byte, dst netip.AddrPort) error {
 // then enables the exit path on dg. The TUN device requires Linux and privileges
 // (CAP_NET_ADMIN); on other platforms OpenTUN returns a clear error.
 func setupExit(dg *gateway.DataGateway, conn net.PacketConn, logger *slog.Logger) error {
-	poolStr := envOr("CONTINUITY_GATEWAY_POOL", "10.99.0.0/16")
+	poolStr := envOr("GEMINA_GATEWAY_POOL", "10.99.0.0/16")
 	pool, err := netip.ParsePrefix(poolStr)
 	if err != nil {
-		return fmt.Errorf("CONTINUITY_GATEWAY_POOL %q: %w", poolStr, err)
+		return fmt.Errorf("GEMINA_GATEWAY_POOL %q: %w", poolStr, err)
 	}
 	alloc, err := exit.NewAllocator(pool)
 	if err != nil {
 		return err
 	}
 
-	tunName := envOr("CONTINUITY_GATEWAY_TUN", "continuity0")
-	mtu := envInt(logger, "CONTINUITY_GATEWAY_TUN_MTU", 1280)
+	tunName := envOr("GEMINA_GATEWAY_TUN", "gemina0")
+	mtu := envInt(logger, "GEMINA_GATEWAY_TUN_MTU", 1280)
 	dev, err := exit.OpenTUN(tunName, mtu)
 	if err != nil {
 		return fmt.Errorf("open tun %q: %w", tunName, err)

@@ -5,36 +5,36 @@ import (
 	"fmt"
 	"os"
 
-	"continuity-vpn/internal/bootstrap"
-	"continuity-vpn/internal/diagnostics"
-	"continuity-vpn/internal/platform/darwin"
+	"github.com/joanmarcriera/gemina/internal/bootstrap"
+	"github.com/joanmarcriera/gemina/internal/diagnostics"
+	"github.com/joanmarcriera/gemina/internal/platform/darwin"
 )
 
 func main() {
 	if len(os.Args) == 1 {
-		fmt.Println(bootstrap.ComponentStage("continuityctl"))
+		fmt.Println(bootstrap.ComponentStage("geminactl"))
 		return
 	}
 
 	switch os.Args[1] {
 	case "darwin-evidence":
 		if err := runDarwinEvidence(); err != nil {
-			fmt.Fprintf(os.Stderr, "continuityctl darwin-evidence: %v\n", err)
+			fmt.Fprintf(os.Stderr, "geminactl darwin-evidence: %v\n", err)
 			os.Exit(1)
 		}
 	case "preflight":
 		if err := runPreflight(os.Args[2:], os.Stdout); err != nil {
-			fmt.Fprintf(os.Stderr, "continuityctl preflight: %v\n", err)
+			fmt.Fprintf(os.Stderr, "geminactl preflight: %v\n", err)
 			os.Exit(1)
 		}
 	case "probe":
 		if err := runProbe(os.Args[2:], os.Stdout); err != nil {
-			fmt.Fprintf(os.Stderr, "continuityctl probe: %v\n", err)
+			fmt.Fprintf(os.Stderr, "geminactl probe: %v\n", err)
 			os.Exit(1)
 		}
 	case "benchmark":
 		if err := runBenchmark(os.Args[2:], os.Stdout); err != nil {
-			fmt.Fprintf(os.Stderr, "continuityctl benchmark: %v\n", err)
+			fmt.Fprintf(os.Stderr, "geminactl benchmark: %v\n", err)
 			os.Exit(1)
 		}
 	default:

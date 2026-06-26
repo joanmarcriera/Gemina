@@ -1,7 +1,7 @@
 # Gateway monitoring stack (Prometheus + Grafana)
 
 A self-contained Prometheus + Grafana deployment that scrapes the Stage-1 probe
-gateway's `/metrics` endpoint and renders the **Continuity — Failover
+gateway's `/metrics` endpoint and renders the **Gemina — Failover
 Effectiveness** dashboard.
 
 ## What it shows
@@ -25,7 +25,7 @@ MAC, or session identifier ever reaches Prometheus.
 - Both Prometheus and Grafana bind to **`127.0.0.1` only**. Nothing is published
   to a public port and **no cloud ingress (VCN) rule is required**.
 - The gateway's metrics port is **never published to the host** — Prometheus
-  reaches it by container name over the private `continuity-mon` network.
+  reaches it by container name over the private `gemina-mon` network.
 - Reach Grafana through an SSH tunnel:
 
   ```bash
@@ -37,7 +37,7 @@ MAC, or session identifier ever reaches Prometheus.
   committed). Retrieve it with:
 
   ```bash
-  ssh oracle 'cat /opt/continuity-vpn/deploy/monitoring/.env'
+  ssh oracle 'cat /opt/gemina/deploy/monitoring/.env'
   ```
 
 ## Deploy / update
@@ -57,7 +57,7 @@ run, and brings the stack up. Re-run it to ship config or dashboard changes.
 | Path | Purpose |
 |------|---------|
 | `docker-compose.yml` | Prometheus + Grafana services (localhost-bound, shared network) |
-| `prometheus/prometheus.yml` | Scrape config (`continuity-gateway:9090`) + alert rule loading |
+| `prometheus/prometheus.yml` | Scrape config (`gemina-gateway:9090`) + alert rule loading |
 | `grafana/provisioning/datasources/` | Prometheus datasource (fixed uid) |
 | `grafana/provisioning/dashboards/` | Dashboard provider |
 | `grafana/dashboards/failover-dashboard.json` | Provisioned dashboard (datasource pinned) |

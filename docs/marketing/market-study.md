@@ -62,7 +62,7 @@ Ranked by willingness to pay, not size:
 | **iPhone hotspot as a path** | **Low** (test + market; likely already works) | **High** | Removes the Android/RNDIS barrier for the Mac+iPhone majority. Verify `Wi-Fi + iPhone-USB` end-to-end, then lead with it. |
 | **Reframe to "bond any two connections"** | Trivial (copy) | High | Wi-Fi + Ethernet/dongle/phone. Widens the "do I qualify?" answer to "yes". |
 | **One-click gateway deploy** (Fly.io/Railway/Render/DO 1-click, docker-compose) | Low | Medium-High | Turns "self-host" from a barrier into a button; feeds both adoption and hosted upsell. |
-| **Homebrew cask + `continuityctl` polish** | Low | Medium | Free reach into the dev/self-host crowd; the preflight as a hook. |
+| **Homebrew cask + `geminactl` polish** | Low | Medium | Free reach into the dev/self-host crowd; the preflight as a hook. |
 | **Setapp distribution** | Low-Medium | Medium-High | Existing paying Mac audience, **no billing to build**; usage-based 70/30 + 20% for users you bring, or 85/15 single-app. Sidesteps the cold-funnel problem. |
 | **Scope which traffic is duplicated** (only the call/SSH, not everything) | Medium | Medium | Also a *selling point*: protects the critical flow without doubling all cellular data. Already in the footprint ADR. |
 | **Windows/Linux client** | High | High (new platforms) | Gateway is already cross-platform; a non-Mac client is a real project (no NE), not "easy". Park it. |

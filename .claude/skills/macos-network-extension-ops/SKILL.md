@@ -1,12 +1,12 @@
 ---
 name: macos-network-extension-ops
-description: Install, approve, load, run and DEBUG the continuity-vpn packet-tunnel Network Extension on macOS — the NEPacketTunnelProvider lifecycle, the NETunnelProviderManager install flow, the System Settings approval prompt, reading the extension's logs, and the common "it won't start / won't connect" failures. Use for Phase 3 work (the real tunnel), for anything touching NEPacketTunnelProvider / NETunnelProviderManager / packetFlow / setTunnelNetworkSettings, or when the VPN toggle does nothing, the extension never loads, or no packets flow. Pairs with [[macos-app-xcode-build]] (build/sign) and [[userspace-rndis-dataplane]] (the uplink).
+description: Install, approve, load, run and DEBUG the gemina packet-tunnel Network Extension on macOS — the NEPacketTunnelProvider lifecycle, the NETunnelProviderManager install flow, the System Settings approval prompt, reading the extension's logs, and the common "it won't start / won't connect" failures. Use for Phase 3 work (the real tunnel), for anything touching NEPacketTunnelProvider / NETunnelProviderManager / packetFlow / setTunnelNetworkSettings, or when the VPN toggle does nothing, the extension never loads, or no packets flow. Pairs with [[macos-app-xcode-build]] (build/sign) and [[userspace-rndis-dataplane]] (the uplink).
 ---
 
 # Running & debugging the macOS Network Extension
 
-The tunnel ships as a **packet-tunnel-provider *app extension*** (`ContinuityTunnel.appex`,
-embedded in `Continuity.app/Contents/PlugIns/`), **not** a System Extension. That
+The tunnel ships as a **packet-tunnel-provider *app extension*** (`GeminaTunnel.appex`,
+embedded in `Gemina.app/Contents/PlugIns/`), **not** a System Extension. That
 choice matters for how it loads and how you debug it:
 
 - An **app extension** is owned by its host app, loaded on demand by the system
@@ -26,7 +26,7 @@ the tunnel be started. Sequence:
 1. **App creates/saves a config** via `NETunnelProviderManager`:
    - `NETunnelProviderManager.loadAllFromPreferences` → reuse or make one.
    - Set `.protocolConfiguration` to an `NETunnelProviderProtocol` with
-     `providerBundleIdentifier = "com.joanmarcriera.continuity.tunnel"` and a
+     `providerBundleIdentifier = "com.joanmarcriera.gemina.tunnel"` and a
      `serverAddress` string (shown in the UI; for us, the gateway address — keep
      it configurable per [[product-model-open-core-hosted-gateway]]).
    - `.isEnabled = true`, then `saveToPreferences`.
@@ -68,23 +68,23 @@ its logs. Use the unified log:
 
 ```bash
 # Live stream just the extension's subsystem (set a real os.Logger subsystem in Swift):
-log stream --level debug --predicate 'subsystem == "com.joanmarcriera.continuity"'
+log stream --level debug --predicate 'subsystem == "com.joanmarcriera.gemina"'
 
 # Or by process once it's running:
-log stream --predicate 'process == "ContinuityTunnel"' --level debug
+log stream --predicate 'process == "GeminaTunnel"' --level debug
 
 # Dump the last 10 min after a failed connect (no need to have streamed live):
-log show --last 10m --predicate 'process == "ContinuityTunnel"' --info --debug
+log show --last 10m --predicate 'process == "GeminaTunnel"' --info --debug
 
 # Is the provider process even alive / what does the system think of the config?
-pgrep -fl ContinuityTunnel
+pgrep -fl GeminaTunnel
 scutil --nc list                     # lists VPN services + state (Connected/Disconnected)
 ifconfig | grep -A3 utun            # the utun interface appears when settings apply
 ```
 
-In Xcode you can also **Debug → Attach to Process → ContinuityTunnel** after it
+In Xcode you can also **Debug → Attach to Process → GeminaTunnel** after it
 spawns, or set the scheme to wait-for-launch. Add an `os.Logger(subsystem:
-"com.joanmarcriera.continuity", category: ...)` early in the provider so there's
+"com.joanmarcriera.gemina", category: ...)` early in the provider so there's
 something to grep.
 
 ## Common failures (symptom → cause)

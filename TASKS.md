@@ -22,7 +22,7 @@ bridge (`cc_handshake_begin`/`cc_handshake_complete`, commit `fdf6f81`).
 the new `internal/exit` package (allocator, IPv4 parse, expiring path-set, router
 with reverse-path filter + return-path duplication, Linux TUN, NAT health-check),
 wired into `DataGateway` (egress on delivered first-copy, return loop, lease on
-admit), env-gated in `cmd/gateway` (`CONTINUITY_GATEWAY_EXIT=on`). Replay upgraded
+admit), env-gated in `cmd/gateway` (`GEMINA_GATEWAY_EXIT=on`). Replay upgraded
 from the FIFO ring to a per-session RFC 6479 sliding-window bitmap
 (`internal/dedup/replay.go`) that distinguishes a *stale* replay from a never-seen
 packet. Proven by an in-process loopback exit test + the Linux on-hardware rig
@@ -64,8 +64,8 @@ and **go-to-market** (open-core + hosted gateway). Next, in priority order:
   exposes. Monetisation strategy studied — keep Stripe (see
   `docs/product/monetisation-apple-study.md`).
 * [x] Monitoring/observability (2026-06-23): stdlib Prometheus `/metrics` on the
-  gateway (failover signal `continuity_packets_total{decision,path}` +
-  `continuity_rejected_total{reason}`, redaction-enforced), plus Grafana/alerts/
+  gateway (failover signal `gemina_packets_total{decision,path}` +
+  `gemina_rejected_total{reason}`, redaction-enforced), plus Grafana/alerts/
   scrape assets and `observability/METRICS.md`. Design in
   `docs/superpowers/specs/2026-06-23-monitoring-design.md`. Client-side metrics
   defined for when the app lands.
@@ -146,7 +146,7 @@ for users who don't want to self-host. See memory
   accounts, and wiring the gate into the gateway admission path.
 * [~] Public GitHub repo prep: open-core README + self-host quickstart, dual
   LICENSE/NOTICE, landing page (`website/`) done. Remaining: make the repo
-  public and route the landing page through `continuityctl preflight`.
+  public and route the landing page through `geminactl preflight`.
 
 ### Packaging & clean footprint (App Store target — ADR 2026-06-21)
 
@@ -184,7 +184,7 @@ supported config needs into the installer. The `device_functions` channel in
   (OnePlus & many OEMs)** → need the userspace RNDIS data plane or root. Confirm
   which Android builds default to NCM tethering.
 * [x] Build a user-facing preflight that maps `device_functions` + OS version to
-  a verdict + next step (2026-06-23). `continuityctl preflight`
+  a verdict + next step (2026-06-23). `geminactl preflight`
   (`internal/diagnostics/compatibility.go`) returns supported / needs-android /
   needs-wifi / needs-both / unsupported-macos with a plain next step; default
   one-line summary, `-json` for the app/website. Key call: an RNDIS function
@@ -211,7 +211,7 @@ evidence exist:
 
 * [x] Bind one UDP socket per path and prove per-interface egress, then prove
   **simultaneous** Wi-Fi + cellular dual-path (2026-06-23). Go mechanism:
-  `internal/transport` `PathDialer` + `continuityctl probe` (IP_BOUND_IF). Full
+  `internal/transport` `PathDialer` + `geminactl probe` (IP_BOUND_IF). Full
   real proof via the userspace spike `rndis_dualpath.c`: the same identity left
   the Mac over Wi-Fi (IP_BOUND_IF en0) and over the phone's cellular RNDIS uplink
   at once; the gateway-host capture saw two distinct public WAN sources (home ISP
@@ -306,6 +306,6 @@ review gates (engineering issue 1, legal/provenance issue 2) — all complete. S
 * [x] `internal/platform/darwin` snapshot boundary, conservative live BSD
   collector, evidence-derived link kinds (shared constants), and command-backed
   live evidence from `networksetup` / `ioreg` reduced to redacted tokens + tests.
-* [x] `continuityctl darwin-evidence` redacted JSON diagnostic + tests; run once
+* [x] `geminactl darwin-evidence` redacted JSON diagnostic + tests; run once
   locally (found Wi-Fi, correctly reported missing Android USB tethering).
 * [x] Root stage markers moved from Stage 0 bootstrap to Stage 1 probe.
