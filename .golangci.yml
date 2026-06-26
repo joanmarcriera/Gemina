@@ -1,0 +1,30 @@
+# golangci-lint v2 configuration.
+#
+# Conservative, high-signal set chosen to start GREEN on the current tree and be
+# safe to require in CI; expand once the baseline stays clean. The standard set
+# already covers errcheck, govet, ineffassign, staticcheck and unused. gofmt is
+# enforced separately by the Go CI workflow and the Makefile, so it is not
+# duplicated here as a formatter.
+#
+# Run locally: golangci-lint run
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: standard
+  enable:
+    - errorlint   # correct error wrapping / errors.Is/As comparisons
+    - unconvert   # flag redundant type conversions
+  exclusions:
+    presets:
+      # Restore the Go community's long-standing default excludes (v2 made these
+      # opt-in): unchecked deferred *.Close, fmt.Fprint*, os.Std{out,err} writes.
+      - std-error-handling
+    rules:
+      # Tests legitimately ignore cleanup errors and keep scratch helpers.
+      - path: _test\.go
+        linters:
+          - errcheck
+          - unused
