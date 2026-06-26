@@ -15,6 +15,15 @@ func (id PathID) Valid() bool {
 	return id != ""
 }
 
+// Decision is the outcome of a Window.Observe call for one (PacketID, PathID)
+// pair. It covers only the FIFO dedup layer — it has no knowledge of packet
+// ordering or sequence numbers and therefore has no Stale value.
+//
+// Intentionally distinct from gateway.Decision (which adds a Rejected state for
+// probe-parse failures at the datagram layer) and from ReplayDecision (which
+// adds ReplayStale for RFC 6479 sequence-number anti-replay). The three types
+// operate at different abstraction levels and have different zero values; a
+// shared type would couple unrelated layers.
 type Decision uint8
 
 const (
