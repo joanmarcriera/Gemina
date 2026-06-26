@@ -2,6 +2,7 @@
 import GeminaVPNCore
 import Foundation
 import NetworkExtension
+import os.lock
 
 // Skeleton NEPacketTunnelProvider that drives the proven dual-path transport
 // (ADR-0005). It wires the tunnel's packet flow to the DualPathRelay: outbound IP
@@ -14,6 +15,13 @@ import NetworkExtension
 //
 // It is guarded by `canImport(NetworkExtension)` so the package still builds where
 // the framework is unavailable.
+//
+// Swift 6 concurrency: `GeminaTunnelProvider` is declared `@unchecked Sendable`
+// (required because `NEPacketTunnelProvider` is an ObjC class that cannot itself
+// conform). The three mutable fields are annotated `nonisolated(unsafe)` — the
+// Swift 6 opt-out for fields whose Sendable-ness cannot be inferred statically —
+// and every read/write is serialised through `stateLock` (OSAllocatedUnfairLock)
+// using `withLockUnchecked` to avoid requiring the contained types to be Sendable.
 
 enum TunnelError: Error {
     /// makeRelay() was not overridden with a real transport core + paths yet.
@@ -35,12 +43,27 @@ extension TunnelError: LocalizedError {
     }
 }
 
-open class GeminaTunnelProvider: NEPacketTunnelProvider {
-    private var relay: DualPathRelay?
+open class GeminaTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
+
+    // MARK: - Protected mutable state
+    //
+    // `nonisolated(unsafe)` tells the Swift 6 compiler that we know these fields
+    // are accessed from multiple concurrency domains but we are managing safety
+    // ourselves — every access goes through `stateLock.withLockUnchecked`, which
+    // serialises without imposing a Sendable requirement on the contained types.
+
+    private nonisolated(unsafe) var relay: DualPathRelay?
     /// Current path states + primary health, maintained from the NE path monitor
     /// and the benchmark pings; consulted by the policy on each outbound packet.
-    private var currentPathStates: [PathInfo] = []
-    private var primaryUnstable = false
+    private nonisolated(unsafe) var currentPathStates: [PathInfo] = []
+    private nonisolated(unsafe) var primaryUnstable = false
+
+    /// Serialises all reads and writes of the three mutable fields above.
+    /// `withLockUnchecked` is used throughout so that non-Sendable types (DualPathRelay,
+    /// PathInfo, Bool) can be read and written without requiring conformance to Sendable.
+    private let stateLock = OSAllocatedUnfairLock<Void>(uncheckedState: ())
+
+    // MARK: - Overridable factory
 
     /// Build the relay: the transport core (cgo bridge) plus the active path
     /// senders. Overridden by a bootstrap subclass; the default refuses to start.
@@ -48,9 +71,11 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider {
         throw TunnelError.notConfigured
     }
 
+    // MARK: - NEPacketTunnelProvider lifecycle
+
     open override func startTunnel(
         options: [String: NSObject]?,
-        completionHandler: @escaping (Error?) -> Void
+        completionHandler: @escaping @Sendable (Error?) -> Void
     ) {
         // The gateway address is configuration (self-host or hosted), never
         // hard-coded; it travels in the VPN profile's server address.
@@ -62,14 +87,14 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider {
             return
         }
 
-        let relay: DualPathRelay
+        let built: DualPathRelay
         do {
-            relay = try makeRelay()
+            built = try makeRelay()
         } catch {
             completionHandler(error)
             return
         }
-        self.relay = relay
+        stateLock.withLockUnchecked { _ in self.relay = built }
 
         // Scope routing to the gateway only — never the system default route, and
         // exclude the management subnet (footprint contract, docs/product/footprint.md).
@@ -88,22 +113,31 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider {
         with reason: NEProviderStopReason,
         completionHandler: @escaping () -> Void
     ) {
-        relay = nil
+        stateLock.withLockUnchecked { _ in relay = nil }
         completionHandler()
     }
+
+    // MARK: - Packet I/O
 
     /// Read outbound IP packets from the tunnel and duplicate each over both
     /// paths. Re-arms itself until the tunnel stops.
     private func readOutboundLoop() {
         packetFlow.readPackets { [weak self] packets, _ in
-            guard let self, let relay = self.relay else { return }
+            guard let self else { return }
+            // Snapshot state under the lock so the closure body runs lock-free.
+            // `withLockUnchecked` avoids the Sendable requirement on DualPathRelay / PathInfo.
+            let (currentRelay, pathStates, unstable): (DualPathRelay?, [PathInfo], Bool) =
+                self.stateLock.withLockUnchecked { _ in
+                    (self.relay, self.currentPathStates, self.primaryUnstable)
+                }
+            guard let currentRelay else { return }
             // currentPathStates / primaryUnstable are maintained from the NE path
             // monitor + the benchmark pings; the policy uses them to choose how
             // many paths to send each packet over (Duplicate / Failover / Smart).
             for packet in packets {
-                _ = try? relay.sendOutbound(packet,
-                                            pathStates: self.currentPathStates,
-                                            primaryUnstable: self.primaryUnstable)
+                _ = try? currentRelay.sendOutbound(packet,
+                                                   pathStates: pathStates,
+                                                   primaryUnstable: unstable)
             }
             self.readOutboundLoop()
         }
@@ -113,8 +147,9 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider {
     /// first copy of its logical packet, write the inner IP packet back to the
     /// tunnel. The path receivers call this.
     public func handleInbound(_ datagram: Data, path: String) {
-        guard let relay = relay else { return }
-        guard let payload = try? relay.receiveInbound(datagram, path: path) else {
+        let currentRelay: DualPathRelay? = stateLock.withLockUnchecked { _ in self.relay }
+        guard let currentRelay else { return }
+        guard let payload = try? currentRelay.receiveInbound(datagram, path: path) else {
             return // duplicate, or failed authentication — drop
         }
         // The inner packet may be IPv4 or IPv6; the tunnel must be told which, or
