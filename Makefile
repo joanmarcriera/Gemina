@@ -2,7 +2,11 @@ SWIFT_CACHE_FLAGS = --package-path apps/macos --cache-path "$(CURDIR)/.build/swi
 SWIFT_ENV = CLANG_MODULE_CACHE_PATH="$(CURDIR)/.build/clang-module-cache"
 GO_ENV = GOCACHE="$(CURDIR)/.build/go-cache"
 
-.PHONY: bootstrap test test-go test-macos lint lint-go lint-swift licence-check fetch-research docs-check infra-check clean-workspace-check
+.PHONY: bootstrap test test-go test-macos lint lint-go lint-swift vet-go licence-check fetch-research docs-check infra-check clean-workspace-check audit ci
+
+# Run every gate the CI pipeline runs, locally, in one shot.
+ci: vet-go lint test licence-check audit
+	@echo "== all local CI gates passed =="
 
 bootstrap:
 	go work sync
@@ -24,6 +28,14 @@ lint: lint-go lint-swift docs-check
 
 lint-go:
 	@test -z "$$(gofmt -l $$(find . -path './.research-src' -prune -o -name '*.go' -print))"
+	@if command -v golangci-lint >/dev/null 2>&1; then \
+		golangci-lint run; \
+	else \
+		echo "golangci-lint not installed; skipping (CI enforces it)"; \
+	fi
+
+vet-go:
+	$(GO_ENV) go vet ./...
 
 lint-swift:
 	@if command -v swiftlint >/dev/null 2>&1; then \
@@ -34,6 +46,9 @@ lint-swift:
 
 licence-check:
 	./scripts/licence-check.sh
+
+audit:
+	bash scripts/prepare-public.sh
 
 fetch-research:
 	./scripts/fetch-research-sources.sh

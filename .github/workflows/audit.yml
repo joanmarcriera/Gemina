@@ -1,0 +1,20 @@
+name: Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  # No path filter: the publish audit and docs check scan the whole tracked
+  # tree, so any change can introduce a raw IP / secret / structural gap. This
+  # check is required by branch protection and must report on every PR.
+  pull_request:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.0
+      - name: publish audit (no secrets, raw IPs, junk, missing licences)
+        run: bash scripts/prepare-public.sh
+      - name: docs structure + no bare TODO markers
+        run: bash scripts/docs-check.sh

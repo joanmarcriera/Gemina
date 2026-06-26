@@ -8,12 +8,9 @@ on:
       - "docs/legal/**"
       - "scripts/licence-check.sh"
       - ".github/workflows/licence-scan.yml"
+  # No path filter on pull_request: the licence job is required by branch
+  # protection, so it must report a status on every PR (see go-ci.yml).
   pull_request:
-    paths:
-      - "research/upstream-manifest.yaml"
-      - "docs/legal/**"
-      - "scripts/licence-check.sh"
-      - ".github/workflows/licence-scan.yml"
 
 jobs:
   licence:
