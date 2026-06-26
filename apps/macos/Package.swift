@@ -32,6 +32,20 @@ let package = Package(
             name: "GeminaVPNPacketTunnelExtension",
             dependencies: ["GeminaVPNShared", "CGeminaCore", "GeminaVPNCore"],
             path: "PacketTunnelExtension"
+        ),
+        // No-op C stubs for the Go transport core ABI (cc_session_new etc.) so
+        // the headless check executable links without the Go c-archive. The stubs
+        // are never called by WiFiPathSender, which uses Network.framework only.
+        .target(
+            name: "CGeminaCoreStubs",
+            path: "CGeminaCoreStubs"
+        ),
+        // Headless integration check for WiFiPathSender. Runs with the plain
+        // toolchain: `swift run WiFiPathSenderCheck`. No XCTest dependency.
+        .executableTarget(
+            name: "WiFiPathSenderCheck",
+            dependencies: ["GeminaVPNPacketTunnelExtension", "CGeminaCoreStubs"],
+            path: "WiFiPathSenderCheck"
         )
     ]
 )
