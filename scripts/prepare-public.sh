@@ -175,6 +175,9 @@ check_raw_ipv4() {
 	#  - licence texts (verbatim upstream);
 	#  - test files and testdata (fixtures legitimately carry sample identifiers);
 	#  - TEST-NET documentation ranges (192.0.2.x, 198.51.100.x, 203.0.113.x);
+	#  - RFC1918 private ranges (10/8, 172.16/12, 192.168/16): non-routable config
+	#    defaults and documented examples, not public host leaks. Octet-anchored
+	#    so 110.* / 210.* and an embedded .10. octet of a public IP stay flagged;
 	#  - link-local / loopback noise is left visible on purpose.
 	local hits
 	hits="$(git grep -nIE -- "$ipv4" \
@@ -186,6 +189,7 @@ check_raw_ipv4() {
 		   ':(exclude)tests/*' 2>/dev/null \
 		| grep -Ev '192\.0\.2\.|198\.51\.100\.|203\.0\.113\.' \
 		| grep -Ev '127\.0\.0\.1|0\.0\.0\.0|255\.255\.255\.255' \
+		| grep -Ev '(^|[^0-9.])(10|192\.168|172\.(1[6-9]|2[0-9]|3[01]))\.' \
 		|| true)"
 
 	if [[ -z "$hits" ]]; then

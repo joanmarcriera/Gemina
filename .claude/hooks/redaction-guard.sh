@@ -30,10 +30,15 @@ esac
 
 mac='([0-9a-f]{2}:){5}[0-9a-f]{2}'
 ipv4='[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}'
+# Allowed dotted-quads — not host leaks: RFC1918 private (10/8, 172.16/12,
+# 192.168/16), TEST-NET docs, loopback/any/broadcast. Anchored at ^ because each
+# match is extracted onto its own line below. Keeps prepare-public.sh in step.
+ipv4_allow='^(10|192\.168|172\.(1[6-9]|2[0-9]|3[01])|192\.0\.2|198\.51\.100|203\.0\.113|127\.|0\.0\.0\.0|255\.255\.255\.255)\.?'
 
 hits=""
 grep -qiE "$mac" "$file" && hits="MAC address"
-grep -qE "$ipv4" "$file" && hits="${hits:+$hits and }IPv4 dotted-quad"
+# Flag only if some dotted-quad in the file is NOT in the allowlist above.
+grep -oE "$ipv4" "$file" | grep -qvE "$ipv4_allow" && hits="${hits:+$hits and }IPv4 dotted-quad"
 
 [ -n "$hits" ] || exit 0
 
