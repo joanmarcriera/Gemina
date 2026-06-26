@@ -22,6 +22,19 @@ enum TunnelError: Error {
     case missingGatewayAddress
 }
 
+extension TunnelError: LocalizedError {
+    // These surface to the user via NE completion handlers, so they must read as
+    // sentences, not enum-case names.
+    var errorDescription: String? {
+        switch self {
+        case .notConfigured:
+            return "The VPN transport is not configured yet."
+        case .missingGatewayAddress:
+            return "No gateway address was provided in the VPN configuration."
+        }
+    }
+}
+
 open class ContinuityTunnelProvider: NEPacketTunnelProvider {
     private var relay: DualPathRelay?
     /// Current path states + primary health, maintained from the NE path monitor
@@ -104,7 +117,16 @@ open class ContinuityTunnelProvider: NEPacketTunnelProvider {
         guard let payload = try? relay.receiveInbound(datagram, path: path) else {
             return // duplicate, or failed authentication — drop
         }
-        packetFlow.writePackets([payload], withProtocols: [NSNumber(value: AF_INET)])
+        // The inner packet may be IPv4 or IPv6; the tunnel must be told which, or
+        // v6 traffic is mis-delivered. The IP version is the high nibble of byte 0.
+        packetFlow.writePackets([payload], withProtocols: [NSNumber(value: ipFamily(of: payload))])
+    }
+
+    /// Protocol family (`AF_INET` / `AF_INET6`) for an inner IP packet, from its
+    /// version nibble. Defaults to `AF_INET` for an empty buffer.
+    private func ipFamily(of packet: Data) -> Int32 {
+        guard let first = packet.first else { return AF_INET }
+        return (first >> 4) == 6 ? AF_INET6 : AF_INET
     }
 }
 #endif
