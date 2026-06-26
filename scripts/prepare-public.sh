@@ -142,8 +142,11 @@ check_secrets() {
 	local pat hits any=0
 	for pat in "${patterns[@]}"; do
 		# -I skips binary files; restrict to tracked files via git grep.
+		# This script and SECURITY.md are excluded so their literal pattern
+		# strings / guidance prose do not match themselves.
 		hits="$(git grep -nIE -- "$pat" \
-			-- ':(exclude)LICENSES/*' ':(exclude)LICENSE' 2>/dev/null || true)"
+			-- ':(exclude)LICENSES/*' ':(exclude)LICENSE' \
+			   ':(exclude)scripts/prepare-public.sh' ':(exclude)SECURITY.md' 2>/dev/null || true)"
 		if [[ -n "$hits" ]]; then
 			fail "possible secret matching /${pat}/:"
 			printf '%s\n' "$hits" | sed 's/^/          /'
