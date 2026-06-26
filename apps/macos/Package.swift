@@ -29,11 +29,6 @@ let package = Package(
         // declarations so the Swift side compiles against them.
         .target(name: "CContinuityCore", path: "CContinuityCore"),
         .target(
-            name: "ContinuityVPNApp",
-            dependencies: ["ContinuityVPNShared"],
-            path: "App"
-        ),
-        .target(
             name: "ContinuityVPNPacketTunnelExtension",
             dependencies: ["ContinuityVPNShared", "CContinuityCore", "ContinuityVPNCore"],
             path: "PacketTunnelExtension"
