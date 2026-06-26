@@ -7,12 +7,12 @@ import (
 )
 
 // TestUSBFunctionDeviceSourceLiveDetectsConnectedTether runs the real ioreg USB
-// query against whatever is plugged in. It is skipped unless CONTINUITY_LIVE_USB
+// query against whatever is plugged in. It is skipped unless GEMINA_LIVE_USB
 // is set, so CI and offline runs are unaffected; set it with an Android phone
 // USB-tethered to confirm the detector sees a real RNDIS function.
 func TestUSBFunctionDeviceSourceLiveDetectsConnectedTether(t *testing.T) {
-	if os.Getenv("CONTINUITY_LIVE_USB") == "" {
-		t.Skip("set CONTINUITY_LIVE_USB=1 with an Android phone USB-tethered to run")
+	if os.Getenv("GEMINA_LIVE_USB") == "" {
+		t.Skip("set GEMINA_LIVE_USB=1 with an Android phone USB-tethered to run")
 	}
 
 	got, err := USBFunctionDeviceSource{}.TetherFunctions()

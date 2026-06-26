@@ -26,7 +26,7 @@ Metrics	Prometheus-compatible exporters and structured logs
 
 Apple explicitly positions NEPacketTunnelProvider as the API for custom IP-level VPN clients and exposes the virtual interface through packetFlow.   WireGuard’s Apple client and Go implementation are both MIT-licensed and therefore suitable as reusable foundations for a commercial application, subject to retaining their notices.
 
-Project Specification: Dual-Path Continuity VPN for macOS
+Project Specification: Dual-Path Gemina VPN for macOS
 
 1. Document purpose
 
@@ -385,24 +385,24 @@ Define a narrow C-compatible boundary between Swift and Go.
 
 Example conceptual API:
 
-continuity_client_t *continuity_client_create(
-    const continuity_client_config_t *config
+gemina_client_t *gemina_client_create(
+    const gemina_client_config_t *config
 );
-int continuity_client_start(continuity_client_t *client);
-int continuity_client_submit_packet(
-    continuity_client_t *client,
+int gemina_client_start(gemina_client_t *client);
+int gemina_client_submit_packet(
+    gemina_client_t *client,
     const uint8_t *packet,
     size_t length
 );
-int continuity_client_add_path(
-    continuity_client_t *client,
-    const continuity_path_config_t *path
+int gemina_client_add_path(
+    gemina_client_t *client,
+    const gemina_path_config_t *path
 );
-int continuity_client_remove_path(
-    continuity_client_t *client,
+int gemina_client_remove_path(
+    gemina_client_t *client,
     const char *path_id
 );
-void continuity_client_stop(continuity_client_t *client);
+void gemina_client_stop(gemina_client_t *client);
 
 The boundary must not expose Go pointers unsafely to Swift.
 
@@ -730,13 +730,13 @@ sources:
 
 Repository name:
 
-continuity-vpn
+gemina
 
 Do not split the project into multiple repositories until there are independent release cycles or access-control requirements.
 
 7.2 Proposed structure
 
-continuity-vpn/
+gemina/
 ├── AGENTS.md
 ├── README.md
 ├── LICENSE
@@ -761,7 +761,7 @@ continuity-vpn/
 │
 ├── apps/
 │   └── macos/
-│       ├── ContinuityVPN.xcodeproj
+│       ├── GeminaVPN.xcodeproj
 │       ├── App/
 │       ├── PacketTunnelExtension/
 │       ├── Shared/
@@ -771,7 +771,7 @@ continuity-vpn/
 ├── cmd/
 │   ├── gateway/
 │   ├── entitlement-api/
-│   ├── continuityctl/
+│   ├── geminactl/
 │   ├── packet-generator/
 │   └── network-simulator/
 │
@@ -1143,7 +1143,7 @@ The macOS application contains:
 
 Disconnected state:
 
-Continuity VPN: Disconnected
+Gemina VPN: Disconnected
 Access key: Configured
 Wi-Fi: GreaterAngliaWiFi
 Android USB: Connected
@@ -1153,7 +1153,7 @@ Android USB: Connected
 
 Connected state:
 
-Continuity VPN: Connected
+Gemina VPN: Connected
 Wi-Fi: Active
 Android USB: Active
 Gateway: eu-central-1
@@ -1253,8 +1253,8 @@ Do not report all failures as “VPN failed”.
 
 The gateway host runs:
 
-continuity-gateway
-continuity-entitlement-api
+gemina-gateway
+gemina-entitlement-api
 Caddy or nginx
 nftables
 node exporter
@@ -1452,11 +1452,11 @@ Build
 
 Client CLI:
 
-continuityctl probe
+geminactl probe
 
 Server:
 
-continuity-gateway --probe-mode
+gemina-gateway --probe-mode
 
 The client must:
 

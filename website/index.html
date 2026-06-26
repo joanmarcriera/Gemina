@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Continuity VPN — seamless internet failover for macOS</title>
-  <meta name="description" content="Continuity VPN keeps your Mac online when one link drops — it sends your traffic over Wi-Fi and your Android phone's cellular at once. Open source, self-hostable.">
-  <link rel="canonical" href="https://continuityvpn.example/">
+  <title>Gemina VPN — seamless internet failover for macOS</title>
+  <meta name="description" content="Gemina VPN keeps your Mac online when one link drops — it sends your traffic over Wi-Fi and your Android phone's cellular at once. Open source, self-hostable.">
+  <link rel="canonical" href="https://geminavpn.example/">
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#0c1418">
   <link rel="stylesheet" href="styles.css">
@@ -13,15 +13,15 @@
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="Continuity VPN">
-  <meta property="og:title" content="Continuity VPN — seamless internet failover for macOS">
+  <meta property="og:site_name" content="Gemina VPN">
+  <meta property="og:title" content="Gemina VPN — seamless internet failover for macOS">
   <meta property="og:description" content="Sends your Mac's traffic over Wi-Fi and your Android phone's cellular at once, so if one link drops your call, SSH or VPN never notices. Open source, self-hostable. Pre-release.">
-  <meta property="og:url" content="https://continuityvpn.example/">
+  <meta property="og:url" content="https://geminavpn.example/">
   <meta property="og:locale" content="en_GB">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Continuity VPN — seamless internet failover for macOS">
+  <meta name="twitter:title" content="Gemina VPN — seamless internet failover for macOS">
   <meta name="twitter:description" content="Two links at once so one dropout never ends your call, SSH or VPN. Open source, self-hostable. Pre-release.">
 
   <!-- Structured data: honest pre-release, no invented hosted price, no ratings/reviews -->
@@ -29,11 +29,11 @@
   {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Continuity VPN",
+    "name": "Gemina VPN",
     "applicationCategory": "UtilitiesApplication",
     "operatingSystem": "macOS",
     "description": "Open-source macOS reliability tool that sends your traffic over Wi-Fi and an Android phone's USB-tethered cellular link at the same time, delivering seamless failover so a dropped link never interrupts a call, SSH session or VPN. Pre-release: dual-path transport proven; encryption and the full app in development.",
-    "url": "https://continuityvpn.example/",
+    "url": "https://geminavpn.example/",
     "license": "https://www.gnu.org/licenses/agpl-3.0.html",
     "isAccessibleForFree": true,
     "softwareVersion": "pre-release",
@@ -45,7 +45,7 @@
       "availability": "https://schema.org/PreOrder",
       "description": "Self-host the gateway free and open source. An optional paid hosted gateway is planned (pricing to be announced; early access)."
     },
-    "codeRepository": "https://github.com/joanmarcriera/continuity-vpn"
+    "codeRepository": "https://github.com/joanmarcriera/gemina"
   }
   </script>
 </head>
@@ -54,18 +54,18 @@
 
 <header class="site-head">
   <div class="wrap head-inner">
-    <a class="brand" href="#top" aria-label="Continuity VPN home">
+    <a class="brand" href="#top" aria-label="Gemina VPN home">
       <svg class="brand-mark" width="28" height="28" viewBox="0 0 32 32" aria-hidden="true">
         <path d="M2 17 h7 l3-7 4 14 3-7 h6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <span>Continuity<span class="brand-thin">VPN</span></span>
+      <span>Gemina<span class="brand-thin">VPN</span></span>
     </a>
     <nav class="head-nav" aria-label="Primary">
       <a href="#how">How it works</a>
       <a href="#why">Why it's different</a>
       <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
-      <a class="btn btn-ghost btn-sm" href="https://github.com/joanmarcriera/continuity-vpn">GitHub</a>
+      <a class="btn btn-ghost btn-sm" href="https://github.com/joanmarcriera/gemina">GitHub</a>
     </nav>
   </div>
 </header>
@@ -84,7 +84,7 @@
           <span class="accent">the dropout.</span>
         </h1>
         <p class="lede">
-          Continuity VPN runs your Mac's traffic over <strong>two links at once</strong> —
+          Gemina VPN runs your Mac's traffic over <strong>two links at once</strong> —
           your Wi-Fi and your Android phone's cellular, over USB. The same packets travel
           both paths. If one drops, the other is already carrying it. Your call, your SSH
           session, your VPN tunnel: none of them feel a thing.
@@ -214,7 +214,7 @@
       <p class="eyebrow">CH&middot;03 — WHY IT'S DIFFERENT</p>
       <h2 id="why-title">Built for staying up, not racing ahead.</h2>
       <p class="section-lede">
-        Plenty of tools promise to bond links for more speed. This isn't that. Continuity
+        Plenty of tools promise to bond links for more speed. This isn't that. Gemina
         VPN spends your second link on <em>certainty</em> — the connection holds when one
         path falters.
       </p>
@@ -266,7 +266,7 @@
             <li>Self-hostable, no account needed</li>
             <li>Community support</li>
           </ul>
-          <a class="btn btn-ghost-dark btn-block" href="https://github.com/joanmarcriera/continuity-vpn">View on GitHub</a>
+          <a class="btn btn-ghost-dark btn-block" href="https://github.com/joanmarcriera/gemina">View on GitHub</a>
         </article>
 
         <article class="plan plan-feature">
@@ -345,7 +345,7 @@
         <button class="btn btn-primary" type="submit">Join the waitlist</button>
       </form>
       <p class="wl-status" role="status" aria-live="polite" data-wl-status></p>
-      <p class="cta-alt">Rather run it yourself? <a href="https://github.com/joanmarcriera/continuity-vpn">Star it on GitHub</a> and self-host today.</p>
+      <p class="cta-alt">Rather run it yourself? <a href="https://github.com/joanmarcriera/gemina">Star it on GitHub</a> and self-host today.</p>
     </div>
   </section>
 
@@ -365,7 +365,7 @@
         </details>
         <details class="faq">
           <summary>Does it change my Mac's security or SIP?</summary>
-          <p>No. There are no kernel extensions, no DriverKit drivers and no System Integrity Protection changes. Continuity VPN runs as an ordinary, unprivileged macOS app.</p>
+          <p>No. There are no kernel extensions, no DriverKit drivers and no System Integrity Protection changes. Gemina VPN runs as an ordinary, unprivileged macOS app.</p>
         </details>
         <details class="faq">
           <summary>Is my traffic encrypted?</summary>
@@ -387,17 +387,17 @@
 <footer class="site-foot">
   <div class="wrap foot-grid">
     <div class="foot-brand">
-      <a class="brand" href="#top" aria-label="Continuity VPN home">
+      <a class="brand" href="#top" aria-label="Gemina VPN home">
         <svg class="brand-mark" width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
           <path d="M2 17 h7 l3-7 4 14 3-7 h6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        <span>Continuity<span class="brand-thin">VPN</span></span>
+        <span>Gemina<span class="brand-thin">VPN</span></span>
       </a>
       <p class="foot-note">Open-source seamless internet failover for macOS. Free to self-host; hosted gateway available in early access — joining the waitlist locks in your place.</p>
     </div>
     <nav class="foot-links" aria-label="Project">
       <h2 class="foot-h">Project</h2>
-      <a href="https://github.com/joanmarcriera/continuity-vpn">GitHub repository</a>
+      <a href="https://github.com/joanmarcriera/gemina">GitHub repository</a>
       <a href="#pricing">Self-host guide</a>
       <a href="#faq">FAQ</a>
       <a href="#waitlist">Join the waitlist</a>
@@ -409,7 +409,7 @@
     </nav>
   </div>
   <div class="wrap foot-base">
-    <p>&copy; 2026 Continuity VPN. Open source — free to use, inspect and self-host.</p>
+    <p>&copy; 2026 Gemina VPN. Open source — free to use, inspect and self-host.</p>
     <p class="foot-pre">Pre-release. Features and pricing may change before launch.</p>
   </div>
 </footer>

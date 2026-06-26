@@ -5,7 +5,7 @@ Status: Approved in brainstorming (owner), ready for an implementation plan.
 
 ## Goal
 
-A great day-one experience for the Continuity VPN macOS app. The product's soul
+A great day-one experience for the Gemina VPN macOS app. The product's soul
 is *reliability you can feel*: the app must make "you're protected, and you'd
 survive a link dropping" obvious at a glance, prove its value over time, respect
 the user's data and privacy, and let a power user tune behaviour — without
@@ -147,9 +147,9 @@ never blocks on a choice that has a safe default.
 
 - The UI is SwiftUI/AppKit in the app target. It reads live state from the NE
   provider (path up/down, current policy, gateway latency via the benchmark ping)
-  and calls the Go core via the **cgo bridge** (`CContinuityCore` / `CoreTransport`).
+  and calls the Go core via the **cgo bridge** (`CGeminaCore` / `CoreTransport`).
 - **Reuse, do not rebuild**: the share payload is `ShareReport()` (built,
-  redaction-tested); gateway latency is the `continuityctl benchmark` ping; the
+  redaction-tested); gateway latency is the `geminactl benchmark` ping; the
   debug bundle is the redacted diagnostics; uninstall is the footprint contract.
 - **New Swift**: the menu-bar controller + popover, the Settings tabs, the
   onboarding flow, a small local **ImpactStore**, and a **PathPolicy** value type
@@ -169,8 +169,8 @@ Unit-testable in Swift (once the Xcode project exists), no UI harness needed:
   / %-protected (pure function over an event log).
 The Go-side payloads (ShareReport, benchmark stats, diagnostics) are already
 tested. **Implemented**: PathPolicy, ProtectionStatus, ConsentDefaults and Impact
-live in the `ContinuityVPNCore` SwiftPM target, verified headless by the
-`ContinuityVPNCoreCheck` executable (the Command Line Tools ship no
+live in the `GeminaVPNCore` SwiftPM target, verified headless by the
+`GeminaVPNCoreCheck` executable (the Command Line Tools ship no
 XCTest/Swift-Testing; the checks port to a test target once Xcode is installed).
 The relay (`DualPathRelay`) consults the policy. "Data sent per path" is a
 separate running byte counter in the provider, not part of `computeImpact`.

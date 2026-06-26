@@ -25,15 +25,15 @@ for path in docs/legal/upstream-licences.md docs/legal/code-provenance.md docs/l
 	fi
 done
 
-if grep -nE 'pin_status: pending|TODO-pin' "$manifest" >/tmp/continuity-vpn-pending-pins 2>/dev/null; then
+if grep -nE 'pin_status: pending|TODO-pin' "$manifest" >/tmp/gemina-pending-pins 2>/dev/null; then
 	echo "upstream manifest still contains pending pins:" >&2
-	cat /tmp/continuity-vpn-pending-pins >&2
+	cat /tmp/gemina-pending-pins >&2
 	exit 1
 fi
 
-if grep -nE '^[[:space:]]*commit: [0-9a-f]{1,39}$|^[[:space:]]*commit: [0-9a-f]{41,}$|^[[:space:]]*commit: [0-9a-f]*[^0-9a-f[:space:]][^[:space:]]*' "$manifest" >/tmp/continuity-vpn-invalid-pins 2>/dev/null; then
+if grep -nE '^[[:space:]]*commit: [0-9a-f]{1,39}$|^[[:space:]]*commit: [0-9a-f]{41,}$|^[[:space:]]*commit: [0-9a-f]*[^0-9a-f[:space:]][^[:space:]]*' "$manifest" >/tmp/gemina-invalid-pins 2>/dev/null; then
 	echo "upstream manifest contains invalid commit pins:" >&2
-	cat /tmp/continuity-vpn-invalid-pins >&2
+	cat /tmp/gemina-invalid-pins >&2
 	exit 1
 fi
 

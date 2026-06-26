@@ -19,7 +19,7 @@ import "C"
 import (
 	"unsafe"
 
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 // cc_session_new creates a session from a 16-byte session id and a 32-byte key,

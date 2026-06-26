@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // defaultPathTTL is how long a source endpoint stays "fresh" after its last

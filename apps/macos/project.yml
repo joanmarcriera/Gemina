@@ -1,14 +1,14 @@
 # XcodeGen spec for the macOS app. Generate the project with:
 #   cd apps/macos && xcodegen generate
-# Then open Continuity.xcodeproj in Xcode, select your Team, and Run.
+# Then open Gemina.xcodeproj in Xcode, select your Team, and Run.
 #
 # Phase 1: the status-led menu-bar app + shared logic frameworks.
 # Phase 2 (this file): the Network Extension (packet tunnel) linking the Go core.
 #
 # Change the bundle id prefix below to your own namespace (a domain you own
-# reversed, e.g. app.continuityvpn — or keep this if you have no domain yet).
+# reversed, e.g. app.geminavpn — or keep this if you have no domain yet).
 
-name: Continuity
+name: Gemina
 
 options:
   bundleIdPrefix: com.joanmarcriera
@@ -25,35 +25,35 @@ settings:
     SWIFT_STRICT_CONCURRENCY: complete
 
 targets:
-  ContinuityVPNShared:
+  GeminaVPNShared:
     type: framework
     platform: macOS
     sources:
       - Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.shared
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.gemina.shared
         GENERATE_INFOPLIST_FILE: "YES"
 
-  ContinuityVPNCore:
+  GeminaVPNCore:
     type: framework
     platform: macOS
     sources:
       - Core
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.core
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.gemina.core
         GENERATE_INFOPLIST_FILE: "YES"
 
-  ContinuityTunnel:
+  GeminaTunnel:
     type: app-extension
     platform: macOS
     sources:
       - PacketTunnelExtension
     dependencies:
-      - target: ContinuityVPNCore
+      - target: GeminaVPNCore
         embed: false
-      - target: ContinuityVPNShared
+      - target: GeminaVPNShared
         embed: false
     preBuildScripts:
       - name: Build Go transport c-archive
@@ -66,38 +66,38 @@ targets:
           export CGO_CFLAGS="-mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
           cd "$SRCROOT/../.."
           go build -buildmode=c-archive \
-            -o "$SRCROOT/build/libcontinuitycore.a" ./bridge/continuitycore
+            -o "$SRCROOT/build/libgeminacore.a" ./bridge/geminacore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.tunnel
-        CODE_SIGN_ENTITLEMENTS: Resources/ContinuityTunnel.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.gemina.tunnel
+        CODE_SIGN_ENTITLEMENTS: Resources/GeminaTunnel.entitlements
         SWIFT_OBJC_BRIDGING_HEADER: PacketTunnelExtension/Bridging-Header.h
-        HEADER_SEARCH_PATHS: $(SRCROOT)/CContinuityCore/include
+        HEADER_SEARCH_PATHS: $(SRCROOT)/CGeminaCore/include
         LIBRARY_SEARCH_PATHS: $(SRCROOT)/build
-        OTHER_LDFLAGS: "-lcontinuitycore -lresolv -framework CoreFoundation -framework Security"
+        OTHER_LDFLAGS: "-lgeminacore -lresolv -framework CoreFoundation -framework Security"
     info:
-      path: Resources/ContinuityTunnel-Info.plist
+      path: Resources/GeminaTunnel-Info.plist
       properties:
         NSExtension:
           NSExtensionPointIdentifier: com.apple.networkextension.packet-tunnel
-          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ContinuityTunnelProvider
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).GeminaTunnelProvider
 
-  Continuity:
+  Gemina:
     type: application
     platform: macOS
     sources:
       - AppUI
     dependencies:
-      - target: ContinuityVPNCore
+      - target: GeminaVPNCore
         embed: true
-      - target: ContinuityVPNShared
+      - target: GeminaVPNShared
         embed: true
-      - target: ContinuityTunnel
+      - target: GeminaTunnel
         embed: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.gemina
         GENERATE_INFOPLIST_FILE: "YES"
         # Menu-bar (agent) app: no Dock icon, no main window.
         INFOPLIST_KEY_LSUIElement: "YES"
-        CODE_SIGN_ENTITLEMENTS: Resources/Continuity.entitlements
+        CODE_SIGN_ENTITLEMENTS: Resources/Gemina.entitlements

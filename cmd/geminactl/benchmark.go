@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 // benchmarkStats summarises the latency and loss to one gateway target.

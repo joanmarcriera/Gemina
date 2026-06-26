@@ -6,13 +6,11 @@
 	<true/>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.com.joanmarcriera.continuity</string>
+		<string>group.com.joanmarcriera.gemina</string>
 	</array>
 	<key>com.apple.developer.networking.networkextension</key>
 	<array>
 		<string>packet-tunnel-provider</string>
 	</array>
-	<key>com.apple.security.device.usb</key>
-	<true/>
 </dict>
 </plist>

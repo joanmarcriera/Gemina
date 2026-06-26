@@ -1,6 +1,6 @@
 ---
 name: macos-app-distribution
-description: Ship the continuity-vpn macOS app OUTSIDE the Mac App Store — Developer ID signing, the hardened runtime, notarization with notarytool, and stapling, so Gatekeeper lets users open it. Use when packaging a release, producing a downloadable .app/.dmg/.pkg, setting up notarization in CI, or debugging "app is damaged / cannot be opened / unidentified developer". NOT for day-to-day dev builds (that's [[macos-app-xcode-build]]) — this is the release path. Note the Network-Extension caveat below.
+description: Ship the gemina macOS app OUTSIDE the Mac App Store — Developer ID signing, the hardened runtime, notarization with notarytool, and stapling, so Gatekeeper lets users open it. Use when packaging a release, producing a downloadable .app/.dmg/.pkg, setting up notarization in CI, or debugging "app is damaged / cannot be opened / unidentified developer". NOT for day-to-day dev builds (that's [[macos-app-xcode-build]]) — this is the release path. Note the Network-Extension caveat below.
 ---
 
 # Distributing the macOS app (Developer ID + notarization)
@@ -37,12 +37,12 @@ each with hardened runtime and the right entitlements:
 codesign --force --timestamp --options runtime \
   --sign "Developer ID Application: … (D427C2J4RG)" \
   --entitlements <that-target>.entitlements <path-to-nested-binary>
-# … repeat for frameworks and ContinuityTunnel.appex …
+# … repeat for frameworks and GeminaTunnel.appex …
 # Finally the app bundle (signs the wrapper; nested items already signed):
 codesign --force --timestamp --options runtime \
   --sign "Developer ID Application: … (D427C2J4RG)" \
-  --entitlements Resources/Continuity.entitlements Continuity.app
-codesign --verify --deep --strict --verbose=2 Continuity.app   # must pass
+  --entitlements Resources/Gemina.entitlements Gemina.app
+codesign --verify --deep --strict --verbose=2 Gemina.app   # must pass
 ```
 
 Hardened runtime + the app sandbox can conflict with how the cgo core and the
@@ -54,20 +54,20 @@ just the dev build, before claiming a release works.
 ```bash
 # One-time: store credentials in the keychain (app-specific password OR an
 # App Store Connect API key — key is better for CI). NEVER hardcode/commit these.
-xcrun notarytool store-credentials "continuity-notary" \
+xcrun notarytool store-credentials "gemina-notary" \
   --apple-id "joanmarcriera@gmail.com" --team-id D427C2J4RG   # prompts for an app-specific pw
 
 # Notarization needs a container: zip the .app, or build a .dmg / .pkg.
-ditto -c -k --keepParent Continuity.app Continuity.zip
+ditto -c -k --keepParent Gemina.app Gemina.zip
 
-xcrun notarytool submit Continuity.zip --keychain-profile "continuity-notary" --wait
+xcrun notarytool submit Gemina.zip --keychain-profile "gemina-notary" --wait
 #   --wait blocks until Accepted/Invalid. On Invalid:
-xcrun notarytool log <submission-id> --keychain-profile "continuity-notary"  # why it failed
+xcrun notarytool log <submission-id> --keychain-profile "gemina-notary"  # why it failed
 
 # Staple the ticket onto the .app (or the .dmg/.pkg you actually ship):
-xcrun stapler staple Continuity.app
-xcrun stapler validate Continuity.app
-spctl -a -vvv --type exec Continuity.app   # Gatekeeper's verdict: "accepted, source=Notarized Developer ID"
+xcrun stapler staple Gemina.app
+xcrun stapler validate Gemina.app
+spctl -a -vvv --type exec Gemina.app   # Gatekeeper's verdict: "accepted, source=Notarized Developer ID"
 ```
 
 You staple the **artifact you distribute**: if you ship a `.dmg`, staple the dmg

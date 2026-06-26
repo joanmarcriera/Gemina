@@ -1,4 +1,4 @@
-import ContinuityVPNCore
+import GeminaVPNCore
 import Foundation
 
 // Swift-side contract for the dual-path data plane (ADR-0005). These protocols

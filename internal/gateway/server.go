@@ -11,9 +11,9 @@ import (
 	"net"
 	"sync/atomic"
 
-	"continuity-vpn/internal/dedup"
-	"continuity-vpn/internal/metrics"
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/dedup"
+	"github.com/joanmarcriera/gemina/internal/metrics"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // maxDatagram bounds a single read. Probes are ProbeWireSize; the slack absorbs
@@ -81,8 +81,8 @@ type Server struct {
 	rejected    atomic.Uint64
 
 	metrics *metrics.Registry
-	packets *metrics.CounterVec // continuity_packets_total{decision,path}
-	rejects *metrics.CounterVec // continuity_rejected_total{reason}
+	packets *metrics.CounterVec // gemina_packets_total{decision,path}
+	rejects *metrics.CounterVec // gemina_rejected_total{reason}
 }
 
 // NewServer builds a gateway with a dedup window of the given capacity. A nil
@@ -101,9 +101,9 @@ func NewServer(capacity int, logger *slog.Logger) (*Server, error) {
 		window:  window,
 		logger:  logger,
 		metrics: reg,
-		packets: reg.Counter("continuity_packets_total",
+		packets: reg.Counter("gemina_packets_total",
 			"Probe datagrams handled, by decision and path.", "decision", "path"),
-		rejects: reg.Counter("continuity_rejected_total",
+		rejects: reg.Counter("gemina_rejected_total",
 			"Datagrams rejected before dedup, by reason.", "reason"),
 	}
 	return s, nil

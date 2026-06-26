@@ -8,8 +8,8 @@ import (
 	"io"
 	"net"
 
-	"continuity-vpn/internal/protocol"
-	"continuity-vpn/internal/transport"
+	"github.com/joanmarcriera/gemina/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/transport"
 )
 
 var errUnknownPath = errors.New("unknown path tag")

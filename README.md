@@ -1,8 +1,8 @@
-# Continuity VPN
+# Gemina VPN
 
 **Keep calls and SSH sessions alive when one network blips — by sending your traffic over two uplinks at once.**
 
-Continuity VPN is a macOS reliability tool. It duplicates your protected traffic
+Gemina VPN is a macOS reliability tool. It duplicates your protected traffic
 over **two independent connections at once** — your Wi-Fi *and* a second
 connection of your choice (your phone's cellular over USB — iPhone or Android — a
 second broadband line, or an LTE/USB-Wi-Fi dongle) — sends both copies to a single
@@ -23,6 +23,16 @@ rather not run their own server.
 > **Status: pre-release.** The dual-path transport is proven end-to-end, but this
 > is not yet a shipping VPN. See [Status](#status) below for exactly what is and
 > is not done.
+
+## The name
+
+**Gemina** is Latin for *twinned*. When a Roman legion was too depleted to be
+sure of holding the line, two were merged into one — a *Legio Gemina*, the twin
+legion (Caesar's Tenth and the Thirteenth both bore the name) — so the force
+always arrived at full strength. Gemina does the same with your connection: it
+sends every packet down two paths at once and keeps whichever copy arrives first,
+so you stay online even when one path drops. The same story is in the app's
+*About Gemina* dialog, and recorded in [ADR-0008](docs/adr/0008-product-name-gemina.md).
 
 ## How it works
 
@@ -89,11 +99,11 @@ nothing to configure beyond the port — no database, no accounts.
 docker run --rm \
   --read-only \
   -p 51820:51820/udp \
-  -e CONTINUITY_GATEWAY_ADDR=:51820 \
-  ghcr.io/example/continuity-gateway:latest
+  -e GEMINA_GATEWAY_ADDR=:51820 \
+  ghcr.io/example/gemina-gateway:latest
 ```
 
-> Replace `ghcr.io/example/continuity-gateway:latest` with your own image, and
+> Replace `ghcr.io/example/gemina-gateway:latest` with your own image, and
 > open **UDP 51820** to the host. Build the image from
 > [`deploy/docker/gateway.Dockerfile`](deploy/docker/gateway.Dockerfile).
 
@@ -125,13 +135,13 @@ saves you from running the container yourself.
 * No special hardware and no second SIM beyond your normal phone plan.
 
 See the community [`COMPATIBILITY.md`](COMPATIBILITY.md) catalogue, and run
-`continuityctl preflight -share` to check your own setup and contribute a report.
+`geminactl preflight -share` to check your own setup and contribute a report.
 
-Run `continuityctl preflight` to confirm a given Mac + Android combination is
+Run `geminactl preflight` to confirm a given Mac + Android combination is
 supported before you commit: it returns a plain verdict (for example *supported*,
 *connect your Android*, *connect to Wi-Fi*) and the one thing to change. Add
 `-json` for the machine-readable report the app and website consume. The
-`continuityctl darwin-evidence` diagnostic reports the underlying path evidence.
+`geminactl darwin-evidence` diagnostic reports the underlying path evidence.
 
 ## Build & test
 
@@ -165,7 +175,7 @@ This project is dual-licensed (open-core):
 * The **gateway/server** is **AGPL-3.0-only** — `cmd/gateway/`,
   `internal/gateway/`, and gateway-only server assets under `deploy/`.
 * The **client and shared core** are **Apache-2.0** — `apps/macos/`, the `pkg/`
-  packages, `cmd/continuityctl/`, and the shared `internal/` packages.
+  packages, `cmd/geminactl/`, and the shared `internal/` packages.
 
 The AGPL keeps the hosted gateway open; the client stays Apache-2.0 so it can
 ship on the Mac App Store, which cannot carry AGPL software. Apache-2.0 is

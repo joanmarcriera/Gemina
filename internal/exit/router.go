@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/netip"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // ErrReversePath is returned by Egress when the inner packet's source address

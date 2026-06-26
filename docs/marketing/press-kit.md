@@ -1,4 +1,4 @@
-# Continuity VPN — press kit
+# Gemina VPN — press kit
 
 > **Status: pre-release.** The dual-path transport is proven end-to-end; encryption and
 > the shipping macOS app are in active development. This kit contains **no invented
@@ -10,14 +10,14 @@
 
 ## Short description (≤ 50 words)
 
-> Continuity VPN is an open-source macOS reliability tool. It sends your traffic over
+> Gemina VPN is an open-source macOS reliability tool. It sends your traffic over
 > Wi-Fi **and** your Android phone's cellular (USB tethering) at once, to a gateway that
 > keeps the first copy of each packet — so if one link drops mid-session, your call, SSH
 > or VPN doesn't notice. Pre-release.
 
 ## Long description (≈ 120 words)
 
-> Continuity VPN keeps your Mac's interactive sessions alive when a network blips. Instead
+> Gemina VPN keeps your Mac's interactive sessions alive when a network blips. Instead
 > of reconnecting after a drop, it sends every packet over **two independent links at the
 > same time** — your Wi-Fi and an Android phone's cellular link via USB tethering — to a
 > single gateway. The gateway delivers the first copy of each packet and discards the
@@ -36,7 +36,7 @@
 
 | | |
 |---|---|
-| **Name** | Continuity VPN |
+| **Name** | Gemina VPN |
 | **Category** | macOS reliability / networking utility (seamless internet failover) |
 | **Platform** | macOS (Apple Silicon primary); requires any Android phone with USB tethering |
 | **What it does** | Duplicates traffic over Wi-Fi + Android USB-tether cellular; gateway dedups to one delivery; survives either link dropping |
@@ -46,7 +46,7 @@
 | **Self-host** | Gateway runs as one container on one UDP port (51820) — no database, no accounts |
 | **Hosted option** | Optional paid hosted gateway planned; billed via Stripe; **pricing to be announced** |
 | **Status** | **Pre-release** — dual-path transport proven end-to-end; encryption + shipping app in development |
-| **Repository** | `https://github.com/joanmarcriera/continuity-vpn` |
+| **Repository** | `https://github.com/joanmarcriera/gemina` |
 | **Website** | `<site>` |
 | **Waitlist** | `<waitlist>` |
 | **Licence texts** | `LICENSES/AGPL-3.0.txt`, `LICENSES/Apache-2.0.txt` |
@@ -97,7 +97,7 @@ probe packets, not your encrypted IP traffic.
 
 > **`<maintainer name>`** — `<one-line bio placeholder: who you are, why you built it>`.
 >
-> Continuity VPN is an open-source project maintained by `<maintainer name>`. It is built
+> Gemina VPN is an open-source project maintained by `<maintainer name>`. It is built
 > in the open; the repository, the architectural decisions (`DECISIONS.md`), the current
 > state (`PROJECT_STATE.md`) and the task list (`TASKS.md`) are all public.
 >
@@ -111,7 +111,7 @@ The canonical, always-current FAQ lives on the website's *Frequently asked quest
 section (see `website/index.html`) and in [`README.md`](../../README.md). Common
 questions — *Does it make my connection faster? (No — it's reliability, not speed.) Do I
 need root or a kernel extension? (No.) Which Android phones work? (Any with USB
-tethering; run `continuityctl preflight`.) Can I self-host? (Yes, free.) What does the
+tethering; run `geminactl preflight`.) Can I self-host? (Yes, free.) What does the
 hosted tier cost? (To be announced.) Is it released yet? (No — pre-release.)* — are
 answered there and must stay consistent with this kit.
 
@@ -129,7 +129,7 @@ answered there and must stay consistent with this kit.
       (`website/og-image.png`).
 - [ ] **Architecture diagram** — the "duplicate, race, dedup" flow (the README/site
       diagram, exported cleanly).
-- [ ] **Screenshot: `continuityctl preflight`** — terminal showing a plain verdict
+- [ ] **Screenshot: `geminactl preflight`** — terminal showing a plain verdict
       (redacted, neutral prompt).
 - [ ] **Screenshot: gateway telemetry** — redacted JSON logs (`first-copy`/`duplicate`,
       `wi-fi`/`android-usb-tether`) and the Prometheus `/metrics` page.
@@ -145,7 +145,7 @@ development.
 
 ## Boilerplate (copy-paste)
 
-> Continuity VPN is an open-source macOS reliability tool that keeps your calls, SSH and
+> Gemina VPN is an open-source macOS reliability tool that keeps your calls, SSH and
 > VPN sessions alive when one network link drops, by sending your traffic over Wi-Fi and
 > an Android phone's cellular link at the same time. It is built for reliability, not
 > speed; works with any Android, no root, and no kernel extension or SIP change on the
@@ -158,5 +158,5 @@ development.
 
 - **General / press:** `<contact email placeholder>`
 - **Security:** see `SECURITY.md` in the repository.
-- **Code & issues:** `https://github.com/joanmarcriera/continuity-vpn`
+- **Code & issues:** `https://github.com/joanmarcriera/gemina`
 - **Website / waitlist:** `<site>` · `<waitlist>`

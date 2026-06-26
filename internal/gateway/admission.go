@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"continuity-vpn/internal/entitlement"
-	"continuity-vpn/internal/protocol"
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/internal/entitlement"
+	"github.com/joanmarcriera/gemina/internal/protocol"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 // ErrSessionReused is returned when admission is attempted for a SessionID the

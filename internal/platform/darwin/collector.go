@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net"
 
-	"continuity-vpn/internal/paths"
+	"github.com/joanmarcriera/gemina/internal/paths"
 )
 
 // ErrNilInterfaceSource is returned when collection is requested without an

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"sync"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 var ErrInvalidCapacity = errors.New("dedup window capacity must be positive")

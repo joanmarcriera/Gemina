@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 func benchProbeWires(n int) [][]byte {

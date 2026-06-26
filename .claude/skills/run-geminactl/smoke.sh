@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Driver for the continuity-vpn `continuityctl` CLI and the per-cycle gate.
+# Driver for the gemina `geminactl` CLI and the per-cycle gate.
 #
 #   smoke.sh            build + drive the CLI, assert redaction invariants
 #   smoke.sh verify     the above, then the full validation gate
@@ -11,20 +11,20 @@ set -euo pipefail
 
 UNIT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$UNIT"
-BIN="$(mktemp -t continuityctl.XXXXXX)"
+BIN="$(mktemp -t geminactl.XXXXXX)"
 trap 'rm -f "$BIN"' EXIT
 
 pass() { printf '  ok   %s\n' "$1"; }
 fail() { printf '  FAIL %s\n' "$1" >&2; exit 1; }
 
 echo "== build =="
-go build -o "$BIN" ./cmd/continuityctl
-pass "go build ./cmd/continuityctl"
+go build -o "$BIN" ./cmd/geminactl
+pass "go build ./cmd/geminactl"
 
 echo "== drive: no-arg stage marker =="
 got="$("$BIN")"
-[ "$got" = "continuityctl:stage-1-probe" ] || fail "stage marker = '$got'"
-pass "prints continuityctl:stage-1-probe"
+[ "$got" = "geminactl:stage-1-probe" ] || fail "stage marker = '$got'"
+pass "prints geminactl:stage-1-probe"
 
 echo "== drive: darwin-evidence =="
 out="$("$BIN" darwin-evidence)"            # exits non-zero -> set -e aborts

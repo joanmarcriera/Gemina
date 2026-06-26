@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"continuity-vpn/internal/entitlement"
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/internal/entitlement"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 func hostedService(t *testing.T) (*entitlement.Service, []byte) {

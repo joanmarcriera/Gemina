@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 func probeBytes(t *testing.T, number protocol.PacketNumber, path protocol.PathTag) []byte {
@@ -35,10 +35,10 @@ func TestGatewayMetricsCountDecisionsByPath(t *testing.T) {
 
 	out := s.Metrics().Render()
 	for _, want := range []string{
-		`continuity_packets_total{decision="first-copy",path="wi-fi"} 1`,
-		`continuity_packets_total{decision="duplicate",path="wi-fi"} 1`,
-		`continuity_rejected_total{reason="short"} 1`,
-		"# TYPE continuity_packets_total counter",
+		`gemina_packets_total{decision="first-copy",path="wi-fi"} 1`,
+		`gemina_packets_total{decision="duplicate",path="wi-fi"} 1`,
+		`gemina_rejected_total{reason="short"} 1`,
+		"# TYPE gemina_packets_total counter",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("metrics missing %q in:\n%s", want, out)

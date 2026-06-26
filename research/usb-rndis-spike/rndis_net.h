@@ -9,11 +9,11 @@
 
 #include <stdint.h>
 
-// Continuity probe PathTag values (must match internal/protocol).
+// Gemina probe PathTag values (must match internal/protocol).
 #define PATH_WIFI 1
 #define PATH_ANDROID_USB_TETHER 2
 
-// Read CONTINUITY_GATEWAY_IP (dotted quad) and CONTINUITY_GATEWAY_PORT (default
+// Read GEMINA_GATEWAY_IP (dotted quad) and GEMINA_GATEWAY_PORT (default
 // 51820) from the environment. Returns 0 on success, -1 if the IP is missing or
 // malformed. Keeping the address in the environment means no server IP is ever
 // compiled into the binary (repo redaction invariant).

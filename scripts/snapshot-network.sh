@@ -14,7 +14,7 @@ OUT="${1:-$OUT_DIR/baseline.txt}"
 mkdir -p "$(dirname "$OUT")"
 
 {
-  echo "# continuity-vpn network baseline"
+  echo "# gemina network baseline"
   echo "# captured: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
   echo
   echo "## network service order (the default-route priority list)"

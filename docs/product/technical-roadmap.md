@@ -34,7 +34,7 @@ and GitHub issues #3–#10 own those; this document owns sequencing, parallelism
   path-set, router with reverse-path filter + return-path duplication, Linux TUN, NAT
   health-check), wired into `DataGateway`. The probe gateway is **deployed and reachable
   over the internet** on the Oracle VPS (distroless arm64 container under systemd).
-- **Swift↔Go bridge.** `bridge/continuitycore/*` — a handle-based cgo C-archive ABI
+- **Swift↔Go bridge.** `bridge/geminacore/*` — a handle-based cgo C-archive ABI
   (ADR-0005, no Go pointers crossing the boundary), with the handshake exposed
   (`cc_handshake_begin`/`cc_handshake_complete`). Apple paid programme is **Active** (team
   `D427C2J4RG`); the Xcode app + Network Extension code-sign with the
@@ -43,7 +43,7 @@ and GitHub issues #3–#10 own those; this document owns sequencing, parallelism
 - **Commercial scaffold.** `internal/entitlement` signed tokens + Open/Hosted gate;
   `StripeProvider` (stdlib, checkout + HMAC-verified webhooks). Licences decided and
   applied: **AGPL-3.0 gateway + Apache-2.0 client/core** (`docs/legal/licensing.md`).
-- **Compatibility + observability + GTM groundwork.** `continuityctl preflight`
+- **Compatibility + observability + GTM groundwork.** `geminactl preflight`
   (supported / needs-android / needs-wifi / needs-both / unsupported-macos); stdlib
   Prometheus `/metrics`; SEO-hardened `website/`, `docs/marketing/`, privacy/terms drafts,
   and a read-only `scripts/prepare-public.sh` GO/NO-GO audit.
@@ -163,7 +163,7 @@ The first shipping client, over one path, end-to-end — **#10 (milestone 1)**:
 
 - Make the open-core monorepo public (`docs/dev/repository-strategy.md`); hosted gateway
   live on Oracle with the single-container self-host `docker run` quickstart documented;
-  route the landing page through `continuityctl preflight`; record the demo video; Show HN
+  route the landing page through `geminactl preflight`; record the demo video; Show HN
   / Product Hunt drafts in `docs/marketing/`.
 - Operate limited: one gateway, controlled keys, defined SLIs, status page, support
   channel, documented shutdown procedure.
@@ -215,7 +215,7 @@ remains the single ordered source of truth; issues link to it.
 ## Verification
 
 Per work cycle, the existing gate is authoritative: run
-`.claude/skills/run-continuityctl/smoke.sh verify` (build, stage marker, `darwin-evidence`
+`.claude/skills/run-geminactl/smoke.sh verify` (build, stage marker, `darwin-evidence`
 JSON + redaction invariant, usage errors, then `go vet`, `go test -race ./...`, dedup
 benchmark, `gofmt`, `docs-check.sh`, `licence-check.sh`). Also `make test` / `make lint`.
 

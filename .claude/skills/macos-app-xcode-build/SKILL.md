@@ -1,9 +1,9 @@
 ---
 name: macos-app-xcode-build
-description: Build, sign, run and verify the continuity-vpn macOS app (menu-bar app + NetworkExtension packet tunnel) from the XcodeGen project, linking the Go transport core via a cgo c-archive. Use whenever working in apps/macos, on the Xcode project, code signing, entitlements, the Network Extension, the Swift app/views, or diagnosing any macOS build/signing failure. Reach for this for anything touching project.yml, xcodegen, xcodebuild, provisioning, "Developer Program / Personal Team", the cgo bridge, or the NEPacketTunnelProvider.
+description: Build, sign, run and verify the gemina macOS app (menu-bar app + NetworkExtension packet tunnel) from the XcodeGen project, linking the Go transport core via a cgo c-archive. Use whenever working in apps/macos, on the Xcode project, code signing, entitlements, the Network Extension, the Swift app/views, or diagnosing any macOS build/signing failure. Reach for this for anything touching project.yml, xcodegen, xcodebuild, provisioning, "Developer Program / Personal Team", the cgo bridge, or the NEPacketTunnelProvider.
 ---
 
-# Building the continuity-vpn macOS app
+# Building the gemina macOS app
 
 The macOS app is an XcodeGen-generated project, not a hand-built one. The Xcode
 project is regenerated from `apps/macos/project.yml`; never edit the `.xcodeproj`
@@ -17,20 +17,20 @@ Run.
 ## Layout
 
 - `apps/macos/Package.swift` — SwiftPM, used only for **headless logic checks**
-  (it compiles `ContinuityVPNCore`, `Shared`, the C module, the extension
-  skeleton, and runs `ContinuityVPNCoreCheck`). It does **not** build the app.
+  (it compiles `GeminaVPNCore`, `Shared`, the C module, the extension
+  skeleton, and runs `GeminaVPNCoreCheck`). It does **not** build the app.
 - `apps/macos/project.yml` — the real Xcode project (XcodeGen): app +
   NetworkExtension + frameworks. `project-dev.yml` is the no-extension variant.
 - `apps/macos/AppUI/` — the SwiftUI app (Xcode-only; not in SwiftPM).
-- `apps/macos/Core/` — `ContinuityVPNCore` framework (PathPolicy, ProtectionStatus,
+- `apps/macos/Core/` — `GeminaVPNCore` framework (PathPolicy, ProtectionStatus,
   Consent, Impact — pure, tested).
 - `apps/macos/PacketTunnelExtension/` — the NE provider + the cgo glue
   (`CoreTransport.swift`, `Bridging-Header.h`, `DualPathTransport.swift`).
-- `apps/macos/CContinuityCore/` — the C ABI module (header + modulemap); mirrors
-  `bridge/include/continuitycore.h`.
+- `apps/macos/CGeminaCore/` — the C ABI module (header + modulemap); mirrors
+  `bridge/include/geminacore.h`.
 
-Targets: `Continuity` (app), `ContinuityTunnel` (packet-tunnel app-extension),
-`ContinuityVPNCore`, `ContinuityVPNShared` (frameworks).
+Targets: `Gemina` (app), `GeminaTunnel` (packet-tunnel app-extension),
+`GeminaVPNCore`, `GeminaVPNShared` (frameworks).
 
 ## Prerequisites (one-time, owner runs the sudo bits)
 
@@ -46,8 +46,8 @@ xcodebuild -version   # confirm it works
 
 ```bash
 cd apps/macos
-xcodegen generate                       # full app + NE  -> Continuity.xcodeproj
-xcodegen generate --spec project-dev.yml  # no NE        -> ContinuityDev.xcodeproj
+xcodegen generate                       # full app + NE  -> Gemina.xcodeproj
+xcodegen generate --spec project-dev.yml  # no NE        -> GeminaDev.xcodeproj
 ```
 
 Re-run `xcodegen generate` after any `project.yml` change, then in Xcode the
@@ -57,11 +57,11 @@ project reloads (quit/reopen if it doesn't).
 
 ```bash
 # Compile + link only — isolates code errors from signing. Use this to iterate.
-xcodebuild -project Continuity.xcodeproj -scheme Continuity \
+xcodebuild -project Gemina.xcodeproj -scheme Gemina \
   -destination 'platform=macOS' clean build CODE_SIGNING_ALLOWED=NO
 
 # Surface the real signing/provisioning error (needs the owner's account):
-xcodebuild -project Continuity.xcodeproj -scheme Continuity \
+xcodebuild -project Gemina.xcodeproj -scheme Gemina \
   -destination 'platform=macOS' build -allowProvisioningUpdates
 
 # What signing certs/teams are installed:
@@ -86,15 +86,15 @@ end-to-end. Recipe:
 
 **One owner GUI step is required first** (CLI alone cannot do it): the Apple ID
 must be signed into Xcode → Settings → Accounts (GUI + 2FA), and the paid team
-selected in the project's Signing & Capabilities on **both** the `Continuity` app
-target AND the `ContinuityTunnel` extension target. That registers the team in
+selected in the project's Signing & Capabilities on **both** the `Gemina` app
+target AND the `GeminaTunnel` extension target. That registers the team in
 Xcode's provisioning store and fetches the two profiles (app + tunnel) into
 `~/Library/Developer/Xcode/UserData/Provisioning Profiles/`. After that the build
 is fully headless:
 
 ```bash
 cd apps/macos
-xcodebuild -project Continuity.xcodeproj -scheme Continuity \
+xcodebuild -project Gemina.xcodeproj -scheme Gemina \
   -destination 'platform=macOS' -allowProvisioningUpdates \
   DEVELOPMENT_TEAM=D427C2J4RG clean build      # -> ** BUILD SUCCEEDED **
 ```
@@ -102,9 +102,9 @@ xcodebuild -project Continuity.xcodeproj -scheme Continuity \
 **Verify the signature + that the NE entitlement actually made it in:**
 
 ```bash
-DD=$(xcodebuild -project apps/macos/Continuity.xcodeproj -scheme Continuity \
+DD=$(xcodebuild -project apps/macos/Gemina.xcodeproj -scheme Gemina \
   -showBuildSettings 2>/dev/null | awk -F' = ' '/ BUILT_PRODUCTS_DIR /{print $2}')
-APP="$DD/Continuity.app"; APPEX="$APP/Contents/PlugIns/ContinuityTunnel.appex"
+APP="$DD/Gemina.app"; APPEX="$APP/Contents/PlugIns/GeminaTunnel.appex"
 codesign --verify --deep --strict --verbose=2 "$APP"     # valid on disk + DR
 codesign -dv "$APP" 2>&1 | grep TeamIdentifier            # -> D427C2J4RG
 codesign -d --entitlements - --xml "$APPEX" | plutil -p - | \
@@ -125,8 +125,8 @@ in a gitignored xcconfig.
 
 ## Linking the Go core (the hard-won recipe)
 
-The extension links `bridge/continuitycore` built as a c-archive. In `project.yml`
-the `ContinuityTunnel` target:
+The extension links `bridge/geminacore` built as a c-archive. In `project.yml`
+the `GeminaTunnel` target:
 
 - **Pre-build script** builds the archive, matched to the deployment target so the
   linker does not warn:
@@ -135,16 +135,16 @@ the `ContinuityTunnel` target:
   export MACOSX_DEPLOYMENT_TARGET=14.0
   export CGO_CFLAGS="-mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET"
   cd "$SRCROOT/../.." && go build -buildmode=c-archive \
-    -o "$SRCROOT/build/libcontinuitycore.a" ./bridge/continuitycore
+    -o "$SRCROOT/build/libgeminacore.a" ./bridge/geminacore
   ```
 - **Bridging header** (`PacketTunnelExtension/Bridging-Header.h`) `#import`s
-  `continuitycore.h` (set `SWIFT_OBJC_BRIDGING_HEADER`). Swift then calls `cc_*`
+  `geminacore.h` (set `SWIFT_OBJC_BRIDGING_HEADER`). Swift then calls `cc_*`
   directly — no Swift module.
-- `CoreTransport.swift` guards `import CContinuityCore` with
-  `#if canImport(CContinuityCore)` so it works in **SwiftPM** (the module) and
+- `CoreTransport.swift` guards `import CGeminaCore` with
+  `#if canImport(CGeminaCore)` so it works in **SwiftPM** (the module) and
   **Xcode** (the bridging header).
-- Link flags: `OTHER_LDFLAGS = -lcontinuitycore -lresolv -framework CoreFoundation
-  -framework Security`; `HEADER_SEARCH_PATHS = $(SRCROOT)/CContinuityCore/include`;
+- Link flags: `OTHER_LDFLAGS = -lgeminacore -lresolv -framework CoreFoundation
+  -framework Security`; `HEADER_SEARCH_PATHS = $(SRCROOT)/CGeminaCore/include`;
   `LIBRARY_SEARCH_PATHS = $(SRCROOT)/build`.
 
 `apps/macos/build/` is git-ignored (regenerated by the pre-build script).
@@ -155,13 +155,13 @@ the `ContinuityTunnel` target:
    ✅ Resolved 2026-06-25: membership is Active (team `D427C2J4RG`) and the NE
    signs. See "Signing the full app + Network Extension" above for the recipe. A
    free **Personal Team** is refused with *"Personal development teams … do not
-   support the Network Extensions capability."*; the no-NE `ContinuityDev`
+   support the Network Extensions capability."*; the no-NE `GeminaDev`
    variant (`project-dev.yml`) remains the fallback for pure UI iteration.
 2. **Framework targets need `GENERATE_INFOPLIST_FILE: "YES"`** or the app's embed
    step fails: *"Framework … did not contain an Info.plist."*
 3. **Command Line Tools ship no XCTest / Swift-Testing.** `swift test` fails with
    *no such module 'XCTest'* / *'Testing'*. The logic is verified by the
-   self-checking executable `swift run ContinuityVPNCoreCheck`; it ports to a test
+   self-checking executable `swift run GeminaVPNCoreCheck`; it ports to a test
    target once full Xcode is the selected toolchain.
 4. **`object file was built for newer 'macOS' version` warning** — the Go archive
    targeted the host OS; fixed by the `MACOSX_DEPLOYMENT_TARGET`/`CGO_CFLAGS` in
@@ -169,12 +169,12 @@ the `ContinuityTunnel` target:
 5. **It is a menu-bar (agent) app** (`INFOPLIST_KEY_LSUIElement: "YES"`): no Dock
    icon, no window — look for the antenna in the top-right menu bar. "Nothing
    happened" usually means they're looking in the Dock.
-6. **Keep the vendored C header in sync** with `bridge/include/continuitycore.h`
+6. **Keep the vendored C header in sync** with `bridge/include/geminacore.h`
    (`diff` them).
 
 ## Owner GUI steps (after a green headless build)
 
-1. Open the project (`open apps/macos/Continuity.xcodeproj`).
+1. Open the project (`open apps/macos/Gemina.xcodeproj`).
 2. Project → target → **Signing & Capabilities** → **Automatically manage
    signing** → pick **Team** (set it on the app AND the extension if the extension
    shows a signing error).
@@ -182,7 +182,7 @@ the `ContinuityTunnel` target:
 
 ## Phase status
 
-- **Phase 1 — done & run:** the menu-bar app (`AppUI/ContinuityApp.swift`,
+- **Phase 1 — done & run:** the menu-bar app (`AppUI/GeminaApp.swift`,
   `MenuBarExtra`) renders `ProtectionStatus` over preview data. Built, signed, ran
   on the Personal Team.
 - **Phase 2 — DONE & SIGNED (2026-06-25):** the NE extension embedded + the Go

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 func TestParseProbeConfigDefaults(t *testing.T) {

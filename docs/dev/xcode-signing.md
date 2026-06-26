@@ -20,9 +20,9 @@ The repo's `apps/macos` is a SwiftPM package (build-only); a signed app with a
 Network Extension needs a real Xcode project.
 
 1. New Xcode project → **macOS App** (SwiftUI). Set a bundle id, e.g.
-   `com.<yourorg>.continuity`.
+   `com.<yourorg>.gemina`.
 2. Add a target → **Network Extension** → **Packet Tunnel Provider**. Bundle id
-   `com.<yourorg>.continuity.tunnel` (must be a child of the app id). This is the
+   `com.<yourorg>.gemina.tunnel` (must be a child of the app id). This is the
    bundled **App Extension** route from `docs/product/footprint.md` (no system
    extension, App Store compatible).
 3. Add the existing Swift sources: `apps/macos/Shared/*`, and the bridge sketch
@@ -42,7 +42,7 @@ On the **app** target → Signing & Capabilities, add:
   This is what lets the extension claim the Android RNDIS function from userspace
   — re-confirm the libusb claim still succeeds **inside the sandbox** (this is the
   open gating task in `TASKS.md`; the spike ran un-sandboxed).
-- **App Groups** (e.g. `group.com.<yourorg>.continuity`) so the app and the
+- **App Groups** (e.g. `group.com.<yourorg>.gemina`) so the app and the
   extension can share configuration/keys.
 
 Mirror the Network Extension + App Group entitlements on the **extension** target.
@@ -55,23 +55,23 @@ over the narrow C boundary (ADR-0005):
 ```sh
 # arm64 (Apple Silicon); add an amd64 slice + lipo if you support Intel.
 GOOS=darwin GOARCH=arm64 \
-  go build -buildmode=c-archive -o build/libcontinuitycore.a ./<cgo-bridge-pkg>
+  go build -buildmode=c-archive -o build/libgeminacore.a ./<cgo-bridge-pkg>
 ```
 
-The cgo bridge **already exists**: `bridge/continuitycore` exports
+The cgo bridge **already exists**: `bridge/geminacore` exports
 `cc_session_new / cc_outbound / cc_inbound / cc_session_free` (handle-based, no Go
 pointer crosses the boundary), with the C header at
-`bridge/include/continuitycore.h`. Build the archive and add the `.a` + that
+`bridge/include/geminacore.h`. Build the archive and add the `.a` + that
 header to the extension target, importing it via a bridging header:
 
 ```sh
 GOOS=darwin GOARCH=arm64 \
-  go build -buildmode=c-archive -o build/libcontinuitycore.a ./bridge/continuitycore
+  go build -buildmode=c-archive -o build/libgeminacore.a ./bridge/geminacore
 ```
 
 Then implement a small Swift `TransportCore` conforming type that calls these C
 functions (allocating the output buffers Swift-side per the header's
-memory-ownership contract), and pass it to the `ContinuityTunnelProvider`
+memory-ownership contract), and pass it to the `GeminaTunnelProvider`
 skeleton's `makeRelay()` (it is already wired to `packetFlow`;
 `apps/macos/PacketTunnelExtension/`). Only the signing below needs your account.
 

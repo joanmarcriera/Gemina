@@ -3,7 +3,7 @@ package dedup
 import (
 	"testing"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // FuzzWindowObserveModel drives Observe with an arbitrary sequence of

@@ -7,7 +7,7 @@ import (
 	"crypto/sha256"
 	"errors"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // Session-key agreement. The two endpoints each generate an X25519 key pair,

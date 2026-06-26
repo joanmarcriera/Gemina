@@ -1,12 +1,12 @@
 # Monetisation
 
-This document describes how continuity-vpn is monetised and how the entitlement
+This document describes how gemina is monetised and how the entitlement
 scaffold in `internal/entitlement` gates the paid tier without crippling the
 free, open-source path. It uses British English throughout.
 
 ## The model: open core, paid hosted gateway
 
-continuity-vpn follows an **open-core** model:
+gemina follows an **open-core** model:
 
 - **The client is open source and free.** Anyone may build and run it.
 - **The gateway is open source and self-hostable for free.** Anyone may stand

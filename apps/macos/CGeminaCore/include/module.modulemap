@@ -1,0 +1,4 @@
+module CGeminaCore {
+    header "geminacore.h"
+    export *
+}

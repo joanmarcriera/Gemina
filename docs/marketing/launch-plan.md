@@ -1,4 +1,4 @@
-# Go-to-market launch plan — Continuity VPN
+# Go-to-market launch plan — Gemina VPN
 
 > **Status: pre-release.** This plan governs the public launch of an open-source
 > product whose **dual-path transport is proven end-to-end** but whose **encryption,
@@ -57,7 +57,7 @@ Self-hostable as a single container; an **optional paid hosted gateway** is plan
 
 ### 1.1 The one-liner
 
-> **Continuity VPN keeps your Mac's calls, SSH and VPN sessions alive when one link
+> **Gemina VPN keeps your Mac's calls, SSH and VPN sessions alive when one link
 > blips — by sending your traffic over Wi-Fi and your Android phone's cellular at the
 > same time. Open source, self-hostable. Pre-release.**
 
@@ -141,7 +141,7 @@ shareable-by-link state (repo public-readiness, site live, waitlist open).
 - Static site live (the `website/` page) with the honest pre-release banner, real repo
   URL, OG/Twitter cards, JSON-LD, `robots.txt`/`sitemap.xml` (per `seo.md` §3–4).
 - Waitlist endpoint working, privacy-respecting, with the "price before charge" promise.
-- `continuityctl preflight` working as the funnel: a visitor runs it (or uses the
+- `geminactl preflight` working as the funnel: a visitor runs it (or uses the
   web-consumed `-json` report) to learn, honestly, whether their Mac + Android combo is
   supported, present-but-not-yet-usable, or needs a change. This sets correct
   expectations *before* anyone joins the waitlist.
@@ -239,18 +239,18 @@ honest.
 > **All copy below is a DRAFT for review.** Replace every `<placeholder>` before posting.
 > Do not post any of it until §4's checklist is green and a human has re-checked it
 > against the §1.4 honesty guardrails. `<repo>` =
-> `https://github.com/joanmarcriera/continuity-vpn`; `<waitlist>` = the live waitlist URL;
+> `https://github.com/joanmarcriera/gemina`; `<waitlist>` = the live waitlist URL;
 > `<site>` = the live site URL.
 
 ### 3.1 Show HN — DRAFT
 
 **Title:**
 
-> Show HN: Continuity VPN – userspace Android USB tether on macOS, no root or kext (pre-release)
+> Show HN: Gemina VPN – userspace Android USB tether on macOS, no root or kext (pre-release)
 
 **Body:**
 
-> Continuity VPN is an open-source macOS *reliability* tool. It sends your traffic over
+> Gemina VPN is an open-source macOS *reliability* tool. It sends your traffic over
 > two uplinks at once — your Wi-Fi **and** an Android phone's cellular link over USB
 > tethering — to a single gateway. The gateway delivers the first copy of each packet and
 > discards the duplicate, so if one link drops mid-session, the other is already carrying
@@ -291,7 +291,7 @@ honest.
 
 **Description:**
 
-> Continuity VPN is an open-source macOS reliability tool. It sends your traffic over
+> Gemina VPN is an open-source macOS reliability tool. It sends your traffic over
 > Wi-Fi **and** your Android phone's cellular (USB tethering) at the same time, to one
 > gateway that keeps the first copy of each packet and drops the duplicate. If one link
 > blips mid-call, the other is already carrying it — so your call, SSH or VPN session
@@ -305,7 +305,7 @@ honest.
 **Maker comment (pin this):**
 
 > Hi PH 👋 I built this because a one-second Wi-Fi blip — a lift, a train, a flaky café —
-> kept killing my calls and SSH sessions. Instead of reconnecting faster, Continuity VPN
+> kept killing my calls and SSH sessions. Instead of reconnecting faster, Gemina VPN
 > sends every packet twice over two independent links and keeps whichever copy arrives
 > first, so a dropped link never ends the session.
 >
@@ -329,7 +329,7 @@ honest.
 
 **Body:**
 
-> I'm building Continuity VPN, an open-source macOS reliability tool, and the server half
+> I'm building Gemina VPN, an open-source macOS reliability tool, and the server half
 > is squarely a r/selfhosted thing, so I wanted to share it here honestly.
 >
 > The client sends your traffic over two links at once — Wi-Fi and an Android phone's USB
@@ -342,7 +342,7 @@ honest.
 >
 > ```
 > docker run --rm --read-only -p 51820:51820/udp \
->   -e CONTINUITY_GATEWAY_ADDR=:51820 \
+>   -e GEMINA_GATEWAY_ADDR=:51820 \
 >   <your-image>
 > ```
 >
@@ -361,7 +361,7 @@ honest.
 
 ### 3.4 X / LinkedIn announcement thread — DRAFT
 
-> **1/** A one-second Wi-Fi blip shouldn't kill your call. Continuity VPN is an
+> **1/** A one-second Wi-Fi blip shouldn't kill your call. Gemina VPN is an
 > open-source macOS reliability tool that sends your traffic over Wi-Fi **and** your
 > Android's cellular at the same time — so when one link drops, your session doesn't.
 > 🧵 Pre-release. `<repo>`
@@ -409,8 +409,8 @@ clean, audited state. Cross-references: [`scripts/prepare-public.sh`](../../scri
 - [ ] Confirm no `.research-src/` or upstream implementation source is tracked; no GPL
       implementation code in product directories.
 - [ ] Replace placeholder URLs: `github.com/example/...` and
-      `ghcr.io/example/continuity-gateway` in README/site/docs with the real repo/image;
-      `continuityvpn.example` with the real domain.
+      `ghcr.io/example/gemina-gateway` in README/site/docs with the real repo/image;
+      `geminavpn.example` with the real domain.
 - [ ] Verify the licence invariant in CI: **the client never imports gateway packages**
       (per `repository-strategy.md`).
 - [ ] Repo hygiene: README's honest first paragraph intact; topics/description set
@@ -433,10 +433,10 @@ clean, audited state. Cross-references: [`scripts/prepare-public.sh`](../../scri
       stays hosted-only and self-host stays free/ungated.
 
 ### 4.4 The preflight working
-- [ ] `continuityctl preflight` returns honest verdicts on the maintainer's Mac + Android
+- [ ] `geminactl preflight` returns honest verdicts on the maintainer's Mac + Android
       combinations, **including** the *present-but-not-yet-usable* case (no faked
       "supported").
-- [ ] `continuityctl preflight -json` produces a clean, host-identifier-free report for
+- [ ] `geminactl preflight -json` produces a clean, host-identifier-free report for
       the app/site to consume.
 - [ ] The site's compatibility section funnels visitors through preflight *before* the
       waitlist, setting correct expectations.

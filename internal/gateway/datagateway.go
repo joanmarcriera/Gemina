@@ -8,12 +8,12 @@ import (
 	"net"
 	"net/netip"
 
-	"continuity-vpn/internal/dedup"
-	"continuity-vpn/internal/entitlement"
-	"continuity-vpn/internal/exit"
-	"continuity-vpn/internal/metrics"
-	"continuity-vpn/internal/protocol"
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/internal/dedup"
+	"github.com/joanmarcriera/gemina/internal/entitlement"
+	"github.com/joanmarcriera/gemina/internal/exit"
+	"github.com/joanmarcriera/gemina/internal/metrics"
+	"github.com/joanmarcriera/gemina/internal/protocol"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 // dataPath is the opaque path label the gateway uses for dedup bookkeeping. The
@@ -52,15 +52,15 @@ type DataGateway struct {
 	exit *exit.Router
 
 	metrics       *metrics.Registry
-	handshakes    *metrics.CounterVec // continuity_handshakes_total{result}
-	dataPackets   *metrics.CounterVec // continuity_data_packets_total{decision}
-	activeSession *metrics.GaugeVec   // continuity_active_sessions
+	handshakes    *metrics.CounterVec // gemina_handshakes_total{result}
+	dataPackets   *metrics.CounterVec // gemina_data_packets_total{decision}
+	activeSession *metrics.GaugeVec   // gemina_active_sessions
 
-	exitForwarded      *metrics.CounterVec // continuity_exit_forwarded_total
-	exitForwardedBytes *metrics.CounterVec // continuity_exit_forwarded_bytes_total
-	exitReturned       *metrics.CounterVec // continuity_exit_returned_total
-	exitReturnedBytes  *metrics.CounterVec // continuity_exit_returned_bytes_total
-	exitDropped        *metrics.CounterVec // continuity_exit_dropped_total{reason}
+	exitForwarded      *metrics.CounterVec // gemina_exit_forwarded_total
+	exitForwardedBytes *metrics.CounterVec // gemina_exit_forwarded_bytes_total
+	exitReturned       *metrics.CounterVec // gemina_exit_returned_total
+	exitReturnedBytes  *metrics.CounterVec // gemina_exit_returned_bytes_total
+	exitDropped        *metrics.CounterVec // gemina_exit_dropped_total{reason}
 }
 
 // NewDataGateway builds a gateway with the given Ed25519 identity, entitlement
@@ -81,15 +81,15 @@ func NewDataGateway(identityPriv ed25519.PrivateKey, service *entitlement.Servic
 		capacity:     dedupCapacity,
 		logger:       logger,
 		metrics:      reg,
-		handshakes:   reg.Counter("continuity_handshakes_total", "Handshakes by result.", "result"),
-		dataPackets:  reg.Counter("continuity_data_packets_total", "Data datagrams by decision.", "decision"),
-		activeSession: reg.Gauge("continuity_active_sessions",
+		handshakes:   reg.Counter("gemina_handshakes_total", "Handshakes by result.", "result"),
+		dataPackets:  reg.Counter("gemina_data_packets_total", "Data datagrams by decision.", "decision"),
+		activeSession: reg.Gauge("gemina_active_sessions",
 			"Sessions currently admitted on the gateway."),
-		exitForwarded:      reg.Counter("continuity_exit_forwarded_total", "Inner packets forwarded to the internet."),
-		exitForwardedBytes: reg.Counter("continuity_exit_forwarded_bytes_total", "Inner bytes forwarded to the internet."),
-		exitReturned:       reg.Counter("continuity_exit_returned_total", "Return datagrams sent back to clients."),
-		exitReturnedBytes:  reg.Counter("continuity_exit_returned_bytes_total", "Return bytes sent back to clients."),
-		exitDropped:        reg.Counter("continuity_exit_dropped_total", "Exit-path drops by reason.", "reason"),
+		exitForwarded:      reg.Counter("gemina_exit_forwarded_total", "Inner packets forwarded to the internet."),
+		exitForwardedBytes: reg.Counter("gemina_exit_forwarded_bytes_total", "Inner bytes forwarded to the internet."),
+		exitReturned:       reg.Counter("gemina_exit_returned_total", "Return datagrams sent back to clients."),
+		exitReturnedBytes:  reg.Counter("gemina_exit_returned_bytes_total", "Return bytes sent back to clients."),
+		exitDropped:        reg.Counter("gemina_exit_dropped_total", "Exit-path drops by reason.", "reason"),
 	}
 }
 
@@ -131,7 +131,7 @@ func (g *DataGateway) HandleDatagram(datagram []byte) (reply []byte, rec DataRec
 	case clientcore.KindData:
 		return nil, g.handleData(datagram)
 	case clientcore.KindPing:
-		// Echo a pong for latency/loss measurement (continuityctl benchmark).
+		// Echo a pong for latency/loss measurement (geminactl benchmark).
 		// The pong is the same size as the ping, so there is no amplification.
 		if isPong, nonce, err := clientcore.DecodePing(datagram); err == nil && !isPong {
 			return clientcore.EncodePong(nonce), DataRecord{Kind: "ping"}

@@ -5,15 +5,15 @@
 # never carry a host identifier.
 
 groups:
-  - name: continuity-gateway
+  - name: gemina-gateway
     rules:
       - alert: GatewayDown
-        expr: up{job="continuity-gateway"} == 0
+        expr: up{job="gemina-gateway"} == 0
         for: 2m
         labels:
           severity: critical
         annotations:
-          summary: Continuity gateway is not scrapeable
+          summary: Gemina gateway is not scrapeable
           description: The gateway target has been down for 2 minutes.
 
       # The headline reliability alarm: traffic is arriving (rejects or any
@@ -21,8 +21,8 @@ groups:
       # dedup/decode path is effectively delivering nothing.
       - alert: NoFirstCopies
         expr: |
-          sum(rate(continuity_packets_total{decision="first-copy"}[5m])) == 0
-          and sum(rate(continuity_packets_total[5m])) > 0
+          sum(rate(gemina_packets_total{decision="first-copy"}[5m])) == 0
+          and sum(rate(gemina_packets_total[5m])) > 0
         for: 5m
         labels:
           severity: critical
@@ -32,8 +32,8 @@ groups:
 
       - alert: HighRejectRate
         expr: |
-          sum(rate(continuity_rejected_total[5m]))
-            / clamp_min(sum(rate(continuity_packets_total[5m])), 1) > 0.5
+          sum(rate(gemina_rejected_total[5m]))
+            / clamp_min(sum(rate(gemina_packets_total[5m])), 1) > 0.5
         for: 10m
         labels:
           severity: warning

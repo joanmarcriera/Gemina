@@ -3,7 +3,7 @@ set -eu
 
 source_dir="$(pwd)"
 tmp_parent="${TMPDIR:-/tmp}"
-clean_dir="$(mktemp -d "$tmp_parent/continuity-vpn-clean.XXXXXX")"
+clean_dir="$(mktemp -d "$tmp_parent/gemina-clean.XXXXXX")"
 
 case "$clean_dir" in
 	"$source_dir"/*)
