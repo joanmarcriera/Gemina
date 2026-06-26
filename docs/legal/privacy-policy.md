@@ -11,7 +11,7 @@
 
 ## Who this policy is about
 
-Continuity VPN is a macOS reliability tool. It sends a copy of your protected
+Gemina VPN is a macOS reliability tool. It sends a copy of your protected
 traffic over two uplinks at once — your Wi-Fi and an Android phone's cellular
 link over USB — to a single gateway, which delivers the first copy and discards
 the duplicate. The aim is continuity: if one link blips, the other is already

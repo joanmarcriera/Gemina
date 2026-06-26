@@ -1,6 +1,6 @@
 ---
 name: macos-usb-tether-detection
-description: Detect USB tether/network functions on macOS (Android RNDIS, CDC-NCM/ECM, plain USB NICs) by querying IORegistry and keying on USB interface class — not vendor strings. Use whenever working on the continuity-vpn darwin-evidence diagnostic, parsing `ioreg` output, deciding whether a phone's USB tether is usable on this Mac, distinguishing RNDIS from NCM, or adding device-level evidence. Reach for this any time the task involves USB networking, tethering, ioreg parsing, or "why doesn't macOS see my phone as a network interface".
+description: Detect USB tether/network functions on macOS (Android RNDIS, CDC-NCM/ECM, plain USB NICs) by querying IORegistry and keying on USB interface class — not vendor strings. Use whenever working on the gemina darwin-evidence diagnostic, parsing `ioreg` output, deciding whether a phone's USB tether is usable on this Mac, distinguishing RNDIS from NCM, or adding device-level evidence. Reach for this any time the task involves USB networking, tethering, ioreg parsing, or "why doesn't macOS see my phone as a network interface".
 ---
 
 # Detecting USB tether functions on macOS
@@ -8,7 +8,7 @@ description: Detect USB tether/network functions on macOS (Android RNDIS, CDC-NC
 A USB-tethered phone or a USB-Ethernet dock exposes one or more **USB
 interfaces**, each tagged with a numeric class/subclass/protocol triple. macOS
 only turns that into a usable `enX` NIC if it has a **host driver** that claims
-the function. The whole continuity-vpn uplink problem turns on this gap:
+the function. The whole gemina uplink problem turns on this gap:
 
 - **Android RNDIS tethering → no macOS NIC.** macOS ships no RNDIS host driver,
   so the function sits unclaimed on the bus. The phone is connected, tethering is
@@ -65,7 +65,7 @@ ioreg -r -c IOEthernetInterface -l   # has "BSD Name" = "enX"
 without returning an error** (`Scan()` just returns false). A full `ioreg -l` USB
 dump contains single property lines ~90 KiB long (IORegistry personality blobs).
 A scanner-based block splitter therefore silently truncates the tree before later
-nodes — you get an empty/partial result and no error. This bit the continuity-vpn
+nodes — you get an empty/partial result and no error. This bit the gemina
 parser: it worked on the small `IOEthernetInterface` output and broke on the
 large `IOUSBHostInterface` output.
 
@@ -75,10 +75,10 @@ buffer with `scanner.Buffer(buf, maxSize)` AND check `scanner.Err()`.
 
 Always verify a USB-layer parser against **live hardware** with the real, full
 `ioreg` output — a hand-trimmed fixture won't have the giant lines that expose
-this bug. In continuity-vpn there is an env-gated live test
-(`CONTINUITY_LIVE_USB=1`) for exactly this.
+this bug. In gemina there is an env-gated live test
+(`GEMINA_LIVE_USB=1`) for exactly this.
 
-## Honesty rules (continuity-vpn never-fake-path-success)
+## Honesty rules (gemina never-fake-path-success)
 
 A detected function is **not** a usable path. Present it truthfully:
 
@@ -92,7 +92,7 @@ A detected function is **not** a usable path. Present it truthfully:
   Never let a serial, MAC, IPv4, product or vendor string reach the output; the
   smoke gate greps for MAC/IPv4 and fails the build if either appears.
 
-## Where this lives in continuity-vpn
+## Where this lives in gemina
 
 - `internal/platform/darwin/usb_functions.go` — `USBFunctionDeviceSource`, the
   class-keyed detector.

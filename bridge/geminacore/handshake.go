@@ -4,7 +4,7 @@ import (
 	"crypto/ed25519"
 	"sync"
 
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 // Client-side handshake support for the C ABI. The handshake (ADR-0007) is a

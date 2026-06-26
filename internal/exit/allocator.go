@@ -5,7 +5,7 @@ import (
 	"net/netip"
 	"sync"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // ErrPoolExhausted is returned by Allocate when every usable address in the

@@ -15,8 +15,8 @@
 //
 // Addresses come from the environment and nothing identifying is printed (repo
 // redaction invariant):
-//   CONTINUITY_GATEWAY_IP=<dotted quad>  CONTINUITY_GATEWAY_PORT=<port>
-//   CONTINUITY_WIFI_IFACE=<iface, default en0>
+//   GEMINA_GATEWAY_IP=<dotted quad>  GEMINA_GATEWAY_PORT=<port>
+//   GEMINA_WIFI_IFACE=<iface, default en0>
 //
 // Provenance: clean-room from MS-RNDIS + DHCP/ARP/IPv4/UDP RFCs and the
 // continuity probe wire format. NOT GPL-derived.
@@ -34,10 +34,10 @@ int main(void) {
     uint8_t gw_ip[4];
     int gw_port;
     if (gateway_from_env(gw_ip, &gw_port) != 0) {
-        printf("FAIL config: set CONTINUITY_GATEWAY_IP\n");
+        printf("FAIL config: set GEMINA_GATEWAY_IP\n");
         return 2;
     }
-    const char *wifi_iface = getenv("CONTINUITY_WIFI_IFACE");
+    const char *wifi_iface = getenv("GEMINA_WIFI_IFACE");
     if (!wifi_iface)
         wifi_iface = "en0";
 

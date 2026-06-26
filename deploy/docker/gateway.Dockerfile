@@ -18,9 +18,9 @@ COPY pkg ./pkg
 RUN go build -trimpath -ldflags="-s -w" -o /out/gateway ./cmd/gateway
 
 FROM gcr.io/distroless/static-debian12:nonroot
-LABEL org.opencontinuity.component="stage-1-probe-gateway"
+LABEL org.opengemina.component="stage-1-probe-gateway"
 COPY --from=build /out/gateway /usr/local/bin/gateway
-# Default listen port; overridable via CONTINUITY_GATEWAY_ADDR.
+# Default listen port; overridable via GEMINA_GATEWAY_ADDR.
 EXPOSE 51820/udp
 USER nonroot:nonroot
 ENTRYPOINT ["/usr/local/bin/gateway"]

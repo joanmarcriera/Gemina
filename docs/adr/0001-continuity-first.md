@@ -1,4 +1,4 @@
-# ADR-0001: Continuity First
+# ADR-0001: Gemina First
 
 Date: 2026-06-17
 
@@ -26,7 +26,7 @@ It duplicates protected traffic over Wi-Fi and Android USB tethering, sends both
 
 ## Rationale
 
-Continuity directly matches the product proposition: stable calls, SSH, RDP and remote-working sessions during access-network loss.
+Gemina directly matches the product proposition: stable calls, SSH, RDP and remote-working sessions during access-network loss.
 
 Aggregation adds major transport complexity and could create false marketing claims before path control and duplicate delivery are proven.
 

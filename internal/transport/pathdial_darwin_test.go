@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // TestDialUDPBindsLoopbackAndDelivers binds a UDP socket to the loopback

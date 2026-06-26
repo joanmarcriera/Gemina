@@ -1,5 +1,5 @@
 #if canImport(NetworkExtension)
-import ContinuityVPNCore
+import GeminaVPNCore
 import Foundation
 import NetworkExtension
 
@@ -35,7 +35,7 @@ extension TunnelError: LocalizedError {
     }
 }
 
-open class ContinuityTunnelProvider: NEPacketTunnelProvider {
+open class GeminaTunnelProvider: NEPacketTunnelProvider {
     private var relay: DualPathRelay?
     /// Current path states + primary health, maintained from the NE path monitor
     /// and the benchmark pings; consulted by the policy on each outbound packet.

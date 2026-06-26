@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 func testKey() []byte {

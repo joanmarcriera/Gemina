@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"continuity-vpn/internal/entitlement"
-	"continuity-vpn/internal/exit"
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/internal/entitlement"
+	"github.com/joanmarcriera/gemina/internal/exit"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 // fakeDevice stands in for the TUN device: Write captures egressed inner packets,

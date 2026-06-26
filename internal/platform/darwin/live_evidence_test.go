@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"continuity-vpn/internal/paths"
+	"github.com/joanmarcriera/gemina/internal/paths"
 )
 
 func TestCombinedInterfaceSourceAddsLiveEvidenceWithoutRawIdentifiers(t *testing.T) {

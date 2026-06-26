@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"testing"
 
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 // simulateGateway plays the gateway's half of the handshake using only clientcore

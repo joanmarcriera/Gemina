@@ -2,35 +2,35 @@
 import PackageDescription
 
 let package = Package(
-    name: "ContinuityVPNMacOS",
+    name: "GeminaVPNMacOS",
     platforms: [
         .macOS(.v14)
     ],
     products: [
-        .library(name: "ContinuityVPNShared", targets: ["ContinuityVPNShared"])
+        .library(name: "GeminaVPNShared", targets: ["GeminaVPNShared"])
     ],
     targets: [
-        .target(name: "ContinuityVPNShared", path: "Shared"),
+        .target(name: "GeminaVPNShared", path: "Shared"),
         // Pure app logic (no AppKit/NetworkExtension): path policy, protection
         // status, consent defaults, impact maths. Unit-tested headless.
-        .target(name: "ContinuityVPNCore", path: "Core"),
+        .target(name: "GeminaVPNCore", path: "Core"),
         // Headless self-checking harness for the core logic. Runs with the plain
-        // toolchain (no Xcode): `swift run ContinuityVPNCoreCheck`. Becomes an
+        // toolchain (no Xcode): `swift run GeminaVPNCoreCheck`. Becomes an
         // XCTest/Swift-Testing target once full Xcode is installed; the test
         // bodies port across unchanged.
         .executableTarget(
-            name: "ContinuityVPNCoreCheck",
-            dependencies: ["ContinuityVPNCore"],
+            name: "GeminaVPNCoreCheck",
+            dependencies: ["GeminaVPNCore"],
             path: "CoreCheck"
         ),
         // C module exposing the Go transport core's ABI
-        // (bridge/include/continuitycore.h). The symbols are linked from the Go
+        // (bridge/include/geminacore.h). The symbols are linked from the Go
         // c-archive in the Xcode project; this target only carries the
         // declarations so the Swift side compiles against them.
-        .target(name: "CContinuityCore", path: "CContinuityCore"),
+        .target(name: "CGeminaCore", path: "CGeminaCore"),
         .target(
-            name: "ContinuityVPNPacketTunnelExtension",
-            dependencies: ["ContinuityVPNShared", "CContinuityCore", "ContinuityVPNCore"],
+            name: "GeminaVPNPacketTunnelExtension",
+            dependencies: ["GeminaVPNShared", "CGeminaCore", "GeminaVPNCore"],
             path: "PacketTunnelExtension"
         )
     ]

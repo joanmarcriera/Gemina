@@ -13,7 +13,7 @@ collecting personal data or running silent telemetry.
 
 1. **No silent collection.** The product never phones home with device data.
    Every catalogue entry is something a person chose to submit.
-2. **Redacted by construction.** `continuityctl preflight -share` prints only
+2. **Redacted by construction.** `geminactl preflight -share` prints only
    coarse tokens already in the compatibility report: the verdict, the macOS
    version, and the tether mode (`native-ncm` / `app-driver-rndis` / `none`). It
    contains no IP, MAC, serial, CID/IMEI or bsd interface name. A unit test

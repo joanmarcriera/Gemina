@@ -22,7 +22,7 @@ Stage 2 has now turned the gateway into a real exit node (2026-06-25): the new
 `internal/exit` package forwards decrypted inner packets to a TUN device and
 routes return traffic back over a client's known source endpoints (reverse-path
 filtered, return-path duplicated), wired into `DataGateway` and env-gated in
-`cmd/gateway` (`CONTINUITY_GATEWAY_EXIT=on`). Replay protection was upgraded from
+`cmd/gateway` (`GEMINA_GATEWAY_EXIT=on`). Replay protection was upgraded from
 the feasibility FIFO ring to a per-session **RFC 6479 sliding-window bitmap**
 (`internal/dedup/replay.go`) that distinguishes a *stale* replay from a never-seen
 packet. The handshake is exposed over the cgo bridge so Swift can drive it.
@@ -66,7 +66,7 @@ Present and unit/race tested:
   splitter used `bufio.Scanner`, which silently truncated at its 64 KiB line
   limit — a full USB `ioreg -l` dump has ~90 KiB lines — so it now splits on raw
   newlines.
-* `internal/diagnostics` + `cmd/continuityctl darwin-evidence` — redacted JSON
+* `internal/diagnostics` + `cmd/geminactl darwin-evidence` — redacted JSON
   Stage 1 evidence report labelled diagnostic-only-not-path-success. Now carries
   a `device_functions` channel (present-but-unusable tether functions, with
   `usable:false`/`host_driver_claimed:false`) plus a `tether-present-not-usable`
@@ -80,9 +80,9 @@ Present and unit/race tested:
   dedup window, and logs first-copy/duplicate/rejected per path as redacted JSON
   (source address never reaches the handler). Loopback-driven tests under race.
   **Deployed and running** on the `oracle` VPS as a distroless arm64 container
-  under systemd (`continuity-gateway.service`); confirmed reachable end-to-end
+  under systemd (`gemina-gateway.service`); confirmed reachable end-to-end
   over the internet. See `docs/dev/gateway-deploy.md`.
-* `internal/transport` `PathDialer` + `continuityctl probe` — binds a connected
+* `internal/transport` `PathDialer` + `geminactl probe` — binds a connected
   UDP socket to a chosen interface for egress via Darwin `IP_BOUND_IF`, so a
   socket leaves a specific path regardless of the default route. `probe` supports
   dual-path (`-interface2`/`-path2`): the same identity over two interfaces.
@@ -97,7 +97,7 @@ Present and unit/race tested:
   attribute strings are not built when disabled) with periodic Info summaries;
   the default Info hot path is ~30 ns/op and allocation-free (was ~447 ns/op
   logging every packet). The listener sets a 4 MiB read buffer for burst
-  tolerance. Set `CONTINUITY_GATEWAY_LOG_LEVEL=debug` for per-packet detail.
+  tolerance. Set `GEMINA_GATEWAY_LOG_LEVEL=debug` for per-packet detail.
 
 Built this cycle (all unit/race tested):
 
@@ -126,14 +126,14 @@ Built this cycle (all unit/race tested):
   and the gateway enforces a freshness window to bound replay. `DataGateway`
   ties it together: it demuxes ClientHello/CVD1 (`ClassifyDatagram`), terminates
   the handshake, decrypts+dedups the data plane, and exposes redacted data-path
-  metrics (`continuity_handshakes_total`, `continuity_data_packets_total`,
-  `continuity_active_sessions`); source addresses are used only to reply, never
+  metrics (`gemina_handshakes_total`, `gemina_data_packets_total`,
+  `gemina_active_sessions`); source addresses are used only to reply, never
   logged. End-to-end tested.
 * `internal/entitlement` Stripe — `StripeProvider` (stdlib net/http, no SDK):
   checkout creation + real webhook signature verification (HMAC, constant-time,
   replay-tolerance). Drops into `entitlement.Service`. Real keys/accounts remain.
 * `apps/macos` is now an **Xcode project** (XcodeGen, `project.yml`): a menu-bar
-  app (`AppUI`, `MenuBarExtra`) + the `ContinuityTunnel` NetworkExtension packet
+  app (`AppUI`, `MenuBarExtra`) + the `GeminaTunnel` NetworkExtension packet
   tunnel + the logic frameworks, with the Go core linked as a cgo c-archive
   (bridging header + pre-build script). Phase 1 (menu-bar app) **ran** on the
   owner's Mac; Phase 2 (app + NE + Go core) is **headless-verified** (`xcodebuild
@@ -143,25 +143,25 @@ Built this cycle (all unit/race tested):
   runs on the Personal Team meanwhile. Build/sign recipe + gotchas in the
   `macos-app-xcode-build` skill. Next: Phase 3, the real `NEPacketTunnelProvider`
   (sockets, makeRelay, handshake over the wire, live status).
-* `apps/macos` Swift↔Go link + app logic — `CContinuityCore` C target +
-  `CoreTransport.swift` (cgo bridge), and `ContinuityVPNCore` (pure Swift):
+* `apps/macos` Swift↔Go link + app logic — `CGeminaCore` C target +
+  `CoreTransport.swift` (cgo bridge), and `GeminaVPNCore` (pure Swift):
   `PathPolicy` (Duplicate/Failover/Smart/Auto + preferred path; the relay honours
   it), `ProtectionStatus`, consent defaults (free opt-in / paid opt-out), and the
   `Impact` maths (outage absorbed, failovers survived). Verified headless by
-  `ContinuityVPNCoreCheck` (no Xcode needed); `swift build` green. The SwiftUI
+  `GeminaVPNCoreCheck` (no Xcode needed); `swift build` green. The SwiftUI
   views (menu bar, Settings, onboarding), the path sockets, and the
   handshake-over-the-wire remain Xcode-runtime work. App design spec:
   `docs/superpowers/specs/2026-06-24-macos-app-experience-design.md`.
 * Monetisation study (`docs/product/monetisation-apple-study.md`): keep Stripe as
   the rail (a free macOS companion to a paid web service can skip App Store IAP);
   IAP, if ever used, is 15% (Small Business Program).
-* `bridge/continuitycore` — the cgo C-shared bridge exposing the core to Swift
+* `bridge/geminacore` — the cgo C-shared bridge exposing the core to Swift
   over a handle-based ABI (ADR-0005); builds as a darwin/arm64 c-archive.
-  `apps/macos` `ContinuityTunnelProvider` (guarded) wires packetFlow to the
+  `apps/macos` `GeminaTunnelProvider` (guarded) wires packetFlow to the
   relay; builds in SwiftPM.
 * `internal/metrics` + gateway `/metrics` — stdlib Prometheus registry; the
-  gateway exposes `continuity_packets_total{decision,path}` (the failover signal)
-  and `continuity_rejected_total{reason}`, redaction-enforced, on an opt-in
+  gateway exposes `gemina_packets_total{decision,path}` (the failover signal)
+  and `gemina_rejected_total{reason}`, redaction-enforced, on an opt-in
   metrics address. Grafana/alerts/scrape assets + `observability/METRICS.md`.
 * Licence decided and applied: AGPL-3.0 gateway + Apache-2.0 client/core
   (`docs/legal/licensing.md`). Xcode/signing owner-action guide in
@@ -189,8 +189,8 @@ drop a real LAN address (see the release audit).
 Research sources are present only in the Git-ignored `.research-src/`. No upstream
 implementation source has been imported into product directories.
 
-Git remote: `origin` = `git@github.com:joanmarcriera/continuity-vpn.git`
-(`https://github.com/joanmarcriera/continuity-vpn`).
+Git remote: `origin` = `git@github.com:joanmarcriera/gemina.git`
+(`https://github.com/joanmarcriera/gemina`).
 
 ## This Cycle's Changes
 

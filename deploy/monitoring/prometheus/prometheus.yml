@@ -1,6 +1,6 @@
-# Prometheus configuration for the continuity gateway monitoring stack.
+# Prometheus configuration for the Gemina gateway monitoring stack.
 #
-# The gateway is reached by container name on the private `continuity-mon`
+# The gateway is reached by container name on the private `gemina-mon`
 # network — no IP address is committed and the metrics port is never published
 # to the host. The alert rules are mounted read-only from the repo's single
 # source of truth (observability/alerts/gateway-rules.yml).
@@ -13,12 +13,12 @@ rule_files:
   - /etc/prometheus/alerts/gateway-rules.yml
 
 scrape_configs:
-  - job_name: continuity-gateway
+  - job_name: gemina-gateway
     metrics_path: /metrics
     scheme: http
     static_configs:
       - targets:
-          - continuity-gateway:9090
+          - gemina-gateway:9090
         labels:
-          service: continuity-gateway
+          service: gemina-gateway
           deployment: hosted

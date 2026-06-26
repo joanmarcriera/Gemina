@@ -7,14 +7,14 @@ work, so a prospective user can check before they start. Contributions welcome.
 
 We do **not** auto-collect anything about your devices. There is no silent
 telemetry. This catalogue grows only from reports people choose to submit. The
-`continuityctl preflight -share` command prints a **redacted** technical summary
+`geminactl preflight -share` command prints a **redacted** technical summary
 (verdict, macOS version, tether mode) — it contains no IP, MAC, serial or phone
 identifier. *You* decide whether to add your phone model when you submit. See
 [`docs/product/compatibility-catalogue.md`](docs/product/compatibility-catalogue.md).
 
 ## How to contribute a report
 
-1. Run the check: `continuityctl preflight -share`.
+1. Run the check: `geminactl preflight -share`.
 2. Open a pull request (or an issue) adding a row to the table below. Paste the
    redacted summary into the PR and fill in your phone model and any notes.
 

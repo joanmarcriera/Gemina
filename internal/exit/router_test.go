@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // fakeDevice is an in-memory Device whose Write side queues packets for

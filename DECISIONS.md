@@ -51,7 +51,7 @@ Conditions for revisiting:
 
 Revisit only if the user explicitly reprioritises the project and accepts the resulting provenance and architecture risk.
 
-## 2026-06-17: Continuity First, Not Aggregation
+## 2026-06-17: Gemina First, Not Aggregation
 
 Decision:
 
@@ -431,7 +431,7 @@ privacy review requires a stricter diagnostic-data model.
 
 Decision:
 
-Add `continuityctl darwin-evidence` to print a redacted JSON Stage 1 evidence
+Add `geminactl darwin-evidence` to print a redacted JSON Stage 1 evidence
 report built from `LiveEvidenceInterfaceSnapshots`.
 
 Alternatives considered:

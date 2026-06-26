@@ -1,5 +1,5 @@
 import AppKit
-import ContinuityVPNCore
+import GeminaVPNCore
 import SwiftUI
 
 // The menu-bar app (Phase 1). It is a status-led menu bar item, matching the
@@ -8,9 +8,9 @@ import SwiftUI
 // data so the app builds, signs, runs and shows the intended shape.
 
 @main
-struct ContinuityApp: App {
+struct GeminaApp: App {
     var body: some Scene {
-        MenuBarExtra("Continuity", systemImage: "antenna.radiowaves.left.and.right") {
+        MenuBarExtra("Gemina", systemImage: "antenna.radiowaves.left.and.right") {
             StatusView()
         }
         .menuBarExtraStyle(.window)
@@ -18,6 +18,22 @@ struct ContinuityApp: App {
 }
 
 struct StatusView: View {
+    @State private var showingAbout = false
+
+    /// The reason for the name — shown in the "About Gemina" dialog. A Legio
+    /// Gemina was two understrength Roman legions merged into one "twin" legion so
+    /// the force always arrived at full strength; Gemina sends every packet down
+    /// two paths and keeps the first copy through, for the same reason.
+    private static let nameStory = """
+    Gemina is Latin for “twinned”. When a Roman legion was too depleted to be sure \
+    of holding the line, two were merged into one — a Legio Gemina, the twin legion \
+    — so the force always arrived at full strength.
+
+    Gemina does the same with your connection: it sends every packet down two paths \
+    at once and keeps whichever copy arrives first, so you stay online even when one \
+    path drops.
+    """
+
     // Live path state arrives from the Network Extension (Phase 3). A release build
     // therefore shows the real "off / not configured" state; only a debug build
     // carries representative preview data so the layout can be exercised without
@@ -57,10 +73,22 @@ struct StatusView: View {
                 .foregroundStyle(.secondary)
             #endif
             Divider()
-            Button("Quit") { NSApplication.shared.terminate(nil) }
+            Text("Gemina — the twin legion: every packet travels two paths; the first to arrive wins.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack {
+                Button("About Gemina") { showingAbout = true }
+                Spacer()
+                Button("Quit") { NSApplication.shared.terminate(nil) }
+            }
         }
         .padding(12)
         .frame(minWidth: 240, idealWidth: 280, maxWidth: 360)
+        .alert("Gemina", isPresented: $showingAbout) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(Self.nameStory)
+        }
     }
 
     /// VoiceOver description for a path row — state is conveyed by colour alone in

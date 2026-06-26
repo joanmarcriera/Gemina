@@ -37,8 +37,8 @@ jobs:
         run: go test -race ./...
       - name: client stays gateway-free
         run: |
-          if go list -deps ./cmd/continuityctl ./pkg/... \
-              | grep -E 'continuity-vpn/(cmd/gateway|internal/gateway|internal/exit)'; then
+          if go list -deps ./cmd/geminactl ./pkg/... \
+              | grep -E 'gemina/(cmd/gateway|internal/gateway|internal/exit)'; then
             echo "::error::client imports gateway-side code — licence/architecture boundary violated"
             exit 1
           fi

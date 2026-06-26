@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 // testKey is a fixed 32-byte key; the two endpoints in a session share it.

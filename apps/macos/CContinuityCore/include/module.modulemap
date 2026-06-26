@@ -1,4 +1,0 @@
-module CContinuityCore {
-    header "continuitycore.h"
-    export *
-}

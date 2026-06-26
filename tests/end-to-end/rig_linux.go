@@ -14,11 +14,11 @@
 //
 // Run on a Linux box with root (CAP_NET_ADMIN for the TUN):
 //
-//	sudo CONTINUITY_RIG_GATEWAY=gw.example:51820 \
-//	     CONTINUITY_RIG_IDENTITY=<base64 ed25519 pub from the gateway log> \
-//	     CONTINUITY_RIG_TOKEN=<entitlement token> \
-//	     CONTINUITY_RIG_TUNNEL_IP=10.99.0.2 \
-//	     CONTINUITY_RIG_PATHS=eth0,wwan0 \
+//	sudo GEMINA_RIG_GATEWAY=gw.example:51820 \
+//	     GEMINA_RIG_IDENTITY=<base64 ed25519 pub from the gateway log> \
+//	     GEMINA_RIG_TOKEN=<entitlement token> \
+//	     GEMINA_RIG_TUNNEL_IP=10.99.0.2 \
+//	     GEMINA_RIG_PATHS=eth0,wwan0 \
 //	     ./rig
 //
 // The tunnel IP is learned out-of-band for now (the first admitted client gets
@@ -40,20 +40,20 @@ import (
 	"syscall"
 	"time"
 
-	"continuity-vpn/internal/exit"
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/internal/exit"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 func main() {
-	gateway := mustEnv("CONTINUITY_RIG_GATEWAY")
-	identityB64 := mustEnv("CONTINUITY_RIG_IDENTITY")
-	token := mustEnv("CONTINUITY_RIG_TOKEN")
-	tunnelIP := envOr("CONTINUITY_RIG_TUNNEL_IP", "10.99.0.2")
-	paths := splitPaths(envOr("CONTINUITY_RIG_PATHS", "")) // empty => default route, single path
+	gateway := mustEnv("GEMINA_RIG_GATEWAY")
+	identityB64 := mustEnv("GEMINA_RIG_IDENTITY")
+	token := mustEnv("GEMINA_RIG_TOKEN")
+	tunnelIP := envOr("GEMINA_RIG_TUNNEL_IP", "10.99.0.2")
+	paths := splitPaths(envOr("GEMINA_RIG_PATHS", "")) // empty => default route, single path
 
 	identity, err := base64.StdEncoding.DecodeString(identityB64)
 	if err != nil || len(identity) != ed25519.PublicKeySize {
-		log.Fatalf("CONTINUITY_RIG_IDENTITY must be a base64 ed25519 public key")
+		log.Fatalf("GEMINA_RIG_IDENTITY must be a base64 ed25519 public key")
 	}
 
 	gwAddr, err := net.ResolveUDPAddr("udp", gateway)

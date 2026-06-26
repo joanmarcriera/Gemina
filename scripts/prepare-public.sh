@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# prepare-public.sh — read-only pre-publication audit for Continuity VPN.
+# prepare-public.sh — read-only pre-publication audit for Gemina VPN.
 #
 # Checks the TRACKED tree for things that must not be published before the
 # repository goes public, and prints a go/no-go checklist. It is strictly
@@ -87,7 +87,7 @@ check_junk_dirs() {
 # 2. No tooling lockfile or built binaries tracked.
 check_junk_files() {
 	head2 "Lockfiles and built binaries"
-	local -a junk=("skills-lock.json" "gateway" "continuityctl")
+	local -a junk=("skills-lock.json" "gateway" "geminactl")
 	local f hits any=0
 	for f in "${junk[@]}"; do
 		# Match the file at repo root only (leading-anchored, no slash before).

@@ -3,7 +3,7 @@ package darwin
 import (
 	"testing"
 
-	"continuity-vpn/internal/paths"
+	"github.com/joanmarcriera/gemina/internal/paths"
 )
 
 func TestObservationsFromSnapshotsPreservesObservationFields(t *testing.T) {

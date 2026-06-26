@@ -1,9 +1,9 @@
 ---
 name: userspace-rndis-dataplane
-description: Build, run, and extend the continuity-vpn userspace RNDIS data plane that drives an Android phone's USB tether from an unprivileged macOS process (no kext, no SIP, no DriverKit) — libusb/IOUSBHost, RNDIS message framing, packet-filter OIDs, DHCP-over-RNDIS. Use for any work in research/usb-rndis-spike, moving L2 frames over the phone tether, NEPacketTunnelProvider integration of the RNDIS link, or debugging "phone tether won't pass packets on macOS". Reach for this whenever the task touches RNDIS, libusb bulk endpoints, REMOTE_NDIS_PACKET_MSG, or feeding the Android uplink into the bonding stack.
+description: Build, run, and extend the gemina userspace RNDIS data plane that drives an Android phone's USB tether from an unprivileged macOS process (no kext, no SIP, no DriverKit) — libusb/IOUSBHost, RNDIS message framing, packet-filter OIDs, DHCP-over-RNDIS. Use for any work in research/usb-rndis-spike, moving L2 frames over the phone tether, NEPacketTunnelProvider integration of the RNDIS link, or debugging "phone tether won't pass packets on macOS". Reach for this whenever the task touches RNDIS, libusb bulk endpoints, REMOTE_NDIS_PACKET_MSG, or feeding the Android uplink into the bonding stack.
 ---
 
-# Userspace RNDIS data plane (continuity-vpn)
+# Userspace RNDIS data plane (gemina)
 
 macOS ships no RNDIS host driver, but the Android RNDIS function is left
 **unclaimed** on the bus — so an ordinary process can claim it and speak RNDIS
@@ -43,7 +43,7 @@ strings — the redaction hook blocks those) to stay within the invariant.
 is ever compiled in:
 
 ```bash
-CONTINUITY_GATEWAY_IP=<ip> CONTINUITY_GATEWAY_PORT=51820 make run-egress
+GEMINA_GATEWAY_IP=<ip> GEMINA_GATEWAY_PORT=51820 make run-egress
 ```
 
 To confirm arrival (the bytes leave only via the USB bulk pipe, so any arrival
@@ -150,8 +150,8 @@ the **same** session+number over both (only the PathTag differs) so the gateway
 dedups by identity. Run it:
 
 ```bash
-CONTINUITY_GATEWAY_IP=<ip> CONTINUITY_GATEWAY_PORT=51820 \
-CONTINUITY_WIFI_IFACE=en0 make run-dualpath
+GEMINA_GATEWAY_IP=<ip> GEMINA_GATEWAY_PORT=51820 \
+GEMINA_WIFI_IFACE=en0 make run-dualpath
 ```
 
 Verify both paths are genuinely independent WANs: the gateway-host `tcpdump`

@@ -4,7 +4,7 @@ import (
 	"strings"
 	"unicode"
 
-	"continuity-vpn/internal/paths"
+	"github.com/joanmarcriera/gemina/internal/paths"
 )
 
 // Canonical Darwin evidence vocabulary. The live command sources emit these

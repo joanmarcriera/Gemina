@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 func TestHandshakeRejectsStaleClientHello(t *testing.T) {

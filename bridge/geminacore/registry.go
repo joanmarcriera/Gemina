@@ -1,4 +1,4 @@
-// Command continuitycore is a C-shared bridge that exposes the Go transport core
+// Command geminacore is a C-shared bridge that exposes the Go transport core
 // (pkg/clientcore.Session) over a narrow C ABI so the macOS
 // NEPacketTunnelProvider (Swift) can drive the proven dual-path
 // duplicate/deduplicate behaviour without re-deriving the transport brain in
@@ -19,8 +19,8 @@ package main
 import (
 	"sync"
 
-	"continuity-vpn/internal/protocol"
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/internal/protocol"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 // Bridge error codes returned (negated) across the C ABI. They are small and

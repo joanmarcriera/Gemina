@@ -16,7 +16,7 @@ In scope:
 * `internal/platform/darwin` fixture-backed evidence-to-link-kind derivation.
 * `internal/platform/darwin` command-backed live evidence reduction from
   `networksetup` and `ioreg` output.
-* `continuityctl darwin-evidence` redacted JSON report generation.
+* `geminactl darwin-evidence` redacted JSON report generation.
 * diagnostic decision values: `first-copy`, `duplicate`, `invalid`.
 
 Out of scope:
@@ -71,7 +71,7 @@ Out of scope:
 * Command-backed evidence sources reduce `networksetup` and `ioreg` output to
   coarse `Evidence` tokens and tests check that MAC-address and raw product-name
   fixture values are not retained.
-* `continuityctl darwin-evidence` sets the report claim to
+* `geminactl darwin-evidence` sets the report claim to
   `diagnostic-only-not-path-success` and reports incomplete classification
   explicitly.
 * Current result fields contain identifiers, path labels and decisions only; no payloads, access keys or private keys are present.

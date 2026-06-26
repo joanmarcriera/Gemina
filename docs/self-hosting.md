@@ -1,6 +1,6 @@
 # Self-hosting the gateway
 
-The gateway is the server half of Continuity VPN. It is a single container that
+The gateway is the server half of Gemina VPN. It is a single container that
 listens on one UDP port, deduplicates the copies of each packet that arrive over
 a client's two uplinks, and delivers the first valid copy. It holds no accounts
 and no database, so running your own is deliberately simple.
@@ -27,11 +27,11 @@ your own published image, then run it:
 docker run --rm \
   --read-only \
   -p 51820:51820/udp \
-  -e CONTINUITY_GATEWAY_ADDR=:51820 \
-  ghcr.io/example/continuity-gateway:latest
+  -e GEMINA_GATEWAY_ADDR=:51820 \
+  ghcr.io/example/gemina-gateway:latest
 ```
 
-`ghcr.io/example/continuity-gateway:latest` is a placeholder — substitute your
+`ghcr.io/example/gemina-gateway:latest` is a placeholder — substitute your
 own image reference.
 
 ### Configuration
@@ -40,10 +40,10 @@ The gateway is configured entirely through environment variables:
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `CONTINUITY_GATEWAY_ADDR` | `:51820` | UDP listen address and port. |
-| `CONTINUITY_GATEWAY_DEDUP_CAPACITY` | `8192` | Size of the in-memory deduplication window. |
-| `CONTINUITY_GATEWAY_READ_BUFFER` | `4 MiB` | Socket read buffer, for tolerating bursts. |
-| `CONTINUITY_GATEWAY_LOG_LEVEL` | `info` | Set to `debug` for per-packet decision logs. |
+| `GEMINA_GATEWAY_ADDR` | `:51820` | UDP listen address and port. |
+| `GEMINA_GATEWAY_DEDUP_CAPACITY` | `8192` | Size of the in-memory deduplication window. |
+| `GEMINA_GATEWAY_READ_BUFFER` | `4 MiB` | Socket read buffer, for tolerating bursts. |
+| `GEMINA_GATEWAY_LOG_LEVEL` | `info` | Set to `debug` for per-packet decision logs. |
 
 The container runs non-root on a read-only root filesystem; keep it that way.
 
@@ -75,7 +75,7 @@ the gateway without reconfiguring clients.
 
 ## Verifying it works
 
-With `CONTINUITY_GATEWAY_LOG_LEVEL=debug`, the gateway logs one line per packet
+With `GEMINA_GATEWAY_LOG_LEVEL=debug`, the gateway logs one line per packet
 decision as JSON. A working dual-path session shows `"decision":"first-copy"` for
 the first copy of each packet identity and `"decision":"duplicate"` for the later
 copy arriving over the second path. No client source address ever appears in the

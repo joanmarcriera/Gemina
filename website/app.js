@@ -1,4 +1,4 @@
-/* Continuity VPN — tiny progressive-enhancement script.
+/* Gemina VPN — tiny progressive-enhancement script.
    1. Cycles the hero "scope" so visitors can watch one input link
       drop while the OUTPUT trace stays unbroken — the core promise.
    2. Gives the waitlist form honest, no-backend feedback.

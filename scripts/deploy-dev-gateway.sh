@@ -15,9 +15,9 @@ set -euo pipefail
 
 HOST="${GATEWAY_HOST:-oracle}"
 PORT="${GATEWAY_PORT:-51820}"
-REMOTE_DIR="${GATEWAY_REMOTE_DIR:-/opt/continuity-vpn}"
-IMAGE="continuity-gateway:latest"
-UNIT="continuity-gateway.service"
+REMOTE_DIR="${GATEWAY_REMOTE_DIR:-/opt/gemina}"
+IMAGE="gemina-gateway:latest"
+UNIT="gemina-gateway.service"
 
 UNIT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$UNIT_ROOT"

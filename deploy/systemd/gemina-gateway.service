@@ -1,6 +1,6 @@
 [Unit]
-Description=continuity-vpn Stage-1 probe gateway (container)
-Documentation=https://github.com/joanmarcriera/continuity-vpn
+Description=gemina Stage-1 probe gateway (container)
+Documentation=https://github.com/joanmarcriera/gemina
 After=docker.service network-online.target
 Requires=docker.service
 Wants=network-online.target
@@ -13,15 +13,15 @@ Environment=DEDUP_CAPACITY=8192
 # debug: per-packet decision logs are visible (diagnostic phase). Switch to
 # info for throughput/load tests so the gateway is not logging-bound.
 Environment=LOG_LEVEL=debug
-ExecStartPre=-/usr/bin/docker rm -f continuity-gateway
-ExecStart=/usr/bin/docker run --rm --name continuity-gateway \
+ExecStartPre=-/usr/bin/docker rm -f gemina-gateway
+ExecStart=/usr/bin/docker run --rm --name gemina-gateway \
   --read-only \
   -p ${GATEWAY_PORT}:51820/udp \
-  -e CONTINUITY_GATEWAY_ADDR=:51820 \
-  -e CONTINUITY_GATEWAY_DEDUP_CAPACITY=${DEDUP_CAPACITY} \
-  -e CONTINUITY_GATEWAY_LOG_LEVEL=${LOG_LEVEL} \
-  continuity-gateway:latest
-ExecStop=/usr/bin/docker stop continuity-gateway
+  -e GEMINA_GATEWAY_ADDR=:51820 \
+  -e GEMINA_GATEWAY_DEDUP_CAPACITY=${DEDUP_CAPACITY} \
+  -e GEMINA_GATEWAY_LOG_LEVEL=${LOG_LEVEL} \
+  gemina-gateway:latest
+ExecStop=/usr/bin/docker stop gemina-gateway
 Restart=always
 RestartSec=3
 TimeoutStopSec=20

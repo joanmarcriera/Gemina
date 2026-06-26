@@ -1,6 +1,6 @@
 openapi: 3.1.0
 info:
-  title: Continuity VPN Control API
+  title: Gemina VPN Control API
   version: 0.0.0-stage1-probe
   description: Control API placeholder. No production control API exists yet.
 paths: {}

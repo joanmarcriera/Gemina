@@ -1,8 +1,8 @@
-import ContinuityVPNCore
+import GeminaVPNCore
 import Foundation
 
-// A dependency-free, headless check harness for the ContinuityVPNCore logic.
-// Run with `swift run ContinuityVPNCoreCheck`. Exits non-zero on any failure.
+// A dependency-free, headless check harness for the GeminaVPNCore logic.
+// Run with `swift run GeminaVPNCoreCheck`. Exits non-zero on any failure.
 // When full Xcode is installed these checks port directly to XCTest/Swift
 // Testing (one assertion each).
 
@@ -109,8 +109,8 @@ check(smartPreferredDown.sendPaths([wifiDown2, line2], primaryUnstable: false) =
       "smart with preferred down uses the surviving path")
 
 if failures == 0 {
-    print("PASS ContinuityVPNCore: all checks passed")
+    print("PASS GeminaVPNCore: all checks passed")
     exit(0)
 }
-print("FAIL ContinuityVPNCore: \(failures) check(s) failed")
+print("FAIL GeminaVPNCore: \(failures) check(s) failed")
 exit(1)

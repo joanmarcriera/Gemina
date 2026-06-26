@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"continuity-vpn/internal/paths"
-	"continuity-vpn/internal/platform/darwin"
+	"github.com/joanmarcriera/gemina/internal/paths"
+	"github.com/joanmarcriera/gemina/internal/platform/darwin"
 )
 
 const CompatibilityReportType = "stage-1-compatibility"
@@ -74,7 +74,7 @@ func (r CompatibilityReport) Summary() string {
 // when submitting, so we never auto-collect a device identifier.
 func (r CompatibilityReport) ShareReport() string {
 	return strings.Join([]string{
-		"Continuity VPN compatibility report (redacted — safe to share)",
+		"Gemina VPN compatibility report (redacted — safe to share)",
 		"  verdict:        " + string(r.Verdict),
 		"  macOS:          " + r.MacOSVersion,
 		"  android tether: " + r.AndroidTether.Mode,

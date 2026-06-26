@@ -3,7 +3,7 @@ package darwin
 import (
 	"testing"
 
-	"continuity-vpn/internal/paths"
+	"github.com/joanmarcriera/gemina/internal/paths"
 )
 
 // TestCanonicalEvidenceConstantsClassify guards that the exact key/value

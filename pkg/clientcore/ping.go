@@ -6,7 +6,7 @@ import (
 )
 
 // A tiny unauthenticated ping/pong used only for latency and loss measurement
-// (the `continuityctl benchmark` tool). It carries no identity and no payload —
+// (the `geminactl benchmark` tool). It carries no identity and no payload —
 // just a nonce the gateway echoes back. The pong is the same size as the ping,
 // so it cannot be used for traffic amplification.
 //

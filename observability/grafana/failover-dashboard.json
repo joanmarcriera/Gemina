@@ -9,8 +9,8 @@
       "pluginName": "Prometheus"
     }
   ],
-  "title": "Continuity — Failover Effectiveness",
-  "uid": "continuity-failover",
+  "title": "Gemina — Failover Effectiveness",
+  "uid": "gemina-failover",
   "schemaVersion": 39,
   "version": 1,
   "editable": true,
@@ -38,7 +38,7 @@
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "sum by (path) (rate(continuity_packets_total{decision=\"first-copy\"}[5m]))",
+          "expr": "sum by (path) (rate(gemina_packets_total{decision=\"first-copy\"}[5m]))",
           "legendFormat": "{{path}}"
         }
       ]
@@ -54,7 +54,7 @@
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "sum by (path) (rate(continuity_packets_total{decision=\"duplicate\"}[5m]))",
+          "expr": "sum by (path) (rate(gemina_packets_total{decision=\"duplicate\"}[5m]))",
           "legendFormat": "{{path}}"
         }
       ]
@@ -70,7 +70,7 @@
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "sum by (reason) (rate(continuity_rejected_total[5m]))",
+          "expr": "sum by (reason) (rate(gemina_rejected_total[5m]))",
           "legendFormat": "{{reason}}"
         }
       ]
@@ -87,7 +87,7 @@
         {
           "refId": "A",
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "sum by (path) (increase(continuity_packets_total{decision=\"first-copy\"}[1h])) / ignoring(path) group_left sum(increase(continuity_packets_total{decision=\"first-copy\"}[1h]))",
+          "expr": "sum by (path) (increase(gemina_packets_total{decision=\"first-copy\"}[1h])) / ignoring(path) group_left sum(increase(gemina_packets_total{decision=\"first-copy\"}[1h]))",
           "legendFormat": "{{path}}"
         }
       ]

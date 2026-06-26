@@ -1,14 +1,14 @@
 ---
-name: run-continuityctl
-description: Run, build, test, verify, and drive the continuity-vpn Go project and its continuityctl CLI (including the darwin-evidence diagnostic). Use to validate a work cycle (vet + race tests + benchmark + gofmt + docs/licence gates) in one command and to orient quickly without re-reading every doc.
+name: run-geminactl
+description: Run, build, test, verify, and drive the gemina Go project and its geminactl CLI (including the darwin-evidence diagnostic). Use to validate a work cycle (vet + race tests + benchmark + gofmt + docs/licence gates) in one command and to orient quickly without re-reading every doc.
 ---
 
-# Run & verify continuity-vpn (continuityctl)
+# Run & verify gemina (geminactl)
 
-`continuity-vpn` is a Go monorepo for a macOS continuity VPN. Today the only
-runnable binary is **`continuityctl`**; `gateway`, `entitlement-api`,
+`gemina` is a Go monorepo for a macOS continuity VPN. Today the only
+runnable binary is **`geminactl`**; `gateway`, `entitlement-api`,
 `packet-generator`, `network-simulator` are stage-marker stubs. The whole thing
-is driven by one script: **`.claude/skills/run-continuityctl/smoke.sh`** (build +
+is driven by one script: **`.claude/skills/run-geminactl/smoke.sh`** (build +
 drive the CLI + assert redaction invariants; `verify` adds the full gate).
 
 Paths below are relative to the repo root (the unit). Run on **macOS** — the
@@ -23,7 +23,7 @@ Paths below are relative to the repo root (the unit). Run on **macOS** — the
   `internal/paths` (Wi-Fi / Android-USB-tether candidate classification, no
   hard-coded interface names), `internal/platform/darwin` (snapshot boundary +
   live BSD collector + evidence-derived link kinds + command-backed evidence),
-  `internal/diagnostics` + `cmd/continuityctl darwin-evidence` (redacted JSON).
+  `internal/diagnostics` + `cmd/geminactl darwin-evidence` (redacted JSON).
 - **What does NOT exist:** UDP egress, gateway runtime, encryption, entitlement,
   payments, NetworkExtension. Don't claim dual-path success without packet
   captures (see the bottom of `PROJECT_STATE.md`).
@@ -37,7 +37,7 @@ Paths below are relative to the repo root (the unit). Run on **macOS** — the
 ## Prerequisites
 
 ```bash
-go version      # Go toolchain (module: continuity-vpn, see go.mod)
+go version      # Go toolchain (module: gemina, see go.mod)
 python3 --version   # used by the driver only to validate JSON
 ```
 
@@ -45,11 +45,11 @@ python3 --version   # used by the driver only to validate JSON
 
 ```bash
 # App smoke: build, run both subcommands, assert no MAC/IPv4 leak in the report
-.claude/skills/run-continuityctl/smoke.sh
+.claude/skills/run-geminactl/smoke.sh
 
 # Full per-cycle gate: app smoke + go vet + go test -race + dedup benchmark
 # + gofmt + docs-check + licence-check
-.claude/skills/run-continuityctl/smoke.sh verify
+.claude/skills/run-geminactl/smoke.sh verify
 ```
 
 `verify` is the one command to run before committing a cycle — it is the whole
@@ -60,12 +60,12 @@ prints `FAIL <what>` and stops.
 ## Run the CLI directly
 
 ```bash
-go build -o /tmp/continuityctl ./cmd/continuityctl
-/tmp/continuityctl                 # -> continuityctl:stage-1-probe
-/tmp/continuityctl darwin-evidence # -> redacted Stage 1 evidence JSON
-/tmp/continuityctl preflight       # -> one-line compatibility verdict + next step
-/tmp/continuityctl preflight -json # -> redacted compatibility report (app/website)
-/tmp/continuityctl probe -h        # -> per-path UDP probe (incl. -interface2 dual-path)
+go build -o /tmp/geminactl ./cmd/geminactl
+/tmp/geminactl                 # -> geminactl:stage-1-probe
+/tmp/geminactl darwin-evidence # -> redacted Stage 1 evidence JSON
+/tmp/geminactl preflight       # -> one-line compatibility verdict + next step
+/tmp/geminactl preflight -json # -> redacted compatibility report (app/website)
+/tmp/geminactl probe -h        # -> per-path UDP probe (incl. -interface2 dual-path)
 ```
 
 `darwin-evidence` reports raw path evidence; `preflight` is the user-facing

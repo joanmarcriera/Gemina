@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # PostToolUse guard: stop raw host identifiers (MAC / IPv4 dotted-quad) from
 # landing in product source, diagnostics, research or docs. Mirrors the runtime
-# redaction invariant asserted by .claude/skills/run-continuityctl/smoke.sh, but
+# redaction invariant asserted by .claude/skills/run-geminactl/smoke.sh, but
 # at edit time instead of gate time.
 #
 # Scope: files under internal/platform/darwin, internal/diagnostics, research/,

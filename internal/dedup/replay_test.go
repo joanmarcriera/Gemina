@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // --- unit tests ---------------------------------------------------------------

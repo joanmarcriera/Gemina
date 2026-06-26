@@ -4,9 +4,9 @@ import (
 	"errors"
 	"sync"
 
-	"continuity-vpn/internal/dedup"
-	"continuity-vpn/internal/protocol"
-	"continuity-vpn/pkg/clientcore"
+	"github.com/joanmarcriera/gemina/internal/dedup"
+	"github.com/joanmarcriera/gemina/internal/protocol"
+	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
 
 // ErrUnknownSession is returned for a datagram whose session has no key — the

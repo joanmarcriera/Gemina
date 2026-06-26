@@ -1,11 +1,11 @@
-#if canImport(CContinuityCore)
-import CContinuityCore // SwiftPM: the C module. In Xcode the symbols come from
+#if canImport(CGeminaCore)
+import CGeminaCore // SwiftPM: the C module. In Xcode the symbols come from
 // the bridging header (Bridging-Header.h) instead, so the import is skipped.
 #endif
 import Foundation
 
 // CoreTransport is the Swift face of the Go transport core (pkg/clientcore) over
-// the C ABI (bridge/continuitycore, ADR-0005). It implements TransportCore so the
+// the C ABI (bridge/geminacore, ADR-0005). It implements TransportCore so the
 // DualPathRelay / NEPacketTunnelProvider can frame, encrypt and deduplicate
 // without knowing about cgo.
 //
@@ -34,7 +34,7 @@ extension CoreTransportError: LocalizedError {
     }
 }
 
-// Negative return codes from the C ABI (see continuitycore.h).
+// Negative return codes from the C ABI (see geminacore.h).
 private func coreError(_ code: Int32) -> CoreTransportError {
     switch code {
     case -1: return .badHandle

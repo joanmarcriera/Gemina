@@ -31,11 +31,11 @@ GOOS=linux GOARCH=arm64 go build -tags e2e ./tests/end-to-end/...
 3. Run the rig, pointing it at the gateway, with one entry per uplink interface:
 
    ```sh
-   sudo CONTINUITY_RIG_GATEWAY=<gateway-host>:51820 \
-        CONTINUITY_RIG_IDENTITY=<base64 ed25519 pub from the gateway log> \
-        CONTINUITY_RIG_TOKEN=<entitlement token> \
-        CONTINUITY_RIG_TUNNEL_IP=<assigned tunnel address> \
-        CONTINUITY_RIG_PATHS=<iface-a>,<iface-b> \
+   sudo GEMINA_RIG_GATEWAY=<gateway-host>:51820 \
+        GEMINA_RIG_IDENTITY=<base64 ed25519 pub from the gateway log> \
+        GEMINA_RIG_TOKEN=<entitlement token> \
+        GEMINA_RIG_TUNNEL_IP=<assigned tunnel address> \
+        GEMINA_RIG_PATHS=<iface-a>,<iface-b> \
         ./rig
    ```
 
@@ -43,5 +43,5 @@ GOOS=linux GOARCH=arm64 go build -tags e2e ./tests/end-to-end/...
    the named interfaces down. The session should survive; the other uplink keeps
    carrying the duplicated copies.
 
-`CONTINUITY_RIG_PATHS` is optional — omit it to use the default route as a single
+`GEMINA_RIG_PATHS` is optional — omit it to use the default route as a single
 path. Each path is a UDP socket bound to its interface (`SO_BINDTODEVICE`).

@@ -1,11 +1,11 @@
 ---
 name: android-usb-tether-function
-description: Switch and inspect an Android phone's USB tether gadget function (RNDIS vs NCM) over adb to control whether macOS can natively claim it as a network interface. Use when working on continuity-vpn uplink acquisition, deciding if a given phone tethers over NCM (macOS-native, no kext) or RNDIS (needs a driver), driving `svc usb setFunctions`/`dumpsys tethering`, or building the pre-purchase device compatibility matrix. Reach for this whenever the task involves Android USB tethering, `adb` USB gadget control, NCM/RNDIS, or "make the phone show up as a usable NIC on the Mac".
+description: Switch and inspect an Android phone's USB tether gadget function (RNDIS vs NCM) over adb to control whether macOS can natively claim it as a network interface. Use when working on gemina uplink acquisition, deciding if a given phone tethers over NCM (macOS-native, no kext) or RNDIS (needs a driver), driving `svc usb setFunctions`/`dumpsys tethering`, or building the pre-purchase device compatibility matrix. Reach for this whenever the task involves Android USB tethering, `adb` USB gadget control, NCM/RNDIS, or "make the phone show up as a usable NIC on the Mac".
 ---
 
 # Controlling Android USB tether function (RNDIS ↔ NCM) over adb
 
-The continuity-vpn second WAN needs the phone to appear on macOS as a **usable
+The gemina second WAN needs the phone to appear on macOS as a **usable
 network interface with cellular upstream**. Whether that's possible without a
 custom macOS driver depends entirely on which **USB gadget function** the phone
 tethers over:

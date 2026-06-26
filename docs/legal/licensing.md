@@ -53,7 +53,7 @@ Everything the client ships or links, plus the shared core and tooling:
 - `internal/platform/`
 - `internal/diagnostics/`
 - `internal/bootstrap/`
-- `cmd/continuityctl/`
+- `cmd/geminactl/`
 - the rest of the shared core and tooling
 
 ## Compatibility: Apache-2.0 into AGPL-3.0

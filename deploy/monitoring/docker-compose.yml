@@ -1,20 +1,20 @@
-# Continuity gateway monitoring stack: Prometheus + Grafana.
+# Gemina gateway monitoring stack: Prometheus + Grafana.
 #
 # Scrapes the gateway's /metrics endpoint and renders the failover dashboard.
 # Both services are bound to localhost only — reach Grafana through an SSH
 # tunnel (see README.md), never a public port. No new cloud ingress rule is
 # required, and no host identifier is ever published.
 #
-# The gateway container must be attached to the same `continuity-mon` network
-# and started with CONTINUITY_GATEWAY_METRICS_ADDR=:9090 (see
-# deploy/systemd/continuity-gateway.service). Prometheus then reaches it by
+# The gateway container must be attached to the same `gemina-mon` network
+# and started with GEMINA_GATEWAY_METRICS_ADDR=:9090 (see
+# deploy/systemd/gemina-gateway.service). Prometheus then reaches it by
 # container name on the private network — the metrics port is never published
 # to the host.
 
 services:
   prometheus:
     image: prom/prometheus:v3.1.0
-    container_name: continuity-prometheus
+    container_name: gemina-prometheus
     restart: unless-stopped
     user: nobody
     command:
@@ -30,11 +30,11 @@ services:
       # Localhost only; for inspection via SSH tunnel. Not externally reachable.
       - "127.0.0.1:9091:9090"
     networks:
-      - continuity-mon
+      - gemina-mon
 
   grafana:
     image: grafana/grafana:11.4.0
-    container_name: continuity-grafana
+    container_name: gemina-grafana
     restart: unless-stopped
     environment:
       GF_SECURITY_ADMIN_USER: admin
@@ -54,11 +54,11 @@ services:
     depends_on:
       - prometheus
     networks:
-      - continuity-mon
+      - gemina-mon
 
 networks:
   # Shared with the gateway container; created out-of-band by the deploy script.
-  continuity-mon:
+  gemina-mon:
     external: true
 
 volumes:

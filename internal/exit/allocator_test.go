@@ -5,7 +5,7 @@ import (
 	"net/netip"
 	"testing"
 
-	"continuity-vpn/internal/protocol"
+	"github.com/joanmarcriera/gemina/internal/protocol"
 )
 
 // Tunnel pool: 10.0.0.0/24 (private range, safe for tests).

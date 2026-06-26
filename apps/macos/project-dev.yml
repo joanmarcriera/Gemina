@@ -3,11 +3,11 @@
 # membership (needed for the Network Extensions capability) activates.
 #
 #   cd apps/macos && xcodegen generate --spec project-dev.yml
-#   open ContinuityDev.xcodeproj   # set your (personal) Team, Run
+#   open GeminaDev.xcodeproj   # set your (personal) Team, Run
 #
 # Use the full project.yml once your Developer Program membership is Active.
 
-name: ContinuityDev
+name: GeminaDev
 
 options:
   bundleIdPrefix: com.joanmarcriera
@@ -24,36 +24,36 @@ settings:
     SWIFT_STRICT_CONCURRENCY: complete
 
 targets:
-  ContinuityVPNShared:
+  GeminaVPNShared:
     type: framework
     platform: macOS
     sources: [Shared]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.shared
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.gemina.shared
         GENERATE_INFOPLIST_FILE: "YES"
 
-  ContinuityVPNCore:
+  GeminaVPNCore:
     type: framework
     platform: macOS
     sources: [Core]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.core
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.gemina.core
         GENERATE_INFOPLIST_FILE: "YES"
 
-  ContinuityDev:
+  GeminaDev:
     type: application
     platform: macOS
     sources: [AppUI]
     dependencies:
-      - target: ContinuityVPNCore
+      - target: GeminaVPNCore
         embed: true
-      - target: ContinuityVPNShared
+      - target: GeminaVPNShared
         embed: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.continuity.dev
+        PRODUCT_BUNDLE_IDENTIFIER: com.joanmarcriera.gemina.dev
         GENERATE_INFOPLIST_FILE: "YES"
         INFOPLIST_KEY_LSUIElement: "YES"
-        CODE_SIGN_ENTITLEMENTS: Resources/Continuity-dev.entitlements
+        CODE_SIGN_ENTITLEMENTS: Resources/Gemina-dev.entitlements

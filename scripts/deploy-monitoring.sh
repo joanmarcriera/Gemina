@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deploy the Prometheus + Grafana monitoring stack to the gateway host.
 #
-# It rsyncs the first-party source, ensures the shared `continuity-mon` docker
+# It rsyncs the first-party source, ensures the shared `gemina-mon` docker
 # network exists, refreshes the gateway unit so it exposes /metrics on that
 # network, generates a Grafana admin password on first run (never printed,
 # never committed), and brings the stack up with docker compose.
@@ -16,8 +16,8 @@
 set -euo pipefail
 
 HOST="${GATEWAY_HOST:-oracle}"
-REMOTE_DIR="${GATEWAY_REMOTE_DIR:-/opt/continuity-vpn}"
-UNIT="continuity-gateway.service"
+REMOTE_DIR="${GATEWAY_REMOTE_DIR:-/opt/gemina}"
+UNIT="gemina-gateway.service"
 MON_DIR="$REMOTE_DIR/deploy/monitoring"
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -39,10 +39,10 @@ rsync -az --delete \
   --exclude 'deploy/monitoring/.env' \
   ./ "$HOST:$REMOTE_DIR/"
 
-say "ensure shared network + refresh gateway unit (exposes /metrics on continuity-mon)"
+say "ensure shared network + refresh gateway unit (exposes /metrics on gemina-mon)"
 ssh "$HOST" "
   set -e
-  sudo docker network create continuity-mon 2>/dev/null || true
+  sudo docker network create gemina-mon 2>/dev/null || true
   sudo install -m 0644 '$REMOTE_DIR/deploy/systemd/$UNIT' '/etc/systemd/system/$UNIT'
   sudo systemctl daemon-reload
   sudo systemctl restart '$UNIT'
@@ -71,7 +71,7 @@ ssh "$HOST" "
   sudo docker compose ps
   echo '--- prometheus target health (expect up=1 once a scrape completes) ---'
   sleep 6
-  curl -fsS 'http://127.0.0.1:9091/api/v1/query?query=up{job=\"continuity-gateway\"}' 2>/dev/null \
+  curl -fsS 'http://127.0.0.1:9091/api/v1/query?query=up{job=\"gemina-gateway\"}' 2>/dev/null \
     | sed -E 's/[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/<ip>/g' || echo '(query failed; check compose logs)'
 "
 

@@ -1,4 +1,4 @@
-# SEO & content strategy — Continuity VPN
+# SEO & content strategy — Gemina VPN
 
 > **Status: pre-release.** This document plans the discovery and content work for an
 > open-source product that has **proven its dual-path transport** but has **not yet
@@ -58,7 +58,7 @@ on marketing.
 2. *Mechanism* ("how does internet failover actually work") → mid-funnel explainer.
 3. *Category* ("internet failover for macOS", "bond wifi and cellular mac") → landing
    page + comparison.
-4. *Brand/comparison* ("Speedify alternative", "Continuity VPN") → comparison + repo.
+4. *Brand/comparison* ("Speedify alternative", "Gemina VPN") → comparison + repo.
 5. *Self-host* ("self-host a continuity gateway") → docs-led, high-intent.
 
 ---
@@ -136,17 +136,17 @@ If we mention them, it is only to correct the expectation.
 The current page (`website/index.html`) is already strong: honest pre-release banner,
 reliability-not-speed framing, semantic sections, skip link, ARIA labels. The
 following are concrete additions/refinements. The GitHub URL placeholder
-`github.com/example/continuity-vpn` should be replaced with the real repo
-`https://github.com/joanmarcriera/continuity-vpn` before launch.
+`github.com/example/gemina` should be replaced with the real repo
+`https://github.com/joanmarcriera/gemina` before launch.
 
 ### 3.1 Title tag
 
 Keep it benefit-led and under ~60 characters where possible. Current:
-`Continuity VPN — your connection never notices a dropout` (good). Alternative that
+`Gemina VPN — your connection never notices a dropout` (good). Alternative that
 captures category + platform for search:
 
 ```html
-<title>Continuity VPN — seamless internet failover for macOS</title>
+<title>Gemina VPN — seamless internet failover for macOS</title>
 ```
 
 Pick one; do not stuff. If the homepage targets the symptom audience, the current
@@ -158,7 +158,7 @@ The current description is accurate and benefit-led. Trim to ~155 characters and
 with the reliability promise:
 
 ```html
-<meta name="description" content="Continuity VPN keeps your Mac online when one link drops — it sends your traffic over Wi-Fi and your Android phone's cellular at once. Open source, self-hostable.">
+<meta name="description" content="Gemina VPN keeps your Mac online when one link drops — it sends your traffic over Wi-Fi and your Android phone's cellular at once. Open source, self-hostable.">
 ```
 
 ### 3.3 H1 / H2 structure
@@ -185,20 +185,20 @@ graphic with the tagline) at `website/og-image.png`, ideally 1200×630.
 
 ```html
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Continuity VPN">
-<meta property="og:title" content="Continuity VPN — seamless internet failover for macOS">
+<meta property="og:site_name" content="Gemina VPN">
+<meta property="og:title" content="Gemina VPN — seamless internet failover for macOS">
 <meta property="og:description" content="Sends your Mac's traffic over Wi-Fi and your Android phone's cellular at once, so if one link drops your call, SSH or VPN never notices. Open source, self-hostable. Pre-release.">
-<meta property="og:url" content="https://continuityvpn.example/">
-<meta property="og:image" content="https://continuityvpn.example/og-image.png">
+<meta property="og:url" content="https://geminavpn.example/">
+<meta property="og:image" content="https://geminavpn.example/og-image.png">
 <meta property="og:image:alt" content="Two input signal traces — Wi-Fi and phone — merging into one unbroken output line.">
 
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Continuity VPN — seamless internet failover for macOS">
+<meta name="twitter:title" content="Gemina VPN — seamless internet failover for macOS">
 <meta name="twitter:description" content="Two links at once so one dropout never ends your call, SSH or VPN. Open source, self-hostable. Pre-release.">
-<meta name="twitter:image" content="https://continuityvpn.example/og-image.png">
+<meta name="twitter:image" content="https://geminavpn.example/og-image.png">
 ```
 
-Replace `continuityvpn.example` with the real domain once chosen. Keep the OG
+Replace `geminavpn.example` with the real domain once chosen. Keep the OG
 description honest: it includes "Pre-release."
 
 ### 3.5 JSON-LD structured data (`SoftwareApplication`)
@@ -213,11 +213,11 @@ real reviews and faking them is both dishonest and against schema guidelines.
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "Continuity VPN",
+  "name": "Gemina VPN",
   "applicationCategory": "UtilitiesApplication",
   "operatingSystem": "macOS",
   "description": "Open-source macOS reliability tool that sends your traffic over Wi-Fi and an Android phone's USB-tethered cellular link at the same time, delivering seamless failover so a dropped link never interrupts a call, SSH session or VPN. Pre-release: dual-path transport proven; encryption and the full app in development.",
-  "url": "https://continuityvpn.example/",
+  "url": "https://geminavpn.example/",
   "license": "https://www.gnu.org/licenses/agpl-3.0.html",
   "isAccessibleForFree": true,
   "softwareVersion": "pre-release",
@@ -228,7 +228,7 @@ real reviews and faking them is both dishonest and against schema guidelines.
     "priceCurrency": "USD",
     "description": "Self-host the gateway free and open source. An optional paid hosted gateway is planned (pricing to be announced; early access)."
   },
-  "codeRepository": "https://github.com/joanmarcriera/continuity-vpn"
+  "codeRepository": "https://github.com/joanmarcriera/gemina"
 }
 </script>
 ```
@@ -278,7 +278,7 @@ Place at site root (`website/robots.txt`):
 ```
 User-agent: *
 Allow: /
-Sitemap: https://continuityvpn.example/sitemap.xml
+Sitemap: https://geminavpn.example/sitemap.xml
 ```
 
 Do not block the blog or docs once published. Do not add fake disallows.
@@ -291,7 +291,7 @@ Root-level (`website/sitemap.xml`). Start minimal and grow as content ships:
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://continuityvpn.example/</loc>
+    <loc>https://geminavpn.example/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -308,7 +308,7 @@ Add a self-referential canonical to every page to avoid duplicate-URL dilution (
 trailing-slash vs not, query strings):
 
 ```html
-<link rel="canonical" href="https://continuityvpn.example/">
+<link rel="canonical" href="https://geminavpn.example/">
 ```
 
 Pick one canonical host (www vs apex) and 301-redirect the other.
@@ -363,7 +363,7 @@ status. Suggested slugs under `/blog/`.
 | 9 | **Two independent WANs: proving a packet arrived over both Wi-Fi and cellular** | Engineering write-up of the proven dual-path result; build-in-public credibility. | `multipath udp reliability` |
 | 10 | **No root, no kernel extension, no SIP changes: driving a phone tether from userspace** | The unusual technical achievement; appeals to macOS/security-minded developers. | `android tether mac no root` |
 | 11 | **What "pre-release" means for an open-source VPN — what's proven, what isn't** | Transparency post that builds trust and ranks for brand + due-diligence queries. | `continuity vpn open source` |
-| 12 | **A compatibility check before you commit: which Android + Mac combos work** | Practical guide around `continuityctl preflight`; captures device-compat searches. | `is my android phone supported tethering mac` |
+| 12 | **A compatibility check before you commit: which Android + Mac combos work** | Practical guide around `geminactl preflight`; captures device-compat searches. | `is my android phone supported tethering mac` |
 
 Editorial rules for every post: link to the GitHub repo and relevant `docs/`; show
 real code/commands (from the repo, not invented); include the pre-release caveat where
@@ -392,7 +392,7 @@ community launches as first-class channels.
 
 ### 6.2 Launch / community angles (honest, pre-release)
 
-- **Show HN** — angle: *"Show HN: Continuity VPN — userspace Android USB tether on
+- **Show HN** — angle: *"Show HN: Gemina VPN — userspace Android USB tether on
   macOS, no root or kext, with proven dual-path failover (pre-release)."* HN respects
   technical honesty; lead with the proven engineering result and clearly label what is
   not done. Link the repo and the dual-path write-up (article #9).
@@ -415,7 +415,7 @@ submission-ready.
 
 ### 6.4 Comparison pages
 
-Build honest comparison pages (also serve as articles #7/#8): "Continuity VPN vs
+Build honest comparison pages (also serve as articles #7/#8): "Gemina VPN vs
 Speedify", "open-source connection-reliability tools compared". State what each
 alternative does well, state our pre-release limitations, never publish unmeasured
 numbers. These pages capture high-intent comparison searches and reinforce the

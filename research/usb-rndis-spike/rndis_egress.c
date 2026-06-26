@@ -9,7 +9,7 @@
 //
 // The gateway address is taken from the environment so no host/server address is
 // ever compiled in or printed (repo redaction invariant):
-//   CONTINUITY_GATEWAY_IP=<dotted quad>   CONTINUITY_GATEWAY_PORT=<port>
+//   GEMINA_GATEWAY_IP=<dotted quad>   GEMINA_GATEWAY_PORT=<port>
 //
 // Provenance: clean-room from MS-RNDIS + DHCP/ARP/IPv4/UDP RFCs and the
 // continuity probe wire format (internal/protocol). NOT GPL-derived.
@@ -26,7 +26,7 @@ int main(void) {
     uint8_t gw_ip[4];
     int gw_port;
     if (gateway_from_env(gw_ip, &gw_port) != 0) {
-        printf("FAIL config: set CONTINUITY_GATEWAY_IP to the gateway dotted "
+        printf("FAIL config: set GEMINA_GATEWAY_IP to the gateway dotted "
                "quad\n");
         return 2;
     }
