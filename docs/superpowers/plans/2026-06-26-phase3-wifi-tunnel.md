@@ -48,6 +48,14 @@ the assigned IP is a fixed-offset field at `[118:122]`, **not** signed (document
 DoS-equivalence; data plane stays AEAD-authenticated — consider binding it into
 the signed transcript as a follow-up).
 
+Security hardening staged for the on-hardware WS-F run: the gateway entitlement
+token now lives in the Keychain (not UserDefaults) and is entered via a SecureField
+(`abfaeec`). The remaining step — move it to a shared keychain-access-group +
+`NETunnelProviderProtocol.passwordReference` so the raw token never enters
+`providerConfiguration`, with `GeminaTunnelBootstrap` reading it from the password
+reference — needs cross-process keychain resolution that can only be validated on
+hardware, so it is documented in code and done during WS-F, not shipped blind.
+
 Deferred review findings to fold into WS-D2/path-monitor work (not bugs today):
 M1 `[weak self]` in `startTunnel` skips `readOutboundLoop` if self is nil (use a
 strong capture in the bootstrap); M2 `currentPathStates`/`primaryUnstable` have no
