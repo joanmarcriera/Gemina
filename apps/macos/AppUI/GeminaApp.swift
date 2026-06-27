@@ -117,8 +117,8 @@ struct StatusView: View {
     private var protectBinding: Binding<Bool> {
         Binding(
             get: { [tunnel] in
-                let s = tunnel.status
-                return s == .connected || s == .connecting || s == .reasserting
+                let state = tunnel.status
+                return state == .connected || state == .connecting || state == .reasserting
             },
             set: { on in
                 if on { connect() } else { tunnel.stop() }

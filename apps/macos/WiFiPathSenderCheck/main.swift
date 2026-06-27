@@ -26,14 +26,16 @@ func check(_ condition: Bool, _ message: String) {
 /// Start a UDP echo server on a random loopback port. Returns (listener, port).
 func makeEchoServer() -> (NWListener, UInt16) {
     let params = NWParameters.udp
-    let listener = try! NWListener(using: params, on: .any)
+    guard let listener = try? NWListener(using: params, on: .any) else {
+        fatalError("could not create loopback echo listener")
+    }
     let sem = DispatchSemaphore(value: 0)
     let portBox = OSAllocatedUnfairLock<UInt16>(initialState: 0)
-    let q = DispatchQueue(label: "check.echo")
+    let queue = DispatchQueue(label: "check.echo")
 
     listener.newConnectionHandler = { conn in
         conn.stateUpdateHandler = { _ in }
-        conn.start(queue: q)
+        conn.start(queue: queue)
         @Sendable func echo() {
             conn.receiveMessage { data, _, _, _ in
                 if let data {
@@ -53,7 +55,7 @@ func makeEchoServer() -> (NWListener, UInt16) {
             sem.signal()
         }
     }
-    listener.start(queue: q)
+    listener.start(queue: queue)
     sem.wait()
     return (listener, portBox.withLock { $0 })
 }

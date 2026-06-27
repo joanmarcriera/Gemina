@@ -91,8 +91,8 @@ final class GeminaTunnelBootstrap: GeminaTunnelProvider, @unchecked Sendable {
 
         // Stash the dotted-quad form of the leased tunnel IP (nil if unassigned).
         let ip = handshake.assignedIPv4
-        if ip.0 != 0 || ip.1 != 0 || ip.2 != 0 || ip.3 != 0 {
-            assignedAddress.withLock { $0 = "\(ip.0).\(ip.1).\(ip.2).\(ip.3)" }
+        if ip.count == 4, ip.contains(where: { $0 != 0 }) {
+            assignedAddress.withLock { $0 = "\(ip[0]).\(ip[1]).\(ip[2]).\(ip[3])" }
         }
 
         // Feed datagrams arriving on Wi-Fi through dedup/decrypt and back to the tunnel.
