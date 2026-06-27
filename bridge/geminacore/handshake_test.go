@@ -154,8 +154,38 @@ func TestBeginHandshakeBufferTooSmall(t *testing.T) {
 }
 
 func TestCompleteHandshakeBadHandle(t *testing.T) {
-	if h := completeHandshake(999999, make([]byte, 118), 64, nil); h != 0 {
+	if h := completeHandshake(999999, make([]byte, serverHelloSize), 64, nil); h != 0 {
 		t.Fatalf("unknown handshake handle: want 0, got %d", h)
+	}
+}
+
+// serverHelloSize mirrors clientcore's ServerHello frame length so the bad-handle
+// test does not silently encode a stale wire size. The handle check fires before
+// the wire bytes are parsed, so the exact value only documents intent.
+const serverHelloSize = 122
+
+// TestCancelHandshakeConsumesHandle proves cancelHandshake discards an in-flight
+// handshake so it cannot leak and the handle cannot be reused: a subsequent
+// completeHandshake on the cancelled handle returns 0.
+func TestCancelHandshakeConsumesHandle(t *testing.T) {
+	gwPub, gwPriv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("identity: %v", err)
+	}
+	out := make([]byte, 4096)
+	helloLen, hs := beginHandshake(gwPub, "tok", out)
+	if helloLen <= 0 || hs == 0 {
+		t.Fatalf("beginHandshake failed: len %d handle %d", helloLen, hs)
+	}
+
+	cancelHandshake(hs)
+
+	// The handle is consumed: completing it now (even with a valid ServerHello)
+	// must fail, proving the in-flight state was freed and cannot be reused.
+	serverHello, _, _ := simulateGateway(t, gwPriv, out[:helloLen])
+	if h := completeHandshake(hs, serverHello, 64, nil); h != 0 {
+		reg.remove(h)
+		t.Fatalf("completing a cancelled handshake returned a session: %d", h)
 	}
 }
 

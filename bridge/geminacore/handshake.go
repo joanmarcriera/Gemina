@@ -117,3 +117,13 @@ func completeHandshake(hsHandle uint64, serverHello []byte, dedupCapacity int, a
 	}
 	return reg.add(session)
 }
+
+// cancelHandshake discards an in-flight handshake without completing it, freeing
+// its state (including the client's ephemeral private key) from hsReg. The host
+// calls it when it abandons a begun handshake — e.g. the socket errored before a
+// ServerHello arrived — so a never-completed handshake cannot leak. Cancelling an
+// unknown handle is a no-op; the handle is consumed either way and must not be
+// reused.
+func cancelHandshake(hsHandle uint64) {
+	hsReg.take(hsHandle)
+}

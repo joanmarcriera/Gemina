@@ -96,6 +96,17 @@ func cc_handshake_complete(hsHandle C.uint64_t, serverHello *C.uint8_t, serverHe
 	return C.uint64_t(handle)
 }
 
+// cc_handshake_cancel discards an in-flight handshake named by hsHandle without
+// completing it, freeing its state (including the ephemeral private key). Call it
+// when abandoning a handshake begun with cc_handshake_begin — e.g. the socket
+// errored before a ServerHello arrived — so it cannot leak. Cancelling an unknown
+// handle is a no-op; the handle is consumed and must not be reused.
+//
+//export cc_handshake_cancel
+func cc_handshake_cancel(hsHandle C.uint64_t) {
+	cancelHandshake(uint64(hsHandle))
+}
+
 // cc_outbound frames+encrypts payloadLen bytes at payload for the session named
 // by handle, writing the framed datagram into the out buffer (capacity outCap).
 // It returns the number of bytes written into out, or a negative error code:

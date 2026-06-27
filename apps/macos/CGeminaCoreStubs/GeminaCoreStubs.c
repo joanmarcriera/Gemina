@@ -56,6 +56,10 @@ uint64_t cc_handshake_complete(uint64_t hsHandle, uint8_t *serverHello,
     return 0x1001; /* a fixed, non-zero fake session handle */
 }
 
+void cc_handshake_cancel(uint64_t hsHandle) {
+    (void)hsHandle;
+}
+
 int cc_outbound(uint64_t handle, uint8_t *payload, int payloadLen,
                 uint8_t *out, int outCap) {
     (void)handle; (void)payload; (void)payloadLen; (void)out; (void)outCap;
