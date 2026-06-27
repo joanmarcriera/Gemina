@@ -23,12 +23,13 @@ struct StatusView: View {
     @State private var showingAbout = false
     @State private var showingSettings = false
 
-    // Gateway configuration. Persisted in UserDefaults for now; a production build
-    // should keep the token in the Keychain, not UserDefaults.
+    // Gateway configuration. Host/port/pinned public key are non-secret and live
+    // in UserDefaults; the entitlement token is a bearer secret and lives in the
+    // Keychain (see KeychainStore), loaded into this transient @State.
     @AppStorage("gemina.gatewayHost") private var gatewayHost = ""
     @AppStorage("gemina.gatewayPort") private var gatewayPort = "51820"
     @AppStorage("gemina.gatewayPublicKey") private var gatewayPublicKey = ""
-    @AppStorage("gemina.token") private var token = ""
+    @State private var token = ""
 
     /// The reason for the name — shown in the "About Gemina" dialog. A Legio
     /// Gemina was two understrength Roman legions merged into one "twin" legion so
@@ -85,6 +86,8 @@ struct StatusView: View {
         } message: {
             Text(Self.nameStory)
         }
+        .onAppear { loadToken() }
+        .onChange(of: token) { _, newValue in KeychainStore.setToken(newValue) }
     }
 
     // MARK: - Derived status
@@ -166,11 +169,23 @@ struct StatusView: View {
             TextField("Gateway host", text: $gatewayHost)
             TextField("Port", text: $gatewayPort)
             TextField("Gateway public key (base64)", text: $gatewayPublicKey)
-            TextField("Token", text: $token)
+            SecureField("Token", text: $token)
+                .privacySensitive()
         }
         .textFieldStyle(.roundedBorder)
         .font(.caption)
         .padding(.vertical, 4)
+    }
+
+    /// Load the token from the Keychain, migrating a legacy UserDefaults value
+    /// (from an earlier build) into the Keychain once and erasing the plist entry.
+    private func loadToken() {
+        let defaults = UserDefaults.standard
+        if let legacy = defaults.string(forKey: "gemina.token"), !legacy.isEmpty {
+            KeychainStore.setToken(legacy)
+            defaults.removeObject(forKey: "gemina.token")
+        }
+        token = KeychainStore.token()
     }
 
     /// VoiceOver description for a path row — state is conveyed by colour alone in

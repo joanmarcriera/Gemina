@@ -66,6 +66,12 @@ final class TunnelController: ObservableObject {
         let proto = NETunnelProviderProtocol()
         proto.providerBundleIdentifier = Self.tunnelBundleID
         proto.serverAddress = gatewayHost
+        // The token is held in the Keychain by the UI (KeychainStore); it is passed
+        // here into providerConfiguration, which is stored in the system-protected NE
+        // configuration store (not UserDefaults). The hardened end-state moves it to
+        // a shared keychain-access-group + proto.passwordReference so the raw token
+        // never enters providerConfiguration — that cross-process resolution must be
+        // validated on hardware (WS-F), so it is staged, not done here.
         var providerConfig: [String: Any] = [
             "port": NSNumber(value: gatewayPort),
             "gatewayPublicKey": gatewayPublicKeyBase64,
