@@ -96,6 +96,13 @@ public final class CoreTransport: TransportCore {
         }
         guard helloLen > 0, hsHandle != 0 else { throw coreError(helloLen) }
 
+        // From here the in-flight handshake handle MUST be consumed or it (and the
+        // client's ephemeral private key) leaks in the Go bridge registry.
+        // cc_handshake_complete is one-shot and consumes it; if we throw before
+        // reaching it (a socket send/receive error), cancel it on the way out.
+        var consumed = false
+        defer { if !consumed { cc_handshake_cancel(hsHandle) } }
+
         try sendClientHello(Data(helloBuf.prefix(Int(helloLen))))
         let serverHello = try receiveServerHello()
 
@@ -109,6 +116,7 @@ public final class CoreTransport: TransportCore {
                 &assigned
             )
         }
+        consumed = true // cc_handshake_complete took the handle, success or not
         guard sessionHandle != 0 else { throw CoreTransportError.coreRejected }
 
         return HandshakeResult(
