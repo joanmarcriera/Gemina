@@ -71,6 +71,14 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
         throw TunnelError.notConfigured
     }
 
+    /// Build the tunnel's network settings for the gateway `tunnelRemoteAddress`.
+    /// The default is route-less (the skeleton refuses to start anyway); a
+    /// bootstrap subclass overrides it to install the gateway-assigned tunnel IP,
+    /// routes and DNS learned during `makeRelay()`.
+    open func makeTunnelSettings(tunnelRemoteAddress: String) -> NEPacketTunnelNetworkSettings {
+        NEPacketTunnelNetworkSettings(tunnelRemoteAddress: tunnelRemoteAddress)
+    }
+
     // MARK: - NEPacketTunnelProvider lifecycle
 
     open override func startTunnel(
@@ -96,15 +104,19 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
         }
         stateLock.withLockUnchecked { _ in self.relay = built }
 
-        // Scope routing to the gateway only — never the system default route, and
-        // exclude the management subnet (footprint contract, docs/product/footprint.md).
-        let settings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: address)
-        setTunnelNetworkSettings(settings) { [weak self] error in
+        // The subclass installs the assigned tunnel IP, routes and DNS here; the
+        // route scoping (gateway-only, exclude the management subnet) lives in the
+        // override (footprint contract, docs/product/footprint.md).
+        let settings = makeTunnelSettings(tunnelRemoteAddress: address)
+        // Capture self strongly: NEPacketTunnelProvider is system-retained for the
+        // duration of startTunnel, and the closure runs exactly once, so there is no
+        // cycle. A weak capture risked silently skipping readOutboundLoop (review M1).
+        setTunnelNetworkSettings(settings) { error in
             if let error = error {
                 completionHandler(error)
                 return
             }
-            self?.readOutboundLoop()
+            self.readOutboundLoop()
             completionHandler(nil)
         }
     }

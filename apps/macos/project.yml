@@ -80,7 +80,7 @@ targets:
       properties:
         NSExtension:
           NSExtensionPointIdentifier: com.apple.networkextension.packet-tunnel
-          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).GeminaTunnelProvider
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).GeminaTunnelBootstrap
 
   Gemina:
     type: application
