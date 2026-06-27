@@ -95,6 +95,15 @@ extern uint64_t cc_handshake_complete(uint64_t hsHandle, uint8_t *serverHello,
                                       uint8_t *assignedIPv4);
 
 /*
+ * cc_handshake_cancel discards an in-flight handshake named by hsHandle without
+ * completing it, freeing its state (including the ephemeral private key). Call it
+ * when abandoning a handshake begun with cc_handshake_begin (e.g. the socket
+ * errored before a ServerHello arrived) so it cannot leak. Cancelling an unknown
+ * handle is a no-op; the handle is consumed and must not be reused.
+ */
+extern void cc_handshake_cancel(uint64_t hsHandle);
+
+/*
  * cc_outbound frames and encrypts a payload for transmission.
  *
  *   handle      session handle from cc_session_new
