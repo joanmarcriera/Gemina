@@ -2,11 +2,69 @@ package gateway
 
 import (
 	"bytes"
+	"net/netip"
 	"testing"
 	"time"
 
+	"github.com/joanmarcriera/gemina/internal/protocol"
 	"github.com/joanmarcriera/gemina/pkg/clientcore"
 )
+
+// With a leaser wired (exit on), the gateway reserves a tunnel IP during the
+// handshake and delivers it in-band: the ServerHello carries it and the client's
+// completed session exposes it via AssignedIPv4.
+func TestHandshakeAssignsTunnelIPInBand(t *testing.T) {
+	idPriv, idPub, err := clientcore.GenerateIdentity()
+	if err != nil {
+		t.Fatalf("identity: %v", err)
+	}
+	service, key := hostedService(t)
+	admitter := NewAdmitter(service, NewSessionStore())
+
+	want := netip.AddrFrom4([4]byte{10, 99, 0, 7})
+	admitter.SetLeaser(func(protocol.SessionID) (netip.Addr, error) { return want, nil })
+
+	hello, hs, err := clientcore.BeginClientHandshake(idPub, hostedToken(t, key))
+	if err != nil {
+		t.Fatalf("begin: %v", err)
+	}
+	serverHello, _, _, tunnelIP, err := admitter.Handshake(hello, idPriv, 64)
+	if err != nil {
+		t.Fatalf("handshake: %v", err)
+	}
+	if tunnelIP != want {
+		t.Fatalf("returned tunnel IP: got %v want %v", tunnelIP, want)
+	}
+	session, err := hs.Complete(serverHello, 64)
+	if err != nil {
+		t.Fatalf("complete: %v", err)
+	}
+	if got := session.AssignedIPv4(); got != want.As4() {
+		t.Fatalf("client session assigned IP: got %v want %v", got, want.As4())
+	}
+}
+
+// With no leaser (exit off) the handshake still succeeds and assigns no IP: the
+// ServerHello carries a zero address and the client session reports the zero
+// value.
+func TestHandshakeWithoutExitAssignsZeroIP(t *testing.T) {
+	idPriv, idPub, _ := clientcore.GenerateIdentity()
+	service, key := hostedService(t)
+	admitter := NewAdmitter(service, NewSessionStore())
+
+	hello, hs, _ := clientcore.BeginClientHandshake(idPub, hostedToken(t, key))
+	serverHello, _, _, tunnelIP, err := admitter.Handshake(hello, idPriv, 64)
+	if err != nil {
+		t.Fatalf("handshake: %v", err)
+	}
+	if tunnelIP.IsValid() {
+		t.Fatalf("expected no tunnel IP with exit off, got %v", tunnelIP)
+	}
+	session, _ := hs.Complete(serverHello, 64)
+	if got := session.AssignedIPv4(); got != ([4]byte{}) {
+		t.Fatalf("expected zero assigned IP, got %v", got)
+	}
+}
 
 func TestHandshakeRejectsStaleClientHello(t *testing.T) {
 	idPriv, idPub, _ := clientcore.GenerateIdentity()
@@ -24,7 +82,7 @@ func TestHandshakeRejectsStaleClientHello(t *testing.T) {
 	if err != nil {
 		t.Fatalf("encode: %v", err)
 	}
-	if _, _, _, err := admitter.Handshake(stale, idPriv, 64); err == nil {
+	if _, _, _, _, err := admitter.Handshake(stale, idPriv, 64); err == nil {
 		t.Fatal("gateway accepted a stale ClientHello (replay window not enforced)")
 	}
 }
@@ -46,7 +104,7 @@ func TestHandshakeEndToEndAdmitsAndCarriesTraffic(t *testing.T) {
 	}
 
 	// Gateway admits and answers.
-	serverHello, claims, _, err := admitter.Handshake(hello, idPriv, 64)
+	serverHello, claims, _, _, err := admitter.Handshake(hello, idPriv, 64)
 	if err != nil {
 		t.Fatalf("gateway handshake: %v", err)
 	}
@@ -76,7 +134,7 @@ func TestHandshakeRejectsUnentitledClient(t *testing.T) {
 
 	// No token in hosted mode -> rejected; nothing registered.
 	hello, _, _ := clientcore.BeginClientHandshake(idPub, "")
-	if _, _, _, err := admitter.Handshake(hello, idPriv, 64); err == nil {
+	if _, _, _, _, err := admitter.Handshake(hello, idPriv, 64); err == nil {
 		t.Fatal("gateway admitted a client with no entitlement token")
 	}
 	if got := len(store.keys); got != 0 {
@@ -91,7 +149,7 @@ func TestHandshakeClientRejectsWrongGatewayIdentity(t *testing.T) {
 	admitter := NewAdmitter(service, NewSessionStore())
 
 	hello, hs, _ := clientcore.BeginClientHandshake(wrongPub, hostedToken(t, key))
-	serverHello, _, _, err := admitter.Handshake(hello, idPriv, 64)
+	serverHello, _, _, _, err := admitter.Handshake(hello, idPriv, 64)
 	if err != nil {
 		t.Fatalf("gateway handshake: %v", err)
 	}

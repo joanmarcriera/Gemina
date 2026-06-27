@@ -3,6 +3,7 @@ package gateway
 import (
 	"crypto/ed25519"
 	"errors"
+	"net/netip"
 	"sync"
 	"time"
 
@@ -80,6 +81,12 @@ type Admitter struct {
 	store     *SessionStore
 	now       func() time.Time // injectable for tests
 	tolerance time.Duration
+
+	// leaser, when set, reserves the tunnel IP for an admitted session so it can
+	// be delivered to the client in-band in the ServerHello. It is nil when the
+	// exit path is off, in which case no address is assigned. The exit router's
+	// Lease is idempotent, so leasing here does not conflict with later exit use.
+	leaser func(protocol.SessionID) (netip.Addr, error)
 }
 
 // NewAdmitter ties an entitlement service to a session store.
@@ -90,6 +97,13 @@ func NewAdmitter(service *entitlement.Service, store *SessionStore) *Admitter {
 		now:       time.Now,
 		tolerance: clientcore.DefaultHandshakeTolerance,
 	}
+}
+
+// SetLeaser wires the tunnel-IP leaser used during the handshake. The gateway
+// sets it to the exit router's Lease when the exit path is enabled; with no
+// leaser the handshake assigns no address (a zero AssignedIPv4).
+func (a *Admitter) SetLeaser(leaser func(protocol.SessionID) (netip.Addr, error)) {
+	a.leaser = leaser
 }
 
 // Admit checks the entitlement and, on success, registers the session key so the
@@ -113,39 +127,50 @@ func (a *Admitter) Admit(token string, id protocol.SessionID, key []byte) (entit
 // key and the client's ephemeral key, admits the client by its entitlement token
 // (registering the key only if admitted — fail-closed), and returns a ServerHello
 // signed with the gateway's Ed25519 identity for the client to authenticate. The
-// admitted session id is returned so the caller can allocate a tunnel-IP lease
-// for the exit path.
-func (a *Admitter) Handshake(clientHello []byte, identityPriv ed25519.PrivateKey, dedupCapacity int) (serverHello []byte, claims entitlement.Claims, id protocol.SessionID, err error) {
+// admitted session id is returned so the caller can drive the exit path. The
+// returned tunnelIP is the gateway-leased address delivered to the client in-band
+// in the ServerHello; it is the zero (invalid) value when the exit path is off.
+func (a *Admitter) Handshake(clientHello []byte, identityPriv ed25519.PrivateKey, dedupCapacity int) (serverHello []byte, claims entitlement.Claims, id protocol.SessionID, tunnelIP netip.Addr, err error) {
 	id, timestamp, clientEph, token, err := clientcore.DecodeClientHello(clientHello)
 	if err != nil {
-		return nil, entitlement.Claims{}, protocol.SessionID{}, err
+		return nil, entitlement.Claims{}, protocol.SessionID{}, netip.Addr{}, err
 	}
 	if err := clientcore.CheckHandshakeFresh(timestamp, a.now(), a.tolerance); err != nil {
-		return nil, entitlement.Claims{}, protocol.SessionID{}, err
+		return nil, entitlement.Claims{}, protocol.SessionID{}, netip.Addr{}, err
 	}
 
 	gatewayEphPriv, gatewayEphPub, err := clientcore.GenerateKeyPair()
 	if err != nil {
-		return nil, entitlement.Claims{}, protocol.SessionID{}, err
+		return nil, entitlement.Claims{}, protocol.SessionID{}, netip.Addr{}, err
 	}
 	key, err := clientcore.DeriveSessionKey(gatewayEphPriv, clientEph, id)
 	if err != nil {
-		return nil, entitlement.Claims{}, protocol.SessionID{}, err
+		return nil, entitlement.Claims{}, protocol.SessionID{}, netip.Addr{}, err
 	}
 
 	// Admit before revealing the signed ServerHello; on rejection the key is not
 	// registered and the DataPlane will refuse the session's packets.
 	claims, err = a.Admit(token, id, key)
 	if err != nil {
-		return nil, entitlement.Claims{}, protocol.SessionID{}, err
+		return nil, entitlement.Claims{}, protocol.SessionID{}, netip.Addr{}, err
+	}
+
+	// Reserve the tunnel IP (exit on) so it can be delivered in-band. A lease
+	// failure (e.g. pool exhausted) does not fail the handshake: the client is
+	// admitted with no address (zero AssignedIPv4) rather than being refused.
+	var assignedIPv4 [4]byte
+	if a.leaser != nil {
+		if addr, leaseErr := a.leaser(id); leaseErr == nil {
+			assignedIPv4 = addr.As4()
+			tunnelIP = addr
+		}
 	}
 
 	sig := clientcore.SignHandshake(identityPriv, gatewayEphPub, id)
-	// A1: no IP is assigned here yet; A2 wires the exit lease into the ServerHello.
-	serverHello, err = clientcore.EncodeServerHello(id, gatewayEphPub, sig, [4]byte{})
+	serverHello, err = clientcore.EncodeServerHello(id, gatewayEphPub, sig, assignedIPv4)
 	if err != nil {
 		a.store.Forget(id) // unwind the registration if we cannot answer
-		return nil, entitlement.Claims{}, protocol.SessionID{}, err
+		return nil, entitlement.Claims{}, protocol.SessionID{}, netip.Addr{}, err
 	}
-	return serverHello, claims, id, nil
+	return serverHello, claims, id, tunnelIP, nil
 }

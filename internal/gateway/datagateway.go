@@ -94,8 +94,13 @@ func NewDataGateway(identityPriv ed25519.PrivateKey, service *entitlement.Servic
 }
 
 // EnableExit turns on the internet exit path, routing delivered packets through r
-// and serving return traffic when Serve runs. Call before Serve.
-func (g *DataGateway) EnableExit(r *exit.Router) { g.exit = r }
+// and serving return traffic when Serve runs. It also wires the router's
+// (idempotent) Lease as the admitter's tunnel-IP leaser so the handshake delivers
+// the assigned address to the client in-band. Call before Serve.
+func (g *DataGateway) EnableExit(r *exit.Router) {
+	g.exit = r
+	g.admitter.SetLeaser(r.Lease)
+}
 
 // FrameReturn implements exit.Framer: it re-encapsulates a return inner-IP
 // payload into a CVD1 datagram for the session so the client can decrypt it.
@@ -144,7 +149,10 @@ func (g *DataGateway) HandleDatagram(datagram []byte) (reply []byte, rec DataRec
 }
 
 func (g *DataGateway) handleHandshake(datagram []byte) ([]byte, DataRecord) {
-	serverHello, _, id, err := g.admitter.Handshake(datagram, g.identityPriv, g.capacity)
+	// The admitter leases the tunnel IP (when the exit path is on) and delivers it
+	// in-band in the ServerHello; tunnelIP mirrors the lease so the reverse-path
+	// filter and return-path lookup work from the first packet.
+	serverHello, _, id, tunnelIP, err := g.admitter.Handshake(datagram, g.identityPriv, g.capacity)
 	if err != nil {
 		g.handshakes.Inc("rejected")
 		if g.logger.Enabled(context.Background(), slog.LevelDebug) {
@@ -156,15 +164,12 @@ func (g *DataGateway) handleHandshake(datagram []byte) ([]byte, DataRecord) {
 	g.activeSession.Set(int64(g.store.len()))
 
 	rec := DataRecord{Kind: "client-hello", Admitted: true, SessionID: id}
-	if g.exit != nil {
-		// Reserve the tunnel IP now so the reverse-path filter and the return-path
-		// lookup work from the first packet. In-band delivery of the address to the
-		// client is a separate wire step (see the TASKS list).
-		if addr, leaseErr := g.exit.Lease(id); leaseErr == nil {
-			rec.TunnelIP = addr
-		} else if g.logger.Enabled(context.Background(), slog.LevelDebug) {
-			g.logger.Debug("tunnel lease failed", "reason", leaseErr.Error())
-		}
+	if tunnelIP.IsValid() {
+		rec.TunnelIP = tunnelIP
+	} else if g.exit != nil && g.logger.Enabled(context.Background(), slog.LevelDebug) {
+		// Exit is on but no address was leased (e.g. pool exhausted): the session is
+		// still admitted, just without an assigned tunnel IP.
+		g.logger.Debug("tunnel lease unavailable", "session", "redacted")
 	}
 	return serverHello, rec
 }
