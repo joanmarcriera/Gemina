@@ -58,7 +58,7 @@ func TestHandshakeBeginCompleteEstablishesWorkingSession(t *testing.T) {
 
 	serverHello, gatewayKey, id := simulateGateway(t, gwPriv, clientHello)
 
-	client := completeHandshake(hs, serverHello, 64)
+	client := completeHandshake(hs, serverHello, 64, nil)
 	if client == 0 {
 		t.Fatalf("completeHandshake: want non-zero session handle")
 	}
@@ -89,6 +89,51 @@ func TestHandshakeBeginCompleteEstablishesWorkingSession(t *testing.T) {
 	}
 }
 
+// TestCompleteHandshakeReturnsAssignedIP proves the bridge surfaces the
+// gateway-assigned tunnel IPv4 (carried in-band in the ServerHello) into the
+// caller's 4-byte out buffer.
+func TestCompleteHandshakeReturnsAssignedIP(t *testing.T) {
+	gwPub, gwPriv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("identity: %v", err)
+	}
+
+	out := make([]byte, 4096)
+	helloLen, hs := beginHandshake(gwPub, "tok", out)
+	if helloLen <= 0 || hs == 0 {
+		t.Fatalf("beginHandshake failed: len %d handle %d", helloLen, hs)
+	}
+
+	// The gateway builds a ServerHello carrying a known assigned tunnel IP.
+	sid, _, clientEph, _, err := clientcore.DecodeClientHello(out[:helloLen])
+	if err != nil {
+		t.Fatalf("decode client hello: %v", err)
+	}
+	gwEphPriv, gwEphPub, err := clientcore.GenerateKeyPair()
+	if err != nil {
+		t.Fatalf("gateway key pair: %v", err)
+	}
+	if _, err = clientcore.DeriveSessionKey(gwEphPriv, clientEph, sid); err != nil {
+		t.Fatalf("gateway derive: %v", err)
+	}
+	sig := clientcore.SignHandshake(gwPriv, gwEphPub, sid)
+	wantIP := [4]byte{10, 99, 0, 42}
+	serverHello, err := clientcore.EncodeServerHello(sid, gwEphPub, sig, wantIP)
+	if err != nil {
+		t.Fatalf("encode server hello: %v", err)
+	}
+
+	gotIP := make([]byte, 4)
+	handle := completeHandshake(hs, serverHello, 64, gotIP)
+	if handle == 0 {
+		t.Fatalf("completeHandshake returned 0")
+	}
+	t.Cleanup(func() { reg.remove(handle) })
+	if !bytes.Equal(gotIP, wantIP[:]) {
+		t.Fatalf("assigned IP out: got %v want %v", gotIP, wantIP)
+	}
+}
+
 func TestBeginHandshakeRejectsBadIdentity(t *testing.T) {
 	out := make([]byte, 4096)
 	// A 31-byte identity is not a valid Ed25519 public key.
@@ -109,7 +154,7 @@ func TestBeginHandshakeBufferTooSmall(t *testing.T) {
 }
 
 func TestCompleteHandshakeBadHandle(t *testing.T) {
-	if h := completeHandshake(999999, make([]byte, 118), 64); h != 0 {
+	if h := completeHandshake(999999, make([]byte, 118), 64, nil); h != 0 {
 		t.Fatalf("unknown handshake handle: want 0, got %d", h)
 	}
 }
@@ -129,13 +174,13 @@ func TestCompleteHandshakeIsOneShot(t *testing.T) {
 	}
 	serverHello, _, _ := simulateGateway(t, gwPriv, out[:helloLen])
 
-	first := completeHandshake(hs, serverHello, 64)
+	first := completeHandshake(hs, serverHello, 64, nil)
 	if first == 0 {
 		t.Fatalf("first complete should succeed")
 	}
 	t.Cleanup(func() { reg.remove(first) })
 
-	if second := completeHandshake(hs, serverHello, 64); second != 0 {
+	if second := completeHandshake(hs, serverHello, 64, nil); second != 0 {
 		t.Fatalf("handshake handle should be one-shot: second complete returned %d", second)
 		reg.remove(second)
 	}
@@ -162,7 +207,7 @@ func TestCompleteHandshakeRejectsForgedSignature(t *testing.T) {
 	// The attacker signs with its own identity, not the pinned gwPub.
 	forged, _, _ := simulateGateway(t, attackerPriv, out[:helloLen])
 
-	if h := completeHandshake(hs, forged, 64); h != 0 {
+	if h := completeHandshake(hs, forged, 64, nil); h != 0 {
 		reg.remove(h)
 		t.Fatalf("forged signature must be rejected, got session handle %d", h)
 	}

@@ -81,13 +81,18 @@ extern int cc_handshake_begin(uint8_t *gatewayPub, char *token,
  *   serverHello     pointer to serverHelloLen received ServerHello bytes (copied)
  *   serverHelloLen  length of serverHello in bytes
  *   capacity        inbound dedup-window capacity for the new session
+ *   assignedIPv4    optional 4-byte out buffer (may be NULL); on success it is
+ *                   filled with the gateway-assigned tunnel IPv4 carried in-band
+ *                   in the ServerHello (all zero = unassigned), left untouched on
+ *                   error. Used to build the packet tunnel's network settings.
  *
  * Returns a non-zero session handle on success, or 0 on any error (unknown
  * handle, malformed or forged ServerHello). The handshake handle is consumed on
  * every call, success or failure, so it must not be reused.
  */
 extern uint64_t cc_handshake_complete(uint64_t hsHandle, uint8_t *serverHello,
-                                      int serverHelloLen, int capacity);
+                                      int serverHelloLen, int capacity,
+                                      uint8_t *assignedIPv4);
 
 /*
  * cc_outbound frames and encrypts a payload for transmission.

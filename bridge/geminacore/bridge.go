@@ -79,10 +79,21 @@ func cc_handshake_begin(gatewayPub *C.uint8_t, token *C.char, out *C.uint8_t, ou
 // (unknown handle, malformed or forged ServerHello). The handshake handle is
 // consumed on every call, so it must not be reused. The wire bytes are copied.
 //
+// assignedIPv4 is an optional caller-allocated 4-byte buffer (may be NULL). On a
+// successful handshake it is filled with the gateway-assigned tunnel IPv4 carried
+// in-band in the ServerHello (all zero = unassigned), which the packet-tunnel
+// provider uses to build its NEPacketTunnelNetworkSettings. It is left untouched
+// on error.
+//
 //export cc_handshake_complete
-func cc_handshake_complete(hsHandle C.uint64_t, serverHello *C.uint8_t, serverHelloLen C.int, dedupCapacity C.int) C.uint64_t {
+func cc_handshake_complete(hsHandle C.uint64_t, serverHello *C.uint8_t, serverHelloLen C.int, dedupCapacity C.int, assignedIPv4 *C.uint8_t) C.uint64_t {
 	wire := C.GoBytes(unsafe.Pointer(serverHello), serverHelloLen)
-	return C.uint64_t(completeHandshake(uint64(hsHandle), wire, int(dedupCapacity)))
+	var ip [4]byte
+	handle := completeHandshake(uint64(hsHandle), wire, int(dedupCapacity), ip[:])
+	if handle != 0 && assignedIPv4 != nil {
+		C.memcpy(unsafe.Pointer(assignedIPv4), unsafe.Pointer(&ip[0]), 4)
+	}
+	return C.uint64_t(handle)
 }
 
 // cc_outbound frames+encrypts payloadLen bytes at payload for the session named
