@@ -23,7 +23,7 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.networkextension.packet-tunnel</string>
 		<key>NSExtensionPrincipalClass</key>
-		<string>$(PRODUCT_MODULE_NAME).GeminaTunnelProvider</string>
+		<string>$(PRODUCT_MODULE_NAME).GeminaTunnelBootstrap</string>
 	</dict>
 </dict>
 </plist>
