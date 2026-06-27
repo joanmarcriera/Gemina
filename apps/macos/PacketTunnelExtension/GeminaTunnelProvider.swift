@@ -83,15 +83,22 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
 
     open override func startTunnel(
         options: [String: NSObject]?,
-        completionHandler: @escaping @Sendable (Error?) -> Void
+        completionHandler: @escaping (Error?) -> Void
     ) {
+        // The completion handler's sendability differs across NetworkExtension SDK
+        // versions (older SDKs — e.g. the CI toolchain — declare it non-Sendable,
+        // newer ones declare it @Sendable). Match the base by NOT annotating it, and
+        // launder it through nonisolated(unsafe) so it stays callable from the
+        // Sendable setTunnelNetworkSettings callback on every SDK.
+        nonisolated(unsafe) let finish = completionHandler
+
         // The gateway address is configuration (self-host or hosted), never
         // hard-coded; it travels in the VPN profile's server address.
         guard
             let address = (protocolConfiguration as? NETunnelProviderProtocol)?.serverAddress,
             !address.isEmpty
         else {
-            completionHandler(TunnelError.missingGatewayAddress)
+            finish(TunnelError.missingGatewayAddress)
             return
         }
 
@@ -99,7 +106,7 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
         do {
             built = try makeRelay()
         } catch {
-            completionHandler(error)
+            finish(error)
             return
         }
         stateLock.withLockUnchecked { _ in self.relay = built }
@@ -113,11 +120,11 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
         // cycle. A weak capture risked silently skipping readOutboundLoop (review M1).
         setTunnelNetworkSettings(settings) { error in
             if let error = error {
-                completionHandler(error)
+                finish(error)
                 return
             }
             self.readOutboundLoop()
-            completionHandler(nil)
+            finish(nil)
         }
     }
 
