@@ -98,7 +98,11 @@ func beginHandshake(gatewayPub []byte, token string, out []byte) (int, uint64) {
 // 0 on any failure (unknown handle, malformed or forged ServerHello, key
 // derivation failure). The handshake handle is consumed on every call, success or
 // failure, so it can never be reused.
-func completeHandshake(hsHandle uint64, serverHello []byte, dedupCapacity int) uint64 {
+//
+// On success, when assignedIPv4Out is at least 4 bytes, it is filled with the
+// gateway-assigned tunnel IPv4 carried in-band in the ServerHello (zero =
+// unassigned). It is left untouched on failure.
+func completeHandshake(hsHandle uint64, serverHello []byte, dedupCapacity int, assignedIPv4Out []byte) uint64 {
 	hs, ok := hsReg.take(hsHandle)
 	if !ok {
 		return 0
@@ -106,6 +110,10 @@ func completeHandshake(hsHandle uint64, serverHello []byte, dedupCapacity int) u
 	session, err := hs.Complete(serverHello, dedupCapacity)
 	if err != nil {
 		return 0
+	}
+	if len(assignedIPv4Out) >= 4 {
+		ip := session.AssignedIPv4()
+		copy(assignedIPv4Out, ip[:])
 	}
 	return reg.add(session)
 }
