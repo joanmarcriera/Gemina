@@ -138,6 +138,14 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
 
     // MARK: - Packet I/O
 
+    /// An atomic snapshot of the protected state taken under `stateLock`, so the
+    /// outbound loop body can run lock-free.
+    private struct RelaySnapshot {
+        let relay: DualPathRelay?
+        let pathStates: [PathInfo]
+        let primaryUnstable: Bool
+    }
+
     /// Read outbound IP packets from the tunnel and duplicate each over both
     /// paths. Re-arms itself until the tunnel stops.
     private func readOutboundLoop() {
@@ -145,18 +153,19 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
             guard let self else { return }
             // Snapshot state under the lock so the closure body runs lock-free.
             // `withLockUnchecked` avoids the Sendable requirement on DualPathRelay / PathInfo.
-            let (currentRelay, pathStates, unstable): (DualPathRelay?, [PathInfo], Bool) =
-                self.stateLock.withLockUnchecked { _ in
-                    (self.relay, self.currentPathStates, self.primaryUnstable)
-                }
-            guard let currentRelay else { return }
+            let snapshot = self.stateLock.withLockUnchecked { _ in
+                RelaySnapshot(relay: self.relay,
+                              pathStates: self.currentPathStates,
+                              primaryUnstable: self.primaryUnstable)
+            }
+            guard let currentRelay = snapshot.relay else { return }
             // currentPathStates / primaryUnstable are maintained from the NE path
             // monitor + the benchmark pings; the policy uses them to choose how
             // many paths to send each packet over (Duplicate / Failover / Smart).
             for packet in packets {
                 _ = try? currentRelay.sendOutbound(packet,
-                                                   pathStates: pathStates,
-                                                   primaryUnstable: unstable)
+                                                   pathStates: snapshot.pathStates,
+                                                   primaryUnstable: snapshot.primaryUnstable)
             }
             self.readOutboundLoop()
         }

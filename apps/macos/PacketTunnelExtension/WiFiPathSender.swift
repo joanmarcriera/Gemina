@@ -53,7 +53,7 @@ public final class WiFiPathSender: PathSender, @unchecked Sendable {
         var isClosed: Bool = false
         var loopActive: Bool = false
         // One-shot datagram vended to receiveOneDatagram via a semaphore.
-        var pendingDatagram: Result<Data, Error>? = nil
+        var pendingDatagram: Result<Data, Error>?
     }
     private let lock = OSAllocatedUnfairLock<MutableState>(initialState: MutableState())
 
@@ -219,14 +219,14 @@ public final class WiFiPathSender: PathSender, @unchecked Sendable {
         let monitor = NWPathMonitor()
         let sem = DispatchSemaphore(value: 0)
         let foundBox = OSAllocatedUnfairLock<NWInterface?>(initialState: nil)
-        let q = DispatchQueue(label: "gemina.wifi-path.iface-lookup")
+        let queue = DispatchQueue(label: "gemina.wifi-path.iface-lookup")
         monitor.pathUpdateHandler = { path in
             if let iface = path.availableInterfaces.first(where: { $0.name == ifaceName }) {
                 foundBox.withLock { $0 = iface }
             }
             sem.signal()
         }
-        monitor.start(queue: q)
+        monitor.start(queue: queue)
         sem.wait()
         monitor.cancel()
         return foundBox.withLock { $0 }

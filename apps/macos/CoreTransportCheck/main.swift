@@ -43,7 +43,7 @@ do {
     )
     check(order == ["send", "recv"], "T1 connect calls sendClientHello before receiveServerHello")
     check(sentHello?.count == 8 && sentHello?.first == 0xC0, "T1 client hello bytes plumbed from the core")
-    check(result.assignedIPv4 == (10, 99, 0, 5), "T1 assigned tunnel IP surfaced from the handshake")
+    check(result.assignedIPv4 == [10, 99, 0, 5], "T1 assigned tunnel IP surfaced from the handshake")
 } catch {
     check(false, "T1 connect threw unexpectedly: \(error)")
 }

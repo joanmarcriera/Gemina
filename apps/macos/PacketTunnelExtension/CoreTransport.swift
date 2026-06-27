@@ -63,7 +63,8 @@ public final class CoreTransport: TransportCore {
     /// four octets are all zero when the gateway assigned no address.
     public struct HandshakeResult {
         public let core: CoreTransport
-        public let assignedIPv4: (UInt8, UInt8, UInt8, UInt8)
+        /// The gateway-assigned tunnel IPv4 as four octets (all zero = unassigned).
+        public let assignedIPv4: [UInt8]
     }
 
     /// Perform the on-wire handshake (ADR-0007) through the Go core: begin a
@@ -121,7 +122,7 @@ public final class CoreTransport: TransportCore {
 
         return HandshakeResult(
             core: CoreTransport(adopting: sessionHandle),
-            assignedIPv4: (assigned[0], assigned[1], assigned[2], assigned[3])
+            assignedIPv4: assigned
         )
     }
 
