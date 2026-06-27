@@ -8,6 +8,41 @@
 
 **Tech Stack:** Go 1.26 (gateway + cgo bridge), Swift 6 / NetworkExtension (provider + app), `pkg/clientcore` (transport core), `internal/gateway` + `internal/exit` (responder + IP leasing).
 
+## Run status (2026-06-27) — WS-A, WS-B, WS-C, WS-D1 DONE; WS-D2/E/F remain
+
+Branch `feat/phase3-wifi-tunnel` (not yet merged). All headless-testable WS done,
+each TDD with a per-task commit; full Go gate (build/vet/`-race`/gofmt) and Swift
+`swift build` + three headless checks (`GeminaVPNCoreCheck`, `WiFiPathSenderCheck`,
+`CoreTransportCheck`) all green.
+
+- **WS-A** — A1 `d89d6fa` (ServerHello +4-byte AssignedIPv4, frame 118→122),
+  A2 `2b4f29a` (gateway leases via an injected `Admitter.SetLeaser` hook, returns
+  the IP, `EnableExit` wires `r.Lease`), A3 `aa062e2` (`cc_handshake_complete`
+  gains a 4-byte out-param; both C headers updated).
+- **WS-D1** — `946b5a6` provider state race-free (`OSAllocatedUnfairLock`).
+- **WS-C** — `5d7a99d` `WiFiPathSender` (NWConnection + `requiredInterface`),
+  headless loopback check. Adds `CGeminaCoreStubs` so checks link without the Go
+  archive.
+- **WS-B** — `6a0aa9b` `CoreTransport.connect(...)` over the bridge +
+  `CoreTransportCheck` glue test (stubs became a deterministic fake, IP 10.99.0.5).
+- **Review fixes** — `c280ea6`: added `cc_handshake_cancel` and a `defer` in
+  `connect` so an aborted handshake cannot leak the ephemeral key (review H1);
+  named the bad-handle test's wire size (H2).
+
+Corrections applied vs the original task text: real funcs are
+`EncodeServerHello`/`DecodeServerHello` (not Marshal/Parse); the IP is delivered
+on the client via `Session.AssignedIPv4()` (keeps `Complete`'s signature stable);
+the assigned IP is a fixed-offset field at `[118:122]`, **not** signed (documented
+DoS-equivalence; data plane stays AEAD-authenticated — consider binding it into
+the signed transcript as a follow-up).
+
+Deferred review findings to fold into WS-D2/path-monitor work (not bugs today):
+M1 `[weak self]` in `startTunnel` skips `readOutboundLoop` if self is nil (use a
+strong capture in the bootstrap); M2 `currentPathStates`/`primaryUnstable` have no
+writer yet — the future NE path-monitor write MUST go through `stateLock`; L1
+`C.GoBytes` takes a signed length at the C boundary (pre-existing pattern across
+all `cc_*`).
+
 ## Global Constraints
 
 - **Swift 6, strict concurrency = complete** (set in `project.yml` and `Package.swift` tools-version 6.0). New provider code MUST be data-race-free under this mode — no `nonisolated(unsafe)` without a lock.
