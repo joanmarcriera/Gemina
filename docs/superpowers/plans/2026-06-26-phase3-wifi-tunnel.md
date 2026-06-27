@@ -8,12 +8,24 @@
 
 **Tech Stack:** Go 1.26 (gateway + cgo bridge), Swift 6 / NetworkExtension (provider + app), `pkg/clientcore` (transport core), `internal/gateway` + `internal/exit` (responder + IP leasing).
 
-## Run status (2026-06-27) — WS-A, WS-B, WS-C, WS-D1 DONE; WS-D2/E/F remain
+## Run status (2026-06-27) — WS-A..E DONE; only WS-F (on-hardware) remains
 
-Branch `feat/phase3-wifi-tunnel` (not yet merged). All headless-testable WS done,
-each TDD with a per-task commit; full Go gate (build/vet/`-race`/gofmt) and Swift
-`swift build` + three headless checks (`GeminaVPNCoreCheck`, `WiFiPathSenderCheck`,
-`CoreTransportCheck`) all green.
+Branch `feat/phase3-wifi-tunnel` (not yet merged). Everything except the
+on-hardware verification is done, each task TDD/build-verified with a per-task
+commit. Full Go gate (build/vet/`-race`/gofmt) green; Swift `swift build` + three
+headless checks (`GeminaVPNCoreCheck`, `WiFiPathSenderCheck`, `CoreTransportCheck`)
+green; **headless AND signed `xcodebuild` both `** BUILD SUCCEEDED **`** (app + NE
+extension + linked Go c-archive), signed with the paid team `D427C2J4RG` and the
+`packet-tunnel-provider` entitlement verified on the `.appex`.
+
+- **WS-D2** — `bfb19c3` `GeminaTunnelBootstrap` (principal class): reads gateway
+  config from `providerConfiguration`, handshakes over a Wi-Fi-pinned UDP socket
+  via `CoreTransport.connect`, installs real `NEPacketTunnelNetworkSettings` from
+  the leased IP (default route, MTU 1380, optional DNS), runs `DualPathRelay`.
+  Added an overridable `makeTunnelSettings` seam + fixed review M1 (strong self).
+- **WS-E** — `9ea9703` `TunnelController` (install/start/stop via
+  `NETunnelProviderManager`, publishes `NEVPNStatus`) + menu-bar Protect toggle +
+  gateway-settings form; headline derived from live status.
 
 - **WS-A** — A1 `d89d6fa` (ServerHello +4-byte AssignedIPv4, frame 118→122),
   A2 `2b4f29a` (gateway leases via an injected `Admitter.SetLeaser` hook, returns
