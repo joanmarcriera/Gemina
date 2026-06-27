@@ -46,6 +46,15 @@ let package = Package(
             name: "WiFiPathSenderCheck",
             dependencies: ["GeminaVPNPacketTunnelExtension", "CGeminaCoreStubs"],
             path: "WiFiPathSenderCheck"
+        ),
+        // Headless glue check for CoreTransport.connect: drives the handshake
+        // factory against the deterministic CGeminaCoreStubs fake and asserts the
+        // closures fire in order and the assigned IP is surfaced. Runs with the
+        // plain toolchain: `swift run CoreTransportCheck`.
+        .executableTarget(
+            name: "CoreTransportCheck",
+            dependencies: ["GeminaVPNPacketTunnelExtension", "CGeminaCoreStubs"],
+            path: "CoreTransportCheck"
         )
     ]
 )

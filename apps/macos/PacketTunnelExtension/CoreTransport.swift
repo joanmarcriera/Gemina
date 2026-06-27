@@ -58,6 +58,71 @@ public final class CoreTransport: TransportCore {
 
     private let handle: UInt64
 
+    /// The outcome of a successful handshake: a ready transport plus the
+    /// gateway-assigned tunnel IPv4 (carried in-band in the ServerHello). The
+    /// four octets are all zero when the gateway assigned no address.
+    public struct HandshakeResult {
+        public let core: CoreTransport
+        public let assignedIPv4: (UInt8, UInt8, UInt8, UInt8)
+    }
+
+    /// Perform the on-wire handshake (ADR-0007) through the Go core: begin a
+    /// ClientHello, hand it to `sendClientHello`, read the gateway's ServerHello
+    /// via `receiveServerHello`, and complete it into a ready session. The crypto
+    /// and wire format stay entirely in Go; this only plumbs bytes and the opaque
+    /// in-flight handle. The provider injects the network I/O so the socket stays
+    /// its concern and this stays testable.
+    public static func connect(
+        gatewayPublicKey: Data,
+        token: String,
+        dedupCapacity: Int32,
+        sendClientHello: (Data) throws -> Void,
+        receiveServerHello: () throws -> Data
+    ) throws -> HandshakeResult {
+        precondition(gatewayPublicKey.count == 32, "gateway identity must be 32 bytes")
+
+        var helloBuf = [UInt8](repeating: 0, count: 8192)
+        var hsHandle: UInt64 = 0
+        let helloLen: Int32 = gatewayPublicKey.withUnsafeBytes { pub in
+            token.withCString { cToken in
+                cc_handshake_begin(
+                    UnsafeMutablePointer(mutating: pub.bindMemory(to: UInt8.self).baseAddress),
+                    UnsafeMutablePointer(mutating: cToken),
+                    &helloBuf,
+                    Int32(helloBuf.count),
+                    &hsHandle
+                )
+            }
+        }
+        guard helloLen > 0, hsHandle != 0 else { throw coreError(helloLen) }
+
+        try sendClientHello(Data(helloBuf.prefix(Int(helloLen))))
+        let serverHello = try receiveServerHello()
+
+        var assigned = [UInt8](repeating: 0, count: 4)
+        let sessionHandle: UInt64 = serverHello.withUnsafeBytes { sh in
+            cc_handshake_complete(
+                hsHandle,
+                UnsafeMutablePointer(mutating: sh.bindMemory(to: UInt8.self).baseAddress),
+                Int32(serverHello.count),
+                dedupCapacity,
+                &assigned
+            )
+        }
+        guard sessionHandle != 0 else { throw CoreTransportError.coreRejected }
+
+        return HandshakeResult(
+            core: CoreTransport(adopting: sessionHandle),
+            assignedIPv4: (assigned[0], assigned[1], assigned[2], assigned[3])
+        )
+    }
+
+    /// Adopt an already-created session handle (e.g. from `connect`), taking
+    /// ownership so `deinit` frees it. Not public: handles only come from the C ABI.
+    private init(adopting handle: UInt64) {
+        self.handle = handle
+    }
+
     /// Create a session from a 16-byte session id, a 32-byte key, the role, and
     /// the inbound dedup-window capacity.
     public init(sessionID: Data, key: Data, role: Role, dedupCapacity: Int32) throws {
