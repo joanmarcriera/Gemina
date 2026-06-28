@@ -84,3 +84,47 @@ To remove: `sudo systemctl disable --now gemina-gateway.service`, remove the
 unit file, `sudo docker rmi gemina-gateway:latest`, remove
 `/opt/gemina`, and `sudo firewall-cmd --remove-port=<port>/udp
 --permanent --reload`.
+
+## Stage-2: the data + exit gateway (WS-F prerequisite) — DRAFT
+
+> **DRAFT (2026-06-28), not yet validated on hardware.** Validate during WS-F
+> (`docs/superpowers/plans/2026-06-26-phase3-wifi-tunnel.md`); see also the
+> step-by-step handoff in `docs/dev/handoff-2026-06-28.md`. The probe gateway
+> above only deduplicates probes — it is **not** a tunnel. The macOS app needs a
+> gateway running the real handshake + encrypted data plane **and** the internet
+> exit path. `cmd/gateway` supports this (`GEMINA_GATEWAY_MODE=data` +
+> `GEMINA_GATEWAY_EXIT=on`); the deploy below is the new, unvalidated part.
+
+Why it differs from probe mode: exit mode opens a Linux TUN device
+(`CAP_NET_ADMIN` + `/dev/net/tun`), routes leased client IPs, and relies on a
+host NAT MASQUERADE rule (the Go exit engine deliberately never touches the
+firewall — `internal/exit/nat_linux.go`). So the container is **not** read-only,
+uses host networking, and mounts a writable volume for the persisted Ed25519
+identity (a fresh key would break every client's pin).
+
+```bash
+# 1. Ship the image (reuses the same build as probe mode).
+scripts/deploy-dev-gateway.sh                      # builds gemina-gateway:latest on oracle
+
+# 2. Prepare the host: ip_forward, persistent TUN gemina0, pool addr, NAT.
+ssh oracle 'cd /opt/gemina && sudo WAN_IF=<egress-iface> scripts/setup-exit-host.sh'
+
+# 3. Install + start the data+exit unit (instead of the probe unit).
+ssh oracle '
+  sudo install -m0644 /opt/gemina/deploy/systemd/gemina-gateway-data.service \
+       /etc/systemd/system/gemina-gateway-data.service
+  sudo systemctl daemon-reload
+  sudo systemctl enable --now gemina-gateway-data.service'
+
+# 4. Read the pinned identity the app needs (base64 Ed25519 public key).
+ssh oracle 'sudo journalctl -u gemina-gateway-data.service | grep public_key | tail -1'
+```
+
+Then open ingress **UDP 51820** in the cloud firewall (VCN) as for probe mode.
+In open/self-host mode (the default) admission ignores the token, so the app only
+needs the gateway host + that base64 public key. Do **not** run both the probe and
+the data unit on the same port at once.
+
+To remove: `sudo systemctl disable --now gemina-gateway-data.service`, remove the
+unit, then undo the host setup (`sudo ip link del gemina0`, drop the MASQUERADE
+rule, `sudo rm /etc/sysctl.d/99-gemina-exit.conf`).

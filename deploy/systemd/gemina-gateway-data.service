@@ -1,0 +1,53 @@
+# DRAFT — Stage-2 data + exit gateway (container).
+#
+# STATUS: written 2026-06-28, NOT yet validated on hardware. Validate during WS-F
+# (docs/superpowers/plans/2026-06-26-phase3-wifi-tunnel.md) and only then drop
+# this header. Unlike gemina-gateway.service (probe mode), this runs the real
+# authenticated handshake + encrypted data plane and the internet exit path, so
+# it needs CAP_NET_ADMIN, /dev/net/tun, host networking, and a writable identity
+# volume — it is NOT read-only and NOT --network-isolated.
+#
+# Prerequisite: run scripts/setup-exit-host.sh first (ip_forward, persistent TUN
+# gemina0, pool address, MASQUERADE). The image is the same gemina-gateway:latest
+# built by scripts/deploy-dev-gateway.sh.
+
+[Unit]
+Description=gemina Stage-2 data + exit gateway (container)
+Documentation=https://github.com/joanmarcriera/gemina
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Environment=GATEWAY_PORT=51820
+Environment=DEDUP_CAPACITY=8192
+Environment=LOG_LEVEL=info
+Environment=POOL=10.99.0.0/16
+Environment=STATE_DIR=/var/lib/gemina
+ExecStartPre=-/usr/bin/docker rm -f gemina-gateway-data
+# --network host: gemina0 (created persistently by setup-exit-host.sh) lives in
+#   the host netns where the MASQUERADE rule applies; the listener binds host UDP.
+# --cap-add NET_ADMIN + --device /dev/net/tun: open and attach the TUN device.
+# -v STATE_DIR: persist the Ed25519 identity so the pinned public key is stable
+#   across restarts (a new key would break every client's pin).
+ExecStart=/usr/bin/docker run --rm --name gemina-gateway-data \
+  --network host \
+  --cap-add NET_ADMIN \
+  --device /dev/net/tun \
+  -v ${STATE_DIR}:/var/lib/gemina \
+  -e GEMINA_GATEWAY_MODE=data \
+  -e GEMINA_GATEWAY_EXIT=on \
+  -e GEMINA_GATEWAY_ADDR=:${GATEWAY_PORT} \
+  -e GEMINA_GATEWAY_IDENTITY=/var/lib/gemina/gateway-identity.key \
+  -e GEMINA_GATEWAY_POOL=${POOL} \
+  -e GEMINA_GATEWAY_TUN=gemina0 \
+  -e GEMINA_GATEWAY_DEDUP_CAPACITY=${DEDUP_CAPACITY} \
+  -e GEMINA_GATEWAY_LOG_LEVEL=${LOG_LEVEL} \
+  gemina-gateway:latest
+ExecStop=/usr/bin/docker stop gemina-gateway-data
+Restart=always
+RestartSec=3
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target
