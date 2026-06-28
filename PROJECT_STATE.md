@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-06-25
+Last updated: 2026-06-28
 
 This is the durable cross-session handover. It records current state, risks,
 blockers and the last validation run. The outstanding task list lives in
@@ -27,11 +27,24 @@ the feasibility FIFO ring to a per-session **RFC 6479 sliding-window bitmap**
 (`internal/dedup/replay.go`) that distinguishes a *stale* replay from a never-seen
 packet. The handshake is exposed over the cgo bridge so Swift can drive it.
 
-Remaining before the on-hardware Stage-2 demo: deliver the assigned tunnel IP to
-the client **in-band** (one wire step). Then the macOS **Phase 3**
-`NEPacketTunnelProvider` (Wi-Fi single-path first, then RNDIS). Apple is unblocked
-(paid program Active, team `D427C2J4RG`; NE signs). Outstanding work is at the top
-of `TASKS.md` and as GitHub issues #3–#10.
+**Phase 3 (Wi-Fi single-path tunnel) is code-complete (2026-06-28).** The
+in-band tunnel-IP delivery (WS-A), the Swift handshake factory (WS-B), the
+Wi-Fi-bound UDP path sender (WS-C), the concrete `GeminaTunnelBootstrap`
+provider with real `NEPacketTunnelNetworkSettings` (WS-D), and the
+`TunnelController` install/start/stop UI + Protect toggle (WS-E) all landed on
+`main` — each TDD/build-verified, signed `xcodebuild` `BUILD SUCCEEDED` (team
+`D427C2J4RG`, `packet-tunnel-provider` entitlement). Only **WS-F — the
+on-hardware verification** remains; it cannot run in CI. See
+`docs/superpowers/plans/2026-06-26-phase3-wifi-tunnel.md` and the WS-F handoff
+in `docs/dev/handoff-2026-06-28.md`.
+
+The one prerequisite for WS-F is a running **data + exit** gateway (the deployed
+`oracle` box runs probe mode only). `cmd/gateway` already supports it
+(`GEMINA_GATEWAY_MODE=data` + `GEMINA_GATEWAY_EXIT=on`); the draft deploy unit and
+host-NAT script are in `deploy/systemd/gemina-gateway-data.service` and
+`scripts/setup-exit-host.sh` (validate on hardware during WS-F). Apple is unblocked
+(paid program Active, team `D427C2J4RG`; NE signs). The repo is **public**
+(`github.com/joanmarcriera/gemina`).
 
 ## Current Implementation State
 

@@ -28,13 +28,20 @@ from the FIFO ring to a per-session RFC 6479 sliding-window bitmap
 packet. Proven by an in-process loopback exit test + the Linux on-hardware rig
 (`tests/end-to-end/rig_linux.go`).
 
-**Next, in order:** (1) deliver the assigned tunnel IP to the client in-band
-(extended ServerHello/config channel) — the one wire step before the on-hardware
-demo; (2) the on-hardware Stage-2 demo (curl/SSH through tunnel surviving a path
-cut); (3) the macOS **Phase 3** `NEPacketTunnelProvider` — Wi-Fi single-path first
-(`makeRelay`, the Wi-Fi `IP_BOUND_IF` `PathSender`, driving the handshake over the
-wire from Swift via the new bridge ABI), then layer the RNDIS uplink. Tracked as
-GitHub issues #3–#10.
+**Phase 3 Wi-Fi tunnel is CODE-COMPLETE (2026-06-28), WS-A..E landed on `main`:**
+in-band tunnel-IP delivery (WS-A), `CoreTransport.connect` handshake factory
+(WS-B), `WiFiPathSender` (WS-C), the concrete `GeminaTunnelBootstrap` provider +
+real `NEPacketTunnelNetworkSettings` (WS-D), and `TunnelController` install/start/
+stop + the Protect toggle (WS-E). Each TDD/build-verified; signed `xcodebuild`
+`BUILD SUCCEEDED`. `cmd/gateway` data+exit wiring is done too.
+
+**Next exact action — WS-F (on-hardware, cannot run in CI):** stand up a
+**data + exit** gateway (the deployed `oracle` box is probe-mode only — use the
+draft `deploy/systemd/gemina-gateway-data.service` + `scripts/setup-exit-host.sh`,
+validate on hardware), then run the app, toggle Protect, and prove packets flow
+through the `utun` surviving a path cut. Full step-by-step in
+`docs/dev/handoff-2026-06-28.md`. Then layer the RNDIS second path (separate plan).
+Tracked as GitHub issues #3–#10.
 
 ---
 
@@ -79,16 +86,27 @@ and **go-to-market** (open-core + hosted gateway). Next, in priority order:
 * [ ] Re-confirm the userspace USB claim succeeds inside an App-Sandbox context
   with `com.apple.security.device.usb` (the spike ran un-sandboxed). Gates the
   App Store route.
-* [ ] Going public: rewrite git history to drop the real LAN address, finalise
-  CONTRIBUTING licence wording, have a lawyer review `docs/legal/privacy-policy.md`
-  + `terms-of-service.md`, then run `scripts/prepare-public.sh` (see
-  `docs/dev/repository-strategy.md`). GTM groundwork done: SEO-hardened `website/`
-  (+ privacy/terms pages), `docs/marketing/` (seo, video-script, launch-plan,
-  press-kit). Record the demo video from the script before launch.
-* [ ] Make the `DataGateway` runnable: a mode in `cmd/gateway` (probe | data) that
-  loads/persists an Ed25519 identity + entitlement config, serves the real
-  handshake+data path, and exposes its `/metrics`. The library + tests exist
-  (`internal/gateway.DataGateway`); only the cmd wiring + deploy remain.
+* [~] Going public: the repo IS now public (`github.com/joanmarcriera/gemina`).
+  `scripts/prepare-public.sh` audit = GO and the current tree is clean.
+  **Open decision (owner):** the bootstrap history (commit `ceb783c`, redacted in
+  `3196c7d`) still carries the real LAN endpoint `192.168.0.5:30068` in `AGENTS.md`
+  — low severity (a private RFC1918 address, not routable, common subnet) but it
+  is in the *public* history. Decide: accept it (recommended — not worth a
+  force-push rewrite of a public repo) or purge with `git filter-repo` + force-push
+  (disruptive; SHAs change; already-cached). 192.168.42.x in history is Android's
+  generic RNDIS tether subnet, not a secret. Remaining go-live: finalise
+  CONTRIBUTING licence wording, lawyer review of `docs/legal/privacy-policy.md` +
+  `terms-of-service.md`, record the demo video. GTM groundwork done: SEO-hardened
+  `website/` (+ privacy/terms pages), `docs/marketing/` (seo, video-script,
+  launch-plan, press-kit).
+* [x] Make the `DataGateway` runnable (cmd wiring done): `cmd/gateway` selects
+  `probe | data` via `GEMINA_GATEWAY_MODE`, the data path loads/persists an Ed25519
+  identity (`GEMINA_GATEWAY_IDENTITY`, logs the base64 public key), gates admission
+  by entitlement tier (`GEMINA_GATEWAY_TIER` open|hosted), optionally enables the
+  Stage-2 exit (`GEMINA_GATEWAY_EXIT=on`, needs Linux TUN + `CAP_NET_ADMIN` + host
+  NAT), and exposes `/metrics`. **Remaining: the deploy.** Draft data+exit unit
+  (`deploy/systemd/gemina-gateway-data.service`) + host setup
+  (`scripts/setup-exit-host.sh`) need on-hardware validation (folded into WS-F).
 * [~] Go-to-market: licence decided + applied (AGPL gateway / Apache client),
   open-core README + landing page done; hosted-tier entitlement/payments
   scaffolded (`internal/entitlement`). Remaining: real payment integration
