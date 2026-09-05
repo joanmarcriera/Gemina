@@ -24,6 +24,23 @@ rather not run their own server.
 > is not yet a shipping VPN. See [Status](#status) below for exactly what is and
 > is not done.
 
+## Quick Start
+
+**For developers:**
+
+```sh
+git clone https://github.com/joanmarcriera/gemina.git
+cd gemina
+make bootstrap    # Prepare Go + Swift workspace
+make test         # Run Go race tests and Swift build check
+```
+
+See [Build & test](#build--test) for the full test suite, lint checks, and available Make targets.
+
+**For deployment:**
+
+Self-host the gateway in a single command (see [Self-host the gateway](#self-host-the-gateway) below), or wait for the optional paid hosted gateway (in development).
+
 ## The name
 
 **Gemina** is Latin for *twinned*. When a Roman legion was too depleted to be
