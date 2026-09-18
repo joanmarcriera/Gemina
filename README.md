@@ -205,3 +205,8 @@ rationale are in [`docs/legal/licensing.md`](docs/legal/licensing.md); see also
 [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). Third-party material, if ever
 imported, retains its original licence and attribution as recorded under
 `docs/legal/`.
+
+<!-- vikunja-tracking -->
+## Tracking
+
+Vikunja project **70 · Gemina** — https://familia.riera.co.uk/projects/70
