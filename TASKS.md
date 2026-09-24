@@ -13,10 +13,12 @@ Stage 0 exit criteria are met and reviewed.
 
 ## Next exact action
 
-**Still true as of 2026-09-24 — nothing below has changed.** The nine commits
-landed since 2026-06-28 (efa6150, effd5da, 7f88772, 293e9a5, db4836c, 4d6d8bb,
-c3169da, efbc20d, 4f6d4a0) are docs/skills/website/dependency housekeeping;
-none touched WS-F. The open items previously narrated per-section below are
+**As of 2026-09-24:** no commit since 2026-06-28 has advanced WS-F. `efbc20d`
+(2026-06-28) drafted the WS-F gateway prerequisite (data+exit deploy unit +
+host-NAT script) but is not itself the on-hardware verification; the
+monetisation financial model landed (`4409378`); the other seven commits since
+(`966da3e`, `efa6150`, `effd5da`, `7f88772`, `293e9a5`, `db4836c`, `4d6d8bb`)
+are docs/skills/website/tracker housekeeping. The open items previously narrated per-section below are
 now tracked as Vikunja tasks in project 70
 (https://familia.riera.co.uk/projects/70), tasks #2562-#2577 — that board, not
 this file, is the live day-to-day queue; this file stays the durable technical

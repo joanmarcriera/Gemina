@@ -37,9 +37,12 @@ provider with real `NEPacketTunnelNetworkSettings` (WS-D), and the
 on-hardware verification** remains; it cannot run in CI. See
 `docs/superpowers/plans/2026-06-26-phase3-wifi-tunnel.md` and the WS-F handoff
 in `docs/dev/handoff-2026-06-28.md`. **Still true as of 2026-09-24** — three
-months idle at this gate; the commits since 2026-06-28
-(https://familia.riera.co.uk/projects/70) are docs/skills/website/dependency
-housekeeping and did not touch WS-F or advance the core blocker. Next exact
+months idle at this gate. `efbc20d` (2026-06-28) drafted the WS-F gateway
+prerequisite (data+exit deploy unit + host-NAT script) but did not itself
+complete the on-hardware verification; the monetisation financial model
+landed (`4409378`); the other commits since
+(https://familia.riera.co.uk/projects/70) are docs/skills/website/tracker
+housekeeping and did not advance the core blocker. Next exact
 action: https://familia.riera.co.uk/tasks/2562 (WS-F, on-hardware, cannot run
 in CI).
 
