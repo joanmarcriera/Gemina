@@ -327,3 +327,5 @@ review gates (engineering issue 1, legal/provenance issue 2) — all complete. S
 * [x] `geminactl darwin-evidence` redacted JSON diagnostic + tests; run once
   locally (found Wi-Fi, correctly reported missing Android USB tethering).
 * [x] Root stage markers moved from Stage 0 bootstrap to Stage 1 probe.
+
+<!-- Reconciled 2026-09-24 by Claude: 12 tasks matched, 4 created, 1 marked done in Vikunja project 70 -->
