@@ -1,6 +1,6 @@
 # Project State
 
-Last updated: 2026-06-28
+Last updated: 2026-09-24
 
 This is the durable cross-session handover. It records current state, risks,
 blockers and the last validation run. The outstanding task list lives in
@@ -36,7 +36,12 @@ provider with real `NEPacketTunnelNetworkSettings` (WS-D), and the
 `D427C2J4RG`, `packet-tunnel-provider` entitlement). Only **WS-F — the
 on-hardware verification** remains; it cannot run in CI. See
 `docs/superpowers/plans/2026-06-26-phase3-wifi-tunnel.md` and the WS-F handoff
-in `docs/dev/handoff-2026-06-28.md`.
+in `docs/dev/handoff-2026-06-28.md`. **Still true as of 2026-09-24** — three
+months idle at this gate; the commits since 2026-06-28
+(https://familia.riera.co.uk/projects/70) are docs/skills/website/dependency
+housekeeping and did not touch WS-F or advance the core blocker. Next exact
+action: https://familia.riera.co.uk/tasks/2562 (WS-F, on-hardware, cannot run
+in CI).
 
 The one prerequisite for WS-F is a running **data + exit** gateway (the deployed
 `oracle` box runs probe mode only). `cmd/gateway` already supports it
@@ -167,7 +172,9 @@ Built this cycle (all unit/race tested):
   `docs/superpowers/specs/2026-06-24-macos-app-experience-design.md`.
 * Monetisation study (`docs/product/monetisation-apple-study.md`): keep Stripe as
   the rail (a free macOS companion to a paid web service can skip App Store IAP);
-  IAP, if ever used, is 15% (Small Business Program).
+  IAP, if ever used, is 15% (Small Business Program). Numbers-based model landed
+  2026-09-24 (`docs/product/monetisation-financial-model.md`): revenue, limits,
+  capex/opex and a GO verdict (scoped, side-income) gated on WS-F unblocking.
 * `bridge/geminacore` — the cgo C-shared bridge exposing the core to Swift
   over a handle-based ABI (ADR-0005); builds as a darwin/arm64 c-archive.
   `apps/macos` `GeminaTunnelProvider` (guarded) wires packetFlow to the
@@ -267,17 +274,25 @@ Git remote: `origin` = `git@github.com:joanmarcriera/gemina.git`
   of "All"); fixed. See `docs/dev/gateway-deploy.md`.
 * Licence classifications are Stage 0 due-diligence records, not legal advice; no
   upstream source is approved for import.
-* Pre-merge CI gating is unfinished: PR-triggered CI confirmation, branch
-  protection / required checks on `main`, and SwiftLint pinning are outstanding
-  (tracked in `TASKS.md`).
+* Pre-merge CI gating is mostly done (2026-09-24): branch protection is
+  **enforced** on `main` via the GitHub ruleset "main protection"
+  (https://github.com/joanmarcriera/Gemina/rules/18189694) — PR required, linear
+  history, no deletion/force-push, and required status checks
+  `test`/`lint`/`swift`/`licence`/`audit`. Outstanding: SwiftLint version pinning
+  in `macos-ci.yml` (still an unpinned `brew install swiftlint`; tracked in
+  `TASKS.md` / https://familia.riera.co.uk/tasks/2574).
 * The Swift scaffold is build-only; real XCTest/UI tests need an Xcode project
   and full Apple toolchain.
 
 ## Known Blockers
 
-* `tofu`, `terraform` and `swiftlint` are not installed locally.
 * SwiftPM `sandbox-exec` is blocked inside the Codex sandbox, requiring
   `--disable-sandbox` for local Swift package commands.
+
+(Resolved 2026-09-24: `swiftlint` 0.65.1 and `opentofu` 1.12.6 are now
+installed locally via Homebrew; `tofu validate` is clean for both `dev` and
+`production` environments. Plain `terraform` remains uninstalled but is not
+required — the Makefile and CI both prefer OpenTofu.)
 
 ## Tests Run This Cycle
 

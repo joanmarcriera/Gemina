@@ -77,7 +77,7 @@ The project is **Go + Swift** (`go 1.26`, Xcode project in `apps/macos/`):
 
 4. **Two gateway modes:** `cmd/gateway` with `GEMINA_GATEWAY_MODE=probe` (Stage 1 UDP probes) and `GEMINA_GATEWAY_MODE=data` (Stage 2 data plane). Deploy units in `deploy/systemd/` (probe = live on oracle; data+exit = draft, validate on hardware during WS-F).
 
-5. **CI gating incomplete:** PR-triggered checks, branch protection, and SwiftLint pinning are tracked in `TASKS.md` but not yet enforced. Local `make ci` runs all gates, but main is not protected.
+5. **CI gating mostly enforced (2026-09-24):** `main` is protected by the GitHub ruleset "main protection" (https://github.com/joanmarcriera/Gemina/rules/18189694) — PR required, linear history, no deletion/force-push, and required status checks `test`/`lint`/`swift`/`licence`/`audit`. Still open: SwiftLint version pinning in `macos-ci.yml` (tracked in `TASKS.md` / https://familia.riera.co.uk/tasks/2574). Local `make ci` runs all gates.
 
 6. **Swift build needs `--disable-sandbox`:** SwiftPM `sandbox-exec` fails inside Codex sandbox. Use `--disable-sandbox` flag for local Swift commands.
 
