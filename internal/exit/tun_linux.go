@@ -100,7 +100,16 @@ func tunSetIff(f *os.File, name string) error {
 // setMTU opens a temporary AF_INET socket and uses SIOCSIFMTU to set the MTU
 // on the named interface. A socket is needed because SIOCSIFMTU operates on a
 // socket fd, not the TUN fd.
+//
+// If the interface already has the requested MTU (the host provisioned it, as
+// scripts/setup-exit-host.sh does for the persistent gemina0) the ioctl is
+// skipped: SIOCSIFMTU needs CAP_NET_ADMIN even for a no-op, and skipping it lets
+// a host-provisioned TUN be attached with the least privilege possible.
 func setMTU(name string, mtu int) error {
+	if ifi, err := net.InterfaceByName(name); err == nil && ifi.MTU == mtu {
+		return nil
+	}
+
 	sock, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, 0)
 	if err != nil {
 		return fmt.Errorf("socket: %w", err)

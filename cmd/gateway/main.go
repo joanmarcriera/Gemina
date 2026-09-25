@@ -97,7 +97,33 @@ func main() {
 // identity clients pin, builds the entitlement service (open for self-host,
 // hosted for the paid tier), and serves the authenticated handshake + encrypted
 // data plane, exposing the same redacted /metrics.
+//
+// Privilege boundary (issue #5): only the UDP listener and the TUN device are
+// opened while privileged. dropToRunAs then switches to the unprivileged uid
+// BEFORE the identity file is touched, the metrics server starts, or any
+// untrusted datagram is read.
 func runDataGateway(logger *slog.Logger, addr string, capacity, readBuffer int) {
+	conn, err := net.ListenPacket("udp", addr)
+	if err != nil {
+		logger.Error("listen", "addr", addr, "error", err.Error())
+		os.Exit(1)
+	}
+	if udp, ok := conn.(*net.UDPConn); ok {
+		_ = udp.SetReadBuffer(readBuffer)
+	}
+
+	// Optional internet exit path (Stage 2). Off by default so the data gateway
+	// stays a decrypt+dedup endpoint unless the operator provisions a TUN.
+	var exitDev *exitDevice
+	if envOr("GEMINA_GATEWAY_EXIT", "off") == "on" {
+		if exitDev, err = openExitDevice(logger); err != nil {
+			logger.Error("enable exit path", "error", err.Error())
+			os.Exit(1)
+		}
+	}
+
+	dropToRunAs(logger)
+
 	identityPath := envOr("GEMINA_GATEWAY_IDENTITY", "gateway-identity.key")
 	priv, created, err := gateway.LoadOrCreateIdentity(identityPath)
 	if err != nil {
@@ -118,23 +144,8 @@ func runDataGateway(logger *slog.Logger, addr string, capacity, readBuffer int) 
 	}
 
 	dg := gateway.NewDataGateway(priv, service, capacity, logger)
-
-	conn, err := net.ListenPacket("udp", addr)
-	if err != nil {
-		logger.Error("listen", "addr", addr, "error", err.Error())
-		os.Exit(1)
-	}
-	if udp, ok := conn.(*net.UDPConn); ok {
-		_ = udp.SetReadBuffer(readBuffer)
-	}
-
-	// Optional internet exit path (Stage 2). Off by default so the data gateway
-	// stays a decrypt+dedup endpoint unless the operator provisions a TUN.
-	if envOr("GEMINA_GATEWAY_EXIT", "off") == "on" {
-		if err := setupExit(dg, conn, logger); err != nil {
-			logger.Error("enable exit path", "error", err.Error())
-			os.Exit(1)
-		}
+	if exitDev != nil {
+		exitDev.enable(dg, conn, logger)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -150,6 +161,35 @@ func runDataGateway(logger *slog.Logger, addr string, capacity, readBuffer int) 
 	}
 }
 
+// dropToRunAs drops root to GEMINA_GATEWAY_RUN_AS (default 65532:65532, the
+// distroless :nonroot uid) and exits the process if that cannot be done and
+// verified — running the packet path as root is never a silent fallback. The
+// explicit value "root" keeps root (logged loudly) for operators who must.
+func dropToRunAs(logger *slog.Logger) {
+	spec := envOr("GEMINA_GATEWAY_RUN_AS", defaultRunAs)
+	if spec == runAsKeepRoot {
+		if os.Geteuid() == 0 {
+			logger.Warn("GEMINA_GATEWAY_RUN_AS=root: NOT dropping privileges; the packet path runs as root")
+		}
+		return
+	}
+	uid, gid, err := parseRunAs(spec)
+	if err != nil {
+		logger.Error("GEMINA_GATEWAY_RUN_AS", "value", spec, "error", err.Error())
+		os.Exit(1)
+	}
+	dropped, err := dropPrivileges(uid, gid)
+	if err != nil {
+		logger.Error("drop privileges", "uid", uid, "gid", gid, "error", err.Error())
+		os.Exit(1)
+	}
+	if dropped {
+		logger.Info("dropped privileges", "uid", uid, "gid", gid, "capabilities", "none")
+	} else {
+		logger.Info("running unprivileged", "uid", os.Geteuid(), "gid", os.Getegid())
+	}
+}
+
 // connSink delivers framed return datagrams over the gateway's UDP socket. It
 // implements exit.Sink so the return path can reach a client's source endpoints.
 type connSink struct{ conn net.PacketConn }
@@ -159,27 +199,44 @@ func (s connSink) SendTo(datagram []byte, dst netip.AddrPort) error {
 	return err
 }
 
-// setupExit provisions the TUN device, address allocator, path set and router,
-// then enables the exit path on dg. The TUN device requires Linux and privileges
-// (CAP_NET_ADMIN); on other platforms OpenTUN returns a clear error.
-func setupExit(dg *gateway.DataGateway, conn net.PacketConn, logger *slog.Logger) error {
+// exitDevice holds the privileged half of the exit path: the opened TUN device
+// plus the parsed pool. It is created before the privilege drop and wired into
+// the data gateway afterwards.
+type exitDevice struct {
+	dev     *exit.TUN
+	alloc   *exit.Allocator
+	tunName string
+	mtu     int
+	pool    string
+}
+
+// openExitDevice parses the pool and opens the TUN device. This is the only
+// step that needs CAP_NET_ADMIN (TUNSETIFF on a TUN owned by another uid, and
+// SIOCSIFMTU when the host has not already set the MTU). On other platforms
+// OpenTUN returns a clear error.
+func openExitDevice(logger *slog.Logger) (*exitDevice, error) {
 	poolStr := envOr("GEMINA_GATEWAY_POOL", "10.99.0.0/16")
 	pool, err := netip.ParsePrefix(poolStr)
 	if err != nil {
-		return fmt.Errorf("GEMINA_GATEWAY_POOL %q: %w", poolStr, err)
+		return nil, fmt.Errorf("GEMINA_GATEWAY_POOL %q: %w", poolStr, err)
 	}
 	alloc, err := exit.NewAllocator(pool)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	tunName := envOr("GEMINA_GATEWAY_TUN", "gemina0")
 	mtu := envInt(logger, "GEMINA_GATEWAY_TUN_MTU", 1280)
 	dev, err := exit.OpenTUN(tunName, mtu)
 	if err != nil {
-		return fmt.Errorf("open tun %q: %w", tunName, err)
+		return nil, fmt.Errorf("open tun %q: %w", tunName, err)
 	}
+	return &exitDevice{dev: dev, alloc: alloc, tunName: tunName, mtu: mtu, pool: poolStr}, nil
+}
 
+// enable builds the path set and router over the already-open TUN and turns on
+// the exit path. It needs no privileges and runs after the drop.
+func (e *exitDevice) enable(dg *gateway.DataGateway, conn net.PacketConn, logger *slog.Logger) {
 	// The kernel does the NAT; we only health-assert it so a misconfigured host
 	// surfaces a loud warning instead of silently dropping all egress.
 	if err := exit.AssertIPForward(); err != nil {
@@ -187,10 +244,9 @@ func setupExit(dg *gateway.DataGateway, conn net.PacketConn, logger *slog.Logger
 	}
 
 	paths := exit.NewPathSet(2 * time.Minute)
-	router := exit.NewRouter(alloc, paths, dev, dg, connSink{conn}, dg)
+	router := exit.NewRouter(e.alloc, paths, e.dev, dg, connSink{conn}, dg)
 	dg.EnableExit(router)
-	logger.Info("exit path enabled", "tun", tunName, "mtu", mtu, "pool", poolStr)
-	return nil
+	logger.Info("exit path enabled", "tun", e.tunName, "mtu", e.mtu, "pool", e.pool)
 }
 
 // startMetricsServer serves GET /metrics (Prometheus text format) on addr until
