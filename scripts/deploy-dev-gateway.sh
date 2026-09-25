@@ -8,6 +8,14 @@
 #
 #   scripts/deploy-dev-gateway.sh                 # deploy to host "oracle"
 #   GATEWAY_HOST=oracle GATEWAY_PORT=51820 scripts/deploy-dev-gateway.sh
+#   GATEWAY_UNIT=gemina-gateway-data.service scripts/deploy-dev-gateway.sh
+#
+# GATEWAY_UNIT selects the unit to (re)start: the Stage-1 probe
+# (gemina-gateway.service, default) or the Stage-2 data+exit gateway
+# (gemina-gateway-data.service). Both bind the same UDP port, so deploying one
+# disables the other. For the data unit the script also installs
+# scripts/setup-exit-host.sh as /usr/local/sbin/gemina-setup-exit-host, which the
+# unit runs as ExecStartPre to provision the host on every start.
 #
 # Requirements on the remote: docker, systemd, firewalld, passwordless sudo.
 # Provenance: .research-src (GPL) is never shipped — see the rsync excludes.
@@ -17,7 +25,12 @@ HOST="${GATEWAY_HOST:-oracle}"
 PORT="${GATEWAY_PORT:-51820}"
 REMOTE_DIR="${GATEWAY_REMOTE_DIR:-/opt/gemina}"
 IMAGE="gemina-gateway:latest"
-UNIT="gemina-gateway.service"
+UNIT="${GATEWAY_UNIT:-gemina-gateway.service}"
+case "$UNIT" in
+  gemina-gateway.service)      OTHER_UNIT="gemina-gateway-data.service" ;;
+  gemina-gateway-data.service) OTHER_UNIT="gemina-gateway.service" ;;
+  *) echo "error: GATEWAY_UNIT must be gemina-gateway.service or gemina-gateway-data.service" >&2; exit 2 ;;
+esac
 
 UNIT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$UNIT_ROOT"
@@ -44,9 +57,13 @@ ssh "$HOST" "cd '$REMOTE_DIR' && sudo docker build -t '$IMAGE' -f deploy/docker/
 say "install/refresh systemd unit $UNIT (port $PORT)"
 ssh "$HOST" "
   set -e
+  if [ '$UNIT' = gemina-gateway-data.service ]; then
+    sudo install -m 0755 '$REMOTE_DIR/scripts/setup-exit-host.sh' /usr/local/sbin/gemina-setup-exit-host
+  fi
   sudo install -m 0644 '$REMOTE_DIR/deploy/systemd/$UNIT' '/etc/systemd/system/$UNIT'
   sudo sed -i 's/^Environment=GATEWAY_PORT=.*/Environment=GATEWAY_PORT=$PORT/' '/etc/systemd/system/$UNIT'
   sudo systemctl daemon-reload
+  sudo systemctl disable --now '$OTHER_UNIT' 2>/dev/null || true
   sudo systemctl enable '$UNIT'
   sudo systemctl restart '$UNIT'
 "
