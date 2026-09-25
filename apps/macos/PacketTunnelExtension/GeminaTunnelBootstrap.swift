@@ -107,6 +107,13 @@ final class GeminaTunnelBootstrap: GeminaTunnelProvider, @unchecked Sendable {
         )
     }
 
+    /// The single Wi-Fi path built in makeRelay() is up once the handshake has
+    /// succeeded. The id must match WiFiPathSender.name ("wifi") or the relay
+    /// reports noSenderForSelectedPath and sends nothing.
+    override func initialPathStates() -> [PathInfo] {
+        [PathInfo(id: "wifi", up: true, metered: false)]
+    }
+
     override func makeTunnelSettings(tunnelRemoteAddress: String) -> NEPacketTunnelNetworkSettings {
         let settings = NEPacketTunnelNetworkSettings(tunnelRemoteAddress: tunnelRemoteAddress)
         guard let address = assignedAddress.withLock({ $0 }) else {

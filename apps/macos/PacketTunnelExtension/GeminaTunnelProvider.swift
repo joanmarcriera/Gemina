@@ -79,6 +79,15 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
         NEPacketTunnelNetworkSettings(tunnelRemoteAddress: tunnelRemoteAddress)
     }
 
+    /// The path states to seed the policy with once the relay is built. The
+    /// policy only sends over paths it sees as up, so an empty list means every
+    /// outbound packet is dropped (found on hardware in WS-F, 2026-09-25). A
+    /// bootstrap subclass returns the paths it just brought up; a live NE path
+    /// monitor should update them afterwards.
+    open func initialPathStates() -> [PathInfo] {
+        []
+    }
+
     // MARK: - NEPacketTunnelProvider lifecycle
 
     open override func startTunnel(
@@ -109,7 +118,11 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
             finish(error)
             return
         }
-        stateLock.withLockUnchecked { _ in self.relay = built }
+        let seeded = initialPathStates()
+        stateLock.withLockUnchecked { _ in
+            self.relay = built
+            self.currentPathStates = seeded
+        }
 
         // The subclass installs the assigned tunnel IP, routes and DNS here; the
         // route scoping (gateway-only, exclude the management subnet) lives in the

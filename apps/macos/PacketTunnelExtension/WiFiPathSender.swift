@@ -204,11 +204,15 @@ public final class WiFiPathSender: PathSender, @unchecked Sendable {
         connection.receiveMessage { [weak self] data, _, isComplete, error in
             guard let self else { return }
 
-            if let data, !data.isEmpty {
+            let hasData = data.map { !$0.isEmpty } ?? false
+            if let data, hasData {
                 onDatagram(data)
             }
             // On NWError the loop stops; caller observes silence and can re-connect.
-            if error != nil || isComplete { return }
+            // For UDP every datagram is a complete message, so isComplete is true
+            // on each one: it only means "closed" when it arrives with no data.
+            // (Stopping on isComplete alone delivered exactly one datagram — WS-F.)
+            if error != nil || (isComplete && !hasData) { return }
             self.receiveNext(onDatagram: onDatagram)
         }
     }

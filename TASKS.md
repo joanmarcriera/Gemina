@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-06-25
+Last updated: 2026-09-24
 
 This file is the single ordered source of truth for outstanding work. Durable
 narrative history lives in `PROJECT_STATE.md` and Git; architectural choices live
@@ -12,6 +12,18 @@ Current stage: **Stage 2 — real tunnel.** Stage 1 (dual-path probe) is PROVEN;
 Stage 0 exit criteria are met and reviewed.
 
 ## Next exact action
+
+**As of 2026-09-24:** no commit since 2026-06-28 has advanced WS-F. `efbc20d`
+(2026-06-28) drafted the WS-F gateway prerequisite (data+exit deploy unit +
+host-NAT script) but is not itself the on-hardware verification; the
+monetisation financial model landed (`4409378`); the other seven commits since
+(`966da3e`, `efa6150`, `effd5da`, `7f88772`, `293e9a5`, `db4836c`, `4d6d8bb`)
+are docs/skills/website/tracker housekeeping. The open items previously narrated per-section below are
+now tracked as Vikunja tasks in project 70
+(https://familia.riera.co.uk/projects/70), tasks #2562-#2577 — that board, not
+this file, is the live day-to-day queue; this file stays the durable technical
+narrative. Top of queue: https://familia.riera.co.uk/tasks/2562 (WS-F,
+BLOCKER, on-hardware, cannot run in CI).
 
 **Apple UNBLOCKED (2026-06-25):** the paid Developer Program is Active (team
 `D427C2J4RG`); the app + Network Extension code-sign with the `packet-tunnel-provider`
@@ -41,7 +53,8 @@ draft `deploy/systemd/gemina-gateway-data.service` + `scripts/setup-exit-host.sh
 validate on hardware), then run the app, toggle Protect, and prove packets flow
 through the `utun` surviving a path cut. Full step-by-step in
 `docs/dev/handoff-2026-06-28.md`. Then layer the RNDIS second path (separate plan).
-Tracked as GitHub issues #3–#10.
+Tracked as GitHub issues #3–#10 (#3 and #7 are finished and just need closing:
+https://familia.riera.co.uk/tasks/2577).
 
 ---
 
@@ -65,11 +78,14 @@ and **go-to-market** (open-core + hosted gateway). Next, in priority order:
   needed (Xcode-runtime, `docs/dev/xcode-signing.md`):** the real provider with
   packetFlow I/O + the two path sockets, driving the handshake over the wire from
   Swift, pinned-identity distribution, and batching.
+  https://familia.riera.co.uk/tasks/2566
 * [~] Payments: `StripeProvider` (stdlib) implements the provider interface
   (checkout + verified webhooks) and drops into `entitlement.Service`. Remaining:
   real Stripe keys + account storage + the webhook endpoint the gateway/site
   exposes. Monetisation strategy studied — keep Stripe (see
-  `docs/product/monetisation-apple-study.md`).
+  `docs/product/monetisation-apple-study.md` and
+  `docs/product/monetisation-financial-model.md`).
+  https://familia.riera.co.uk/tasks/2565
 * [x] Monitoring/observability (2026-06-23): stdlib Prometheus `/metrics` on the
   gateway (failover signal `gemina_packets_total{decision,path}` +
   `gemina_rejected_total{reason}`, redaction-enforced), plus Grafana/alerts/
@@ -85,20 +101,24 @@ and **go-to-market** (open-core + hosted gateway). Next, in priority order:
   fail-closed); the DataPlane only serves admitted sessions.
 * [ ] Re-confirm the userspace USB claim succeeds inside an App-Sandbox context
   with `com.apple.security.device.usb` (the spike ran un-sandboxed). Gates the
-  App Store route.
+  App Store route. https://familia.riera.co.uk/tasks/2564
 * [~] Going public: the repo IS now public (`github.com/joanmarcriera/gemina`).
   `scripts/prepare-public.sh` audit = GO and the current tree is clean.
   **Open decision (owner):** the bootstrap history (commit `ceb783c`, redacted in
-  `3196c7d`) still carries the real LAN endpoint `192.168.0.5:30068` in `AGENTS.md`
+  `3196c7d`) still carries the real LAN endpoint `<LAN-IP>:<port>` in `AGENTS.md`
   — low severity (a private RFC1918 address, not routable, common subnet) but it
   is in the *public* history. Decide: accept it (recommended — not worth a
   force-push rewrite of a public repo) or purge with `git filter-repo` + force-push
   (disruptive; SHAs change; already-cached). 192.168.42.x in history is Android's
-  generic RNDIS tether subnet, not a secret. Remaining go-live: finalise
+  generic RNDIS tether subnet, not a secret.
+  https://familia.riera.co.uk/tasks/2567 Remaining go-live: finalise
   CONTRIBUTING licence wording, lawyer review of `docs/legal/privacy-policy.md` +
-  `terms-of-service.md`, record the demo video. GTM groundwork done: SEO-hardened
-  `website/` (+ privacy/terms pages), `docs/marketing/` (seo, video-script,
-  launch-plan, press-kit).
+  `terms-of-service.md` (https://familia.riera.co.uk/tasks/2568), record the
+  demo video (https://familia.riera.co.uk/tasks/2575). GTM groundwork done:
+  SEO-hardened `website/` (+ privacy/terms pages), `docs/marketing/` (seo,
+  video-script, launch-plan, press-kit). Known website gaps tracked in Vikunja:
+  OG/Twitter card image (2570), placeholder domain `geminavpn.example` (2571),
+  waitlist form has no backend (2572).
 * [x] Make the `DataGateway` runnable (cmd wiring done): `cmd/gateway` selects
   `probe | data` via `GEMINA_GATEWAY_MODE`, the data path loads/persists an Ed25519
   identity (`GEMINA_GATEWAY_IDENTITY`, logs the base64 public key), gates admission
@@ -275,15 +295,21 @@ evidence exist:
 
 ## Stage 0 hardening — carry-over, complete before the first Stage 1 *merge*
 
-* [ ] Add branch protection / required status checks on `main`.
+* [x] Add branch protection / required status checks on `main` (done by
+  2026-09-24; ruleset "main protection",
+  https://github.com/joanmarcriera/Gemina/rules/18189694 — PR required, linear
+  history, required checks `test`/`lint`/`swift`/`licence`/`audit`).
+  https://familia.riera.co.uk/tasks/2569
 * [ ] Confirm PR-triggered path-filtered CI runs (push-triggered path-filtered CI
   has passed on `fcd6238` and `4a8afd4`).
 * [ ] Pin SwiftLint install in macOS CI instead of unpinned `brew install
-  swiftlint`.
+  swiftlint`. https://familia.riera.co.uk/tasks/2574
 * [ ] Decide whether to generate the Xcode project now or stay SwiftPM-only until
   signing details are known; add real XCTest/UI tests once decided.
-* [ ] Run OpenTofu validation and SwiftLint in an environment that has `tofu` and
-  `swiftlint` installed.
+* [x] Run OpenTofu validation and SwiftLint in an environment that has `tofu` and
+  `swiftlint` installed (done 2026-09-24: `opentofu` 1.12.6 + `swiftlint` 0.65.1
+  installed via Homebrew; `tofu validate` clean for `dev` and `production`).
+  https://familia.riera.co.uk/tasks/2576
 
 ## Legal / provenance standing conditions (block any upstream import)
 
@@ -327,3 +353,5 @@ review gates (engineering issue 1, legal/provenance issue 2) — all complete. S
 * [x] `geminactl darwin-evidence` redacted JSON diagnostic + tests; run once
   locally (found Wi-Fi, correctly reported missing Android USB tethering).
 * [x] Root stage markers moved from Stage 0 bootstrap to Stage 1 probe.
+
+<!-- Reconciled 2026-09-24 by Claude: 12 tasks matched, 4 created, 1 marked done in Vikunja project 70 -->

@@ -728,3 +728,43 @@ Conditions for revisiting:
 Revisit when multiple hosts or reproducible signed images are needed (introduce a
 registry and CI build), or if the gateway moves to managed infrastructure defined
 in `deploy/tofu`.
+
+## 2026-09-25: Default the Tunnel's DNS to Cloudflare "1.1.1.1 for Families"
+
+Decision:
+
+When the caller of `TunnelController.installIfNeeded` passes no `dnsServers`,
+default to Cloudflare's "1.1.1.1 for Families" malware + adult-content resolver
+pair, `1.1.1.3` and `1.0.0.3` (`TunnelController.defaultDNSServers`), pushed to
+macOS via `NEDNSSettings` for the lifetime of the tunnel.
+
+Alternatives considered:
+
+* Default to no DNS override (previous behaviour: empty array, system resolver
+  untouched). Rejected: Marc wants the default tunnel experience to start
+  blocking malware and adult content out of the box.
+* Default to the malware-only pair (`1.1.1.2`/`1.0.0.2`), leaving Families
+  blocking opt-in. Rejected: Marc wants Families blocking as the free default.
+
+Rationale:
+
+Marc's product decision (2026-09-25): the free/default tier gets Cloudflare
+"1.1.1.1 for Families" (`1.1.1.3`/`1.0.0.3`) — malware **and** adult-content
+blocking. The malware-only pair (`1.1.1.2`/`1.0.0.2`) and any other resolver
+choice is a paid-tier option. The change is a one-line default-parameter swap
+in `TunnelController.installIfNeeded`; a caller can still pass its own
+`dnsServers` (or `[]` to opt out entirely) to override it.
+
+Consequences:
+
+* Every install that doesn't explicitly override DNS now filters malware and
+  adult content by default — this is a behaviour change users should be told
+  about (release notes / onboarding copy, not yet written).
+* The paid-tier DNS choice (`1.1.1.2`/`1.0.0.2`, or any other resolver) is not
+  yet wired into the UI or entitlement gate — only the default is implemented
+  here; exposing a resolver picker is future work.
+
+Conditions for revisiting:
+
+Revisit when the paid-tier resolver picker is built, or if Families blocking
+causes false-positive complaints significant enough to change the free default.
