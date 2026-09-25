@@ -47,7 +47,7 @@ Read these carefully — they tell you the whole story:
 ## Switch the raw gadget function
 
 ```bash
-adb shell svc usb setFunctions ncm        # or rndis,adb / ncm,adb to keep adb
+adb shell svc usb setFunctions ncm        # or rndis. Do NOT pass "rndis,adb": Android 16 rejects it (IllegalArgumentException); adb is re-added automatically (config becomes rndis,none,adb)
 ```
 
 - Changing functions **resets the USB bus**, so the adb session drops mid-command
