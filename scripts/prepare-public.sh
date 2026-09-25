@@ -178,7 +178,11 @@ check_raw_ipv4() {
 	#  - RFC1918 private ranges (10/8, 172.16/12, 192.168/16): non-routable config
 	#    defaults and documented examples, not public host leaks. Octet-anchored
 	#    so 110.* / 210.* and an embedded .10. octet of a public IP stay flagged;
-	#  - link-local / loopback noise is left visible on purpose.
+	#  - link-local / loopback noise is left visible on purpose;
+	#  - Cloudflare's public DNS resolver anycast addresses (1.1.1.0/24,
+	#    1.0.0.0/24: the plain/malware-only/Families resolver trio) — these are
+	#    published, well-known third-party service addresses baked into the
+	#    product's default DNS config (Marc, 2026-09-25), not a host leak.
 	local hits
 	hits="$(git grep -nIE -- "$ipv4" \
 		-- ':(exclude)LICENSES/*' \
@@ -190,6 +194,8 @@ check_raw_ipv4() {
 		| grep -Ev '192\.0\.2\.|198\.51\.100\.|203\.0\.113\.' \
 		| grep -Ev '127\.0\.0\.1|0\.0\.0\.0|255\.255\.255\.255' \
 		| grep -Ev '(^|[^0-9.])(10|192\.168|172\.(1[6-9]|2[0-9]|3[01]))\.' \
+		| grep -Ev '(^|[^0-9.])1\.1\.1\.[0-3]([^0-9]|$)' \
+		| grep -Ev '(^|[^0-9.])1\.0\.0\.[0-3]([^0-9]|$)' \
 		|| true)"
 
 	if [[ -z "$hits" ]]; then
