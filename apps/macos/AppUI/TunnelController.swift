@@ -23,6 +23,12 @@ final class TunnelController: ObservableObject {
     /// The bundle id of the packet-tunnel app-extension (see project.yml).
     static let tunnelBundleID = "com.joanmarcriera.gemina.tunnel"
 
+    /// Default DNS servers pushed to macOS while the tunnel is up when the caller
+    /// specifies none: Cloudflare "1.1.1.1 for Families" (malware + adult-content
+    /// blocking). The malware-only pair (1.1.1.2/1.0.0.2) and any other resolver
+    /// are a paid-tier option, not the default (Marc, 2026-09-25).
+    static let defaultDNSServers = ["1.1.1.3", "1.0.0.3"]
+
     @Published private(set) var status: NEVPNStatus = .invalid
     @Published private(set) var lastError: String?
 
@@ -58,7 +64,7 @@ final class TunnelController: ObservableObject {
         gatewayPort: UInt16,
         gatewayPublicKeyBase64: String,
         token: String,
-        dnsServers: [String] = []
+        dnsServers: [String] = TunnelController.defaultDNSServers
     ) async throws {
         let managers = try await NETunnelProviderManager.loadAllFromPreferences()
         let mgr = managers.first ?? NETunnelProviderManager()
