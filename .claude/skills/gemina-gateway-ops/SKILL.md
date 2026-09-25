@@ -1,6 +1,6 @@
 ---
 name: gemina-gateway-ops
-description: Provision, deploy, and operate the gemina dedup/exit gateway host (currently an Oracle Cloud arm64 VM, SSH alias `oracle`, region uk-london-1 — NOT the Hetzner joanmarcriera.es box). Covers scripts/deploy-dev-gateway.sh, scripts/setup-exit-host.sh, scripts/probe-gateway.sh, scripts/deploy-monitoring.sh, the two systemd units (gemina-gateway.service Stage-1 probe / gemina-gateway-data.service Stage-2 data+exit, DRAFT), host nftables/iptables NAT + firewalld + Oracle VCN security-list ingress, and the Prometheus/Grafana monitoring stack. Use for "deploy the gateway", "set up the exit host", "probe the gateway", "gateway won't dedupe/exit", "stand up monitoring for the gateway", or any change to deploy/{docker,systemd,nftables,cloud-init,ansible,tofu,monitoring}. Distinct from run-geminactl (client/CLI build+test, explicitly scopes OUT gateway runtime) and from riera-selfhost-ops (the Hetzner Traefik /opt/stacks product stack — a different host entirely).
+description: Provision, deploy, and operate the gemina dedup/exit gateway host (currently an Oracle Cloud arm64 VM, SSH alias `oracle`, region uk-london-1 — NOT the Hetzner joanmarcriera.es box). Covers scripts/deploy-dev-gateway.sh, scripts/setup-exit-host.sh, scripts/probe-gateway.sh, scripts/deploy-monitoring.sh, the two systemd units (gemina-gateway.service Stage-1 probe / gemina-gateway-data.service Stage-2 data+exit, live + least-privilege since 2026-09-25), host nftables/iptables NAT + firewalld + Oracle VCN security-list ingress, and the Prometheus/Grafana monitoring stack. Use for "deploy the gateway", "set up the exit host", "probe the gateway", "gateway won't dedupe/exit", "stand up monitoring for the gateway", or any change to deploy/{docker,systemd,nftables,cloud-init,ansible,tofu,monitoring}. Distinct from run-geminactl (client/CLI build+test, explicitly scopes OUT gateway runtime) and from riera-selfhost-ops (the Hetzner Traefik /opt/stacks product stack — a different host entirely).
 ---
 
 # gemina gateway ops
@@ -16,20 +16,22 @@ moves this host, update this skill first.
 
 ## Two gateway modes
 
-- **Stage-1 probe** (**live, deployed today**) — `gemina-gateway.service`,
-  container `--read-only`, no host networking; only dedups probe packets and
-  logs decisions. No prereqs. Env: `GEMINA_GATEWAY_ADDR`, `_DEDUP_CAPACITY`,
-  `_LOG_LEVEL`.
-- **Stage-2 data+exit** (**DRAFT, unvalidated on hardware since 2026-06-28**) —
-  `gemina-gateway-data.service`, not read-only, `--network host`, `--cap-add
-  NET_ADMIN`, `--device /dev/net/tun`; real handshake + encrypted data plane +
-  internet exit via TUN. Requires `scripts/setup-exit-host.sh` first. Env adds
-  `GEMINA_GATEWAY_MODE=data`, `_EXIT=on`, `_IDENTITY`, `_POOL`, `_TUN`.
+- **Stage-1 probe** — `gemina-gateway.service`, container `--read-only`, no
+  host networking; only dedups probe packets and logs decisions. No prereqs.
+  Env: `GEMINA_GATEWAY_ADDR`, `_DEDUP_CAPACITY`, `_LOG_LEVEL`. **Disabled on
+  oracle since 2026-09-25** in favour of the data unit (same port).
+- **Stage-2 data+exit** (**live on oracle, validated 2026-09-25**, WS-F,
+  https://familia.riera.co.uk/tasks/2609) — `gemina-gateway-data.service`,
+  `--network host`, `--device /dev/net/tun`, `--read-only`, starts as uid 0 with
+  **only** NET_ADMIN+SETUID+SETGID and `no-new-privileges`; `cmd/gateway` opens
+  the socket + TUN, then drops to `GEMINA_GATEWAY_RUN_AS` (65532:65532, all caps
+  cleared, verified) before reading the identity or any datagram (issue #5). Real
+  handshake + encrypted data plane + internet exit via TUN. Env adds
+  `GEMINA_GATEWAY_MODE=data`, `_EXIT=on`, `_IDENTITY`, `_POOL`, `_TUN`, `_RUN_AS`.
 
-Never run both on the same port. Both the Stage-2 unit and
-`setup-exit-host.sh` carry a DRAFT header — validate on hardware during WS-F
-(`docs/superpowers/plans/2026-06-26-phase3-wifi-tunnel.md`) before treating
-either as production-ready.
+Never run both on the same port (the units `Conflicts=` each other). Do NOT
+"fix" a TUN EPERM by running the container as plain root (`--user 0:0` with all
+default caps and no drop) — that was the WS-F stopgap this design replaced.
 
 ## Deploy / redeploy the probe gateway
 
@@ -54,28 +56,32 @@ Console steps: `docs/dev/gateway-deploy.md`. Remove:
 rmi gemina-gateway:latest` + remove `/opt/gemina` + `firewall-cmd
 --remove-port=<port>/udp --permanent --reload`.
 
-## Bring up Stage-2 data+exit (DRAFT — validate before trusting)
+## Bring up / redeploy Stage-2 data+exit
 
 ```bash
-scripts/deploy-dev-gateway.sh                                          # 1. ship the image
-ssh oracle 'cd /opt/gemina && sudo WAN_IF=<egress-iface> scripts/setup-exit-host.sh'  # 2. host NAT
-ssh oracle 'sudo install -m0644 /opt/gemina/deploy/systemd/gemina-gateway-data.service \
-  /etc/systemd/system/ && sudo systemctl daemon-reload && \
-  sudo systemctl enable --now gemina-gateway-data.service'             # 3. start it
-ssh oracle 'sudo journalctl -u gemina-gateway-data.service | grep public_key | tail -1'  # 4. get the pinned key
+GATEWAY_UNIT=gemina-gateway-data.service scripts/deploy-dev-gateway.sh   # ship + (re)start
+ssh oracle 'sudo journalctl -u gemina-gateway-data.service | grep public_key | tail -1'  # pinned key
 ```
 
-`setup-exit-host.sh` (idempotent, root) enables `net.ipv4.ip_forward`
-(`/etc/sysctl.d/99-gemina-exit.conf`); creates a **persistent TUN `gemina0`**
-owned by uid `65532` (distroless `:nonroot` uid) so it exists before the
-container starts; addresses it (`10.99.0.1/16` in pool `10.99.0.0/16` — must
-match `GEMINA_GATEWAY_POOL`); adds a MASQUERADE rule out `WAN_IF` (nftables
-preferred, iptables fallback; defaults to the default-route interface).
-`internal/exit/nat_linux.go` never touches the firewall — this script is the
-only place the NAT rule is written (`deploy/nftables/` is still an empty
-placeholder). Ed25519 identity persists at `$STATE_DIR/gateway-identity.key`
-(default `/var/lib/gemina`) — losing it breaks every client's pin. Remove:
-disable the unit, `ip link del gemina0`, drop the MASQUERADE rule, `rm
+The deploy installs `scripts/setup-exit-host.sh` as
+`/usr/local/sbin/gemina-setup-exit-host` (bin_t under SELinux; OL9 is
+Enforcing) and the unit runs it as **ExecStartPre on every start**, idempotently:
+`net.ipv4.ip_forward` (`/etc/sysctl.d/99-gemina-exit.conf`); **persistent TUN
+`gemina0`** owned by uid 65532, `10.99.0.1/16` (pool `10.99.0.0/16`, must match
+`GEMINA_GATEWAY_POOL`), MTU 1280; MASQUERADE out `WAN_IF` (nft table `inet
+gemina`, iptables fallback; default = default-route iface, `enp0s3` on oracle);
+and `gemina0` ↔ WAN ACCEPT rules in Docker's `DOCKER-USER` chain (Docker sets
+FORWARD policy DROP — without them pool traffic is silently blackholed even with
+NAT). None of these survive a reboot by themselves; the ExecStartPre is what
+makes a reboot safe. `internal/exit/nat_linux.go` never touches the firewall.
+Ed25519 identity persists at `$STATE_DIR/gateway-identity.key` (default
+`/var/lib/gemina`, owned 65532) — losing it breaks every client's pin.
+
+Check least privilege: `sudo grep -E 'Uid|Cap(Prm|Eff)|NoNewPrivs'
+/proc/$(sudo docker inspect -f '{{.State.Pid}}' gemina-gateway-data)/status` →
+uid 65532, CapPrm/CapEff 0, NoNewPrivs 1. Remove: disable the unit, delete it +
+`/usr/local/sbin/gemina-setup-exit-host`, `ip link del gemina0`, `nft delete
+table inet gemina`, delete the two `gemina0` DOCKER-USER rules, `rm
 /etc/sysctl.d/99-gemina-exit.conf`.
 
 ## Verify end-to-end
