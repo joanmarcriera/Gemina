@@ -105,7 +105,7 @@ and **go-to-market** (open-core + hosted gateway). Next, in priority order:
 * [~] Going public: the repo IS now public (`github.com/joanmarcriera/gemina`).
   `scripts/prepare-public.sh` audit = GO and the current tree is clean.
   **Open decision (owner):** the bootstrap history (commit `ceb783c`, redacted in
-  `3196c7d`) still carries the real LAN endpoint `192.168.0.5:30068` in `AGENTS.md`
+  `3196c7d`) still carries the real LAN endpoint `<LAN-IP>:<port>` in `AGENTS.md`
   — low severity (a private RFC1918 address, not routable, common subnet) but it
   is in the *public* history. Decide: accept it (recommended — not worth a
   force-push rewrite of a public repo) or purge with `git filter-repo` + force-push
