@@ -12,7 +12,7 @@
   --bone:     #f3f0e7;   /* warm light panel */
   --bone-2:   #e7e2d4;   /* light hairline */
   --signal:   #3fb6a8;   /* the alive Wi-Fi link / primary accent */
-  --signal-d: #2c8e84;   /* darker signal for light bg contrast */
+  --signal-d: #1f6e63;   /* darker signal for light-bg text — AA contrast on --bone */
   --amber:    #e0a458;   /* the phone / secondary path */
   --paper-tx: #1b2a30;   /* text on bone */
   --paper-tx-mute: #46585f;
@@ -280,14 +280,13 @@ input:focus-visible {
 .scope-svg .ch-amber { fill: var(--amber); }
 .scope-svg .ch-out { fill: var(--signal); }
 
-.trace { stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.trace { stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; transition: opacity .5s ease; }
 .trace-wifi  { stroke: var(--signal); }
 .trace-phone { stroke: var(--amber); }
 .trace-out   { stroke: var(--signal); stroke-width: 2.8; filter: drop-shadow(0 0 6px rgba(63,182,168,0.4)); }
 
 /* a trace that is "dropped" fades out; output never gets this class */
-.trace.is-down { opacity: 0.12; transition: opacity .5s ease; }
-.trace { transition: opacity .5s ease; }
+.trace.is-down { opacity: 0.12; }
 
 .scope-cap {
   margin-top: 12px;
@@ -298,6 +297,10 @@ input:focus-visible {
 /* =====================================================
    BANDS
    ===================================================== */
+/* keep the sticky header from covering a section's heading when
+   jumping to it via an in-page nav link (#how, #why, #pricing, #faq) */
+main section[id] { scroll-margin-top: 84px; }
+
 .band { padding-block: clamp(60px, 9vw, 116px); }
 .band-bone {
   background: var(--bone);
