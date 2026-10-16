@@ -496,28 +496,7 @@ main section[id] { scroll-margin-top: 84px; }
 .cta-inner { max-width: 640px; margin-inline: auto; }
 .cta-inner .eyebrow, .cta-inner .section-lede { margin-inline: auto; }
 .cta-inner .section-lede { max-width: 52ch; }
-.wl-form {
-  display: flex; gap: 10px;
-  margin: 2rem auto 0; max-width: 480px;
-  flex-wrap: wrap;
-}
-.wl-form input {
-  flex: 1 1 220px;
-  background: var(--ink);
-  border: 1.5px solid var(--ink-3);
-  border-radius: 10px;
-  color: var(--ink-tx);
-  font: 500 1rem var(--sans);
-  padding: 0.9em 1.1em;
-}
-.wl-form input::placeholder { color: var(--ink-tx-mute); }
-.wl-form input:focus-visible { border-color: var(--signal); }
-.wl-form .btn { flex: 0 0 auto; }
-.wl-status {
-  min-height: 1.4em; margin-top: 14px;
-  font-family: var(--mono); font-size: 0.84rem; color: var(--signal);
-}
-.wl-status[data-error] { color: var(--amber); }
+.cta-inner .cta-row { justify-content: center; margin-top: 2rem; }
 .cta-alt { margin-top: 1.6rem; font-size: 0.94rem; color: var(--ink-tx-mute); }
 
 /* =====================================================
@@ -602,7 +581,7 @@ main section[id] { scroll-margin-top: 84px; }
 @media (max-width: 620px) {
   body { font-size: 16px; }
   .foot-grid { grid-template-columns: 1fr; }
-  .cta-row .btn, .wl-form .btn { flex: 1 1 100%; }
+  .cta-row .btn { flex: 1 1 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {

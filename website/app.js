@@ -1,7 +1,6 @@
 /* Gemina VPN — tiny progressive-enhancement script.
    1. Cycles the hero "scope" so visitors can watch one input link
       drop while the OUTPUT trace stays unbroken — the core promise.
-   2. Gives the waitlist form honest, no-backend feedback.
    Everything degrades gracefully: with JS off, the page is complete
    and the scope simply shows both links up. */
 (function () {
@@ -36,27 +35,5 @@
         status.removeAttribute("data-state");
       }
     }, 2600);
-  }
-
-  /* ---- 2. Waitlist form ---- */
-  var form = document.querySelector(".wl-form");
-  var out = document.querySelector("[data-wl-status]");
-  if (form && out) {
-    form.addEventListener("submit", function (e) {
-      e.preventDefault();
-      var input = form.querySelector('input[type="email"]');
-      var value = input ? input.value.trim() : "";
-      var valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-      if (!valid) {
-        out.setAttribute("data-error", "");
-        out.textContent = "Please enter a valid email address.";
-        if (input) { input.focus(); }
-        return;
-      }
-      out.removeAttribute("data-error");
-      // No backend yet — be honest about what just happened.
-      out.textContent = "Thanks — you're on the list. We'll be in touch before launch.";
-      form.reset();
-    });
   }
 })();
