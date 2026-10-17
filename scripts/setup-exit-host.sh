@@ -22,6 +22,9 @@
 #      flushes) pool traffic never reaches WAN_IF even with MASQUERADE in place.
 #      nftables cannot override this from our own table: a drop verdict in any
 #      base chain is final, so the accept has to live in Docker's chain.
+#      Before those ACCEPTs, DROP rules (below) stop tunnel
+#      clients reaching cloud metadata (169.254.0.0/16), RFC1918, 100.64/10,
+#      loopback and IPv6 ULA/link-local through the exit.
 #
 # After this, start the gateway with deploy/systemd/gemina-gateway-data.service.
 #
@@ -40,6 +43,42 @@ STATE_DIR="${STATE_DIR:-/var/lib/gemina}"
 WAN_IF="${WAN_IF:-}"
 
 say() { printf '\n== %s\n' "$1"; }
+
+# Egress deny-list for the Gemina exit host (defined inline: the script is installed standalone, so no lib file).
+#
+# Tunnel clients are untrusted. Once the FORWARD ACCEPT for the TUN exists they
+# could otherwise reach, THROUGH the exit host, the cloud metadata service
+# (169.254.169.254, link-local) and any private network the host can route to
+# (its own VCN/VPC, RFC1918, CGNAT, loopback, IPv6 ULA/link-local).
+# These DROP rules are inserted at the TOP of DOCKER-USER, i.e. before the ACCEPT.
+#
+# Functions (all idempotent via -C check; take the tool name as $1):
+#   exit_egress_v4_ranges / exit_egress_v6_ranges   print the denied CIDRs
+#   exit_egress_apply <iptables|ip6tables> <tun>    insert the DROP rules at position 1
+# Callers must add their ACCEPT rules FIRST, then call exit_egress_apply, so the
+# DROPs end up above them. Re-runs keep the order (-C hits, nothing is moved).
+
+exit_egress_v4_ranges() {
+  printf '%s\n' 0.0.0.0/8 10.0.0.0/8 100.64.0.0/10 127.0.0.0/8 \
+    169.254.0.0/16 172.16.0.0/12 192.168.0.0/16
+}
+
+exit_egress_v6_ranges() {
+  # fc00::/7 covers the fd00::/8 ULA space actually used.
+  printf '%s\n' ::1/128 fc00::/7 fe80::/10
+}
+
+exit_egress_apply() {
+  local tool="$1" tun="$2" ranges cidr
+  if [[ "$tool" == ip6tables ]]; then ranges="$(exit_egress_v6_ranges)"; else ranges="$(exit_egress_v4_ranges)"; fi
+  while IFS= read -r cidr; do
+    "$tool" -C DOCKER-USER -i "$tun" -d "$cidr" -j DROP 2>/dev/null || \
+      "$tool" -I DOCKER-USER 1 -i "$tun" -d "$cidr" -j DROP
+  done <<<"$ranges"
+}
+
+# Tests source this file for the functions above only (scripts/test-exit-egress.sh).
+[[ -n "${GEMINA_SETUP_LIB_ONLY:-}" ]] && return 0
 
 if [[ $EUID -ne 0 ]]; then
   echo "error: run as root (needs sysctl, ip, and firewall changes)" >&2
@@ -89,6 +128,11 @@ if command -v iptables >/dev/null 2>&1 && iptables -n -L DOCKER-USER >/dev/null 
     iptables -I DOCKER-USER 1 -i "$TUN" -o "$WAN_IF" -j ACCEPT
   iptables -C DOCKER-USER -i "$WAN_IF" -o "$TUN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || \
     iptables -I DOCKER-USER 1 -i "$WAN_IF" -o "$TUN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+  # Deny metadata + private ranges BEFORE the ACCEPT (inserted last, at the top).
+  exit_egress_apply iptables "$TUN"
+  if command -v ip6tables >/dev/null 2>&1 && ip6tables -n -L DOCKER-USER >/dev/null 2>&1; then
+    exit_egress_apply ip6tables "$TUN"
+  fi
   iptables -S DOCKER-USER | sed 's/^/  /'
 else
   # No Docker FORWARD chain yet: either Docker is not installed (FORWARD is not
@@ -114,5 +158,5 @@ Next:
   3. Open ingress UDP 51820 in the cloud firewall (VCN/security group) too.
 
 To undo: ip link del $TUN ; nft delete table inet gemina (or the iptables NAT rule) ;
-         iptables -D DOCKER-USER <the two $TUN rules> ; rm /etc/sysctl.d/99-gemina-exit.conf
+         iptables -D DOCKER-USER <the $TUN ACCEPT and DROP rules> ; rm /etc/sysctl.d/99-gemina-exit.conf
 EOF
