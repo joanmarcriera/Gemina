@@ -44,19 +44,25 @@ WAN_IF="${WAN_IF:-}"
 
 say() { printf '\n== %s\n' "$1"; }
 
-# Egress deny-list for the Gemina exit host (defined inline: the script is installed standalone, so no lib file).
+# Egress deny-list for the Gemina exit host.
 #
 # Tunnel clients are untrusted. Once the FORWARD ACCEPT for the TUN exists they
 # could otherwise reach, THROUGH the exit host, the cloud metadata service
 # (169.254.169.254, link-local) and any private network the host can route to
 # (its own VCN/VPC, RFC1918, CGNAT, loopback, IPv6 ULA/link-local).
-# These DROP rules are inserted at the TOP of DOCKER-USER, i.e. before the ACCEPT.
 #
-# Functions (all idempotent via -C check; take the tool name as $1):
+# Design (order-safe across re-runs, even if WAN_IF/TUN change): the DROPs live in
+# a dedicated chain GEMINA-EGRESS that is flushed and rebuilt on EVERY run (ending
+# in RETURN). A single `-i $TUN -j GEMINA-EGRESS` jump is (re)inserted at position
+# 1 of DOCKER-USER AFTER the ACCEPTs, after deleting any existing jump(s) and any
+# stale per-range DROPs left directly in DOCKER-USER by the earlier design.
+#
+# Functions (take the tool name as $1):
 #   exit_egress_v4_ranges / exit_egress_v6_ranges   print the denied CIDRs
-#   exit_egress_apply <iptables|ip6tables> <tun>    insert the DROP rules at position 1
-# Callers must add their ACCEPT rules FIRST, then call exit_egress_apply, so the
-# DROPs end up above them. Re-runs keep the order (-C hits, nothing is moved).
+#   exit_egress_apply <iptables|ip6tables> <tun>    rebuild chain + jump at position 1
+#   exit_egress_remove <iptables|ip6tables>         undo (jump + chain)
+# Callers must add their ACCEPT rules FIRST, then call exit_egress_apply.
+EGRESS_CHAIN=GEMINA-EGRESS
 
 exit_egress_v4_ranges() {
   printf '%s\n' 0.0.0.0/8 10.0.0.0/8 100.64.0.0/10 127.0.0.0/8 \
@@ -68,13 +74,35 @@ exit_egress_v6_ranges() {
   printf '%s\n' ::1/128 fc00::/7 fe80::/10
 }
 
+# Delete every jump to the egress chain from DOCKER-USER (whatever its -i).
+exit_egress_unjump() {
+  local tool="$1" line
+  local -a rule
+  while line="$("$tool" -S DOCKER-USER 2>/dev/null | grep -m1 -e "-j $EGRESS_CHAIN\$")"; do
+    read -ra rule <<<"$line"             # -A DOCKER-USER <spec...>
+    "$tool" -D DOCKER-USER "${rule[@]:2}" || break
+  done
+}
+
 exit_egress_apply() {
   local tool="$1" tun="$2" ranges cidr
   if [[ "$tool" == ip6tables ]]; then ranges="$(exit_egress_v6_ranges)"; else ranges="$(exit_egress_v4_ranges)"; fi
+  "$tool" -N "$EGRESS_CHAIN" 2>/dev/null || true
+  "$tool" -F "$EGRESS_CHAIN"
   while IFS= read -r cidr; do
-    "$tool" -C DOCKER-USER -i "$tun" -d "$cidr" -j DROP 2>/dev/null || \
-      "$tool" -I DOCKER-USER 1 -i "$tun" -d "$cidr" -j DROP
+    "$tool" -A "$EGRESS_CHAIN" -d "$cidr" -j DROP
+    # Stale per-range DROPs from the previous (fail-open) design.
+    while "$tool" -D DOCKER-USER -i "$tun" -d "$cidr" -j DROP 2>/dev/null; do :; done
   done <<<"$ranges"
+  "$tool" -A "$EGRESS_CHAIN" -j RETURN
+  exit_egress_unjump "$tool"
+  "$tool" -I DOCKER-USER 1 -i "$tun" -j "$EGRESS_CHAIN"
+}
+
+exit_egress_remove() {
+  local tool="$1"
+  exit_egress_unjump "$tool"
+  "$tool" -F "$EGRESS_CHAIN" 2>/dev/null && "$tool" -X "$EGRESS_CHAIN" 2>/dev/null || true
 }
 
 # Tests source this file for the functions above only (scripts/test-exit-egress.sh).
@@ -128,7 +156,7 @@ if command -v iptables >/dev/null 2>&1 && iptables -n -L DOCKER-USER >/dev/null 
     iptables -I DOCKER-USER 1 -i "$TUN" -o "$WAN_IF" -j ACCEPT
   iptables -C DOCKER-USER -i "$WAN_IF" -o "$TUN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || \
     iptables -I DOCKER-USER 1 -i "$WAN_IF" -o "$TUN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-  # Deny metadata + private ranges BEFORE the ACCEPT (inserted last, at the top).
+  # Deny metadata + private ranges BEFORE the ACCEPTs: jump inserted last, at the top.
   exit_egress_apply iptables "$TUN"
   if command -v ip6tables >/dev/null 2>&1 && ip6tables -n -L DOCKER-USER >/dev/null 2>&1; then
     exit_egress_apply ip6tables "$TUN"
@@ -158,5 +186,6 @@ Next:
   3. Open ingress UDP 51820 in the cloud firewall (VCN/security group) too.
 
 To undo: ip link del $TUN ; nft delete table inet gemina (or the iptables NAT rule) ;
-         iptables -D DOCKER-USER <the $TUN ACCEPT and DROP rules> ; rm /etc/sysctl.d/99-gemina-exit.conf
+         iptables -D DOCKER-USER <the $TUN ACCEPT rules and the GEMINA-EGRESS jump> ;
+         iptables -F GEMINA-EGRESS ; iptables -X GEMINA-EGRESS (same for ip6tables) ; rm /etc/sysctl.d/99-gemina-exit.conf
 EOF
