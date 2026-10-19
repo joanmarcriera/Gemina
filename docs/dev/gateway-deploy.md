@@ -115,11 +115,19 @@ verified. Check on the host: `grep -E 'Uid|Cap(Prm|Eff)' /proc/$(docker inspect
 
 **Host provisioning is part of the unit.** `scripts/setup-exit-host.sh`
 (installed as `/usr/local/sbin/gemina-setup-exit-host`) runs as `ExecStartPre` on
-every start: `ip_forward`, persistent TUN `gemina0` (owner 65532, `10.99.0.1/16`,
-MTU 1280), the MASQUERADE rule, and ACCEPT rules for `gemina0` ↔ WAN in Docker's
-`DOCKER-USER` chain (Docker forces the iptables FORWARD policy to DROP, which
-otherwise blackholes pool traffic even with NAT in place). None of that survives
-a reboot on its own; re-running on start makes a reboot or docker restart safe.
+every start: `ip_forward`, persistent TUN `gemina0` (owned by the `RUN_AS` uid,
+pool `.1` e.g. `10.99.0.1/16`, MTU `TUN_MTU`), the MASQUERADE rule, and the
+forward rules in Docker's `DOCKER-USER` chain (Docker forces the iptables FORWARD
+policy to DROP, which otherwise blackholes pool traffic even with NAT in place).
+Tunnel traffic jumps to a `GEMINA-EGRESS-A`/`-B` chain that DROPs cloud metadata,
+RFC1918, CGNAT, loopback, reserved/multicast and IPv6 ULA/link-local/v4-mapped
+before its single `-o WAN -j ACCEPT`; the chain is rebuilt and swapped in on
+every run, so there is never a moment when tunnel traffic is accepted
+unfiltered. An `INPUT -i gemina0 -j DROP` keeps host services (sshd, metrics)
+unreachable through the tunnel. If `DOCKER-USER` does not exist the script fails
+instead of forwarding unfiltered (set `HOOK_CHAIN=FORWARD` on a host without
+Docker). None of that survives a reboot on its own; re-running on start makes a
+reboot or docker restart safe.
 
 ```bash
 # 1. Ship the image, install the setup script + data unit, disable the probe
@@ -138,5 +146,7 @@ public key. The two units `Conflicts=` each other; never run both on one port.
 
 To remove: `sudo systemctl disable --now gemina-gateway-data.service`, remove the
 unit and `/usr/local/sbin/gemina-setup-exit-host`, then undo the host setup
-(`sudo ip link del gemina0`, `sudo nft delete table inet gemina`, delete the two
-`gemina0` rules from `DOCKER-USER`, `sudo rm /etc/sysctl.d/99-gemina-exit.conf`).
+(`sudo ip link del gemina0`, `sudo nft delete table inet gemina`, delete the
+`gemina0` return ACCEPT and the `GEMINA-EGRESS-*` jump from `DOCKER-USER` then
+flush/delete that chain, delete `INPUT -i gemina0 -j DROP` (same for ip6tables),
+`sudo rm /etc/sysctl.d/99-gemina-exit.conf`; the script prints the exact list).
