@@ -17,8 +17,10 @@ package main
 // runs the packet path — the part that touches untrusted input — unprivileged.
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -95,4 +97,35 @@ func dropPrivileges(uid, gid int) (dropped bool, err error) {
 		return false, err
 	}
 	return true, nil
+}
+
+// checkNoCapabilities parses a /proc/<pid>/status stream and fails if CapPrm,
+// CapEff or CapAmb is non-zero, or if any of the three is missing or malformed.
+// Leaving uid 0 should have cleared all three; a non-zero set means something
+// (e.g. SECBIT_KEEP_CAPS or file capabilities) kept privilege we meant to shed.
+// CapInh and CapBnd are ignored: they grant nothing on their own.
+func checkNoCapabilities(r io.Reader) error {
+	seen := 0
+	sc := bufio.NewScanner(r)
+	for sc.Scan() {
+		key, val, ok := strings.Cut(sc.Text(), ":")
+		if !ok || (key != "CapPrm" && key != "CapEff" && key != "CapAmb") {
+			continue
+		}
+		seen++
+		bits, err := strconv.ParseUint(strings.TrimSpace(val), 16, 64)
+		if err != nil {
+			return fmt.Errorf("parse %s %q: %w", key, val, err)
+		}
+		if bits != 0 {
+			return fmt.Errorf("%s=%016x after privilege drop, want 0", key, bits)
+		}
+	}
+	if err := sc.Err(); err != nil {
+		return err
+	}
+	if seen != 3 {
+		return fmt.Errorf("found %d of CapPrm/CapEff/CapAmb in status, want 3", seen)
+	}
+	return nil
 }
