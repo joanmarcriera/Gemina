@@ -67,12 +67,16 @@ The deploy installs `scripts/setup-exit-host.sh` as
 `/usr/local/sbin/gemina-setup-exit-host` (bin_t under SELinux; OL9 is
 Enforcing) and the unit runs it as **ExecStartPre on every start**, idempotently:
 `net.ipv4.ip_forward` (`/etc/sysctl.d/99-gemina-exit.conf`); **persistent TUN
-`gemina0`** owned by uid 65532, `10.99.0.1/16` (pool `10.99.0.0/16`, must match
-`GEMINA_GATEWAY_POOL`), MTU 1280; MASQUERADE out `WAN_IF` (nft table `inet
-gemina`, iptables fallback; default = default-route iface, `enp0s3` on oracle);
-and `gemina0` ↔ WAN ACCEPT rules in Docker's `DOCKER-USER` chain (Docker sets
-FORWARD policy DROP — without them pool traffic is silently blackholed even with
-NAT). None of these survive a reboot by themselves; the ExecStartPre is what
+`gemina0`** owned by the unit's `RUN_AS` uid (65532), pool `.1` = `10.99.0.1/16`
+(derived from `POOL`, which the unit also passes to the gateway), MTU `TUN_MTU`
+1280; MASQUERADE out `WAN_IF` (nft table `inet gemina`, iptables fallback;
+default = default-route iface, `enp0s3` on oracle); in Docker's `DOCKER-USER`
+chain (Docker sets FORWARD policy DROP — without rules pool traffic is silently
+blackholed even with NAT) a return-traffic ACCEPT plus a jump to
+`GEMINA-EGRESS-A`/`-B` = DROP metadata/private/reserved ranges, then the only
+`-o WAN -j ACCEPT` (rebuilt + swapped each run, never fail-open; the script
+**fails** if `DOCKER-USER` is missing); and `INPUT -i gemina0 -j DROP` so tunnel
+clients cannot reach host services. None of these survive a reboot by themselves; the ExecStartPre is what
 makes a reboot safe. `internal/exit/nat_linux.go` never touches the firewall.
 Ed25519 identity persists at `$STATE_DIR/gateway-identity.key` (default
 `/var/lib/gemina`, owned 65532) — losing it breaks every client's pin.
@@ -81,7 +85,8 @@ Check least privilege: `sudo grep -E 'Uid|Cap(Prm|Eff)|NoNewPrivs'
 /proc/$(sudo docker inspect -f '{{.State.Pid}}' gemina-gateway-data)/status` →
 uid 65532, CapPrm/CapEff 0, NoNewPrivs 1. Remove: disable the unit, delete it +
 `/usr/local/sbin/gemina-setup-exit-host`, `ip link del gemina0`, `nft delete
-table inet gemina`, delete the two `gemina0` DOCKER-USER rules, `rm
+table inet gemina`, delete the `gemina0` DOCKER-USER rules + `GEMINA-EGRESS-*`
+chain and the `INPUT -i gemina0` DROP (the script's footer lists them), `rm
 /etc/sysctl.d/99-gemina-exit.conf`.
 
 ## Verify end-to-end
