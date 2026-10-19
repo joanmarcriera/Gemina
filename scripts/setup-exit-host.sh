@@ -240,7 +240,8 @@ say "6/6 drop tunnel traffic addressed to this host (INPUT)"
 # Clients reach the internet via FORWARD; nothing on the host is meant for them
 # (DNS defaults to a public resolver), so sshd/metrics/etc. stay unreachable.
 for tool in iptables ip6tables; do
-  command -v "$tool" >/dev/null 2>&1 || continue
+  # Skip a tool that is absent or cannot filter (e.g. ip6tables with IPv6 off).
+  if ! command -v "$tool" >/dev/null 2>&1 || ! "$tool" -n -L INPUT >/dev/null 2>&1; then continue; fi
   "$tool" -C INPUT -i "$TUN" -j DROP 2>/dev/null || "$tool" -I INPUT 1 -i "$TUN" -j DROP
 done
 
