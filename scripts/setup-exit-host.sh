@@ -22,9 +22,14 @@
 #      flushes) pool traffic never reaches WAN_IF even with MASQUERADE in place.
 #      nftables cannot override this from our own table: a drop verdict in any
 #      base chain is final, so the accept has to live in Docker's chain.
-#      Before those ACCEPTs, DROP rules (below) stop tunnel
-#      clients reaching cloud metadata (169.254.0.0/16), RFC1918, 100.64/10,
-#      loopback and IPv6 ULA/link-local through the exit.
+#      The TUN->WAN ACCEPT lives INSIDE the egress chain (below), after DROP rules
+#      that stop tunnel clients reaching cloud metadata (link-local 169.254/16),
+#      RFC1918, 100.64/10, loopback, reserved space and IPv6 ULA/link-local.
+#      With no DOCKER-USER chain the script FAILS rather than forward unfiltered
+#      (set HOOK_CHAIN=FORWARD on a host without Docker).
+#   6. Drops tunnel traffic addressed to the exit host itself (INPUT), so
+#      clients cannot reach host services (sshd, metrics, ...) via 10.99.0.1 or
+#      the host's public address through the tunnel.
 #
 # After this, start the gateway with deploy/systemd/gemina-gateway-data.service.
 #
@@ -32,15 +37,24 @@
 #   sudo scripts/setup-exit-host.sh                 # WAN_IF = default-route iface
 #   sudo WAN_IF=enp0s3 scripts/setup-exit-host.sh
 #   sudo WAN_IF=enp1s0 POOL=10.99.0.0/16 GW_ADDR=10.99.0.1/16 scripts/setup-exit-host.sh
+#   sudo RUN_AS=1000:1000 scripts/setup-exit-host.sh   # match GEMINA_GATEWAY_RUN_AS
 set -euo pipefail
 
 TUN="${GEMINA_TUN:-gemina0}"
 POOL="${POOL:-10.99.0.0/16}"             # must match GEMINA_GATEWAY_POOL
-GW_ADDR="${GW_ADDR:-10.99.0.1/16}"       # gateway's own address inside the pool
+# Gateway's own address inside the pool: the pool's .1 (internal/exit reserves
+# it), derived from POOL (given as its network address) unless set explicitly.
+if [[ -z "${GW_ADDR:-}" ]]; then
+  IFS=. read -r _o1 _o2 _o3 _o4 <<<"${POOL%/*}"
+  GW_ADDR="$_o1.$_o2.$_o3.$((_o4 + 1))/${POOL#*/}"
+fi
 TUN_MTU="${TUN_MTU:-1280}"               # must match GEMINA_GATEWAY_TUN_MTU
-CONTAINER_UID="${CONTAINER_UID:-65532}"  # uid the gateway drops to (GEMINA_GATEWAY_RUN_AS)
+RUN_AS="${RUN_AS:-65532:65532}"         # uid[:gid] the gateway drops to (GEMINA_GATEWAY_RUN_AS)
+CONTAINER_UID="${CONTAINER_UID:-${RUN_AS%%:*}}"
+if [[ "$RUN_AS" == *:* ]]; then CONTAINER_GID="${CONTAINER_GID:-${RUN_AS#*:}}"; else CONTAINER_GID="${CONTAINER_GID:-$CONTAINER_UID}"; fi
 STATE_DIR="${STATE_DIR:-/var/lib/gemina}"
 WAN_IF="${WAN_IF:-}"
+HOOK_CHAIN="${HOOK_CHAIN:-DOCKER-USER}"  # FORWARD-path chain we own rules in
 
 say() { printf '\n== %s\n' "$1"; }
 
@@ -48,53 +62,68 @@ say() { printf '\n== %s\n' "$1"; }
 #
 # Tunnel clients are untrusted. Once the FORWARD ACCEPT for the TUN exists they
 # could otherwise reach, THROUGH the exit host, the cloud metadata service
-# (169.254.169.254, link-local) and any private network the host can route to
+# (on link-local 169.254/16) and any private network the host can route to
 # (its own VCN/VPC, RFC1918, CGNAT, loopback, IPv6 ULA/link-local), and send
 # multicast.
 #
 # Design (order-safe and gap-free across re-runs, even if WAN_IF/TUN change):
-# the DROPs live in one of two dedicated chains, GEMINA-EGRESS-A / -B. Each run
-# builds the rules into the chain that is NOT currently jumped to, so the live
-# chain is never flushed in place. Only when the new chain is complete (ends in
-# RETURN) is `-i $TUN -j <new>` inserted at position 1 of DOCKER-USER (after the
-# ACCEPTs); then the old jump(s) are deleted and the old chain flushed and
-# removed. At every instant the jump points at a complete chain, so there is no
-# window where tunnel traffic reaches the ACCEPTs unfiltered. Stale per-range
-# DROPs from the earliest design and the legacy single GEMINA-EGRESS chain are
-# cleaned up.
+# the DROPs AND the TUN->WAN ACCEPT live in one of two dedicated chains,
+# GEMINA-EGRESS-A / -B (DROPs first, then `-o $WAN -j ACCEPT`, then RETURN).
+# Each run builds the rules into the chain that is NOT currently jumped to, so
+# the live chain is never flushed in place. Only when the new chain is complete
+# (ends in RETURN) is `-i $TUN -j <new>` inserted at position 1 of $HOOK_CHAIN;
+# then the old jump(s) are deleted and the old chain flushed and removed. At
+# every instant the jump points at a complete chain and no TUN ACCEPT exists
+# outside it, so tunnel traffic can never be accepted unfiltered — including
+# when WAN_IF changes (the old WAN's ACCEPT disappears with the old chain).
+# Stale rules from earlier designs (per-range DROPs, top-level TUN ACCEPTs,
+# the legacy single GEMINA-EGRESS chain) are cleaned up.
 #
 # Functions (take the tool name as $1):
 #   exit_egress_v4_ranges / exit_egress_v6_ranges   print the denied CIDRs
-#   exit_egress_apply <iptables|ip6tables> <tun>    build new chain, swap jump
+#   exit_egress_apply <iptables|ip6tables> <tun> [wan]
+#                                  build new chain (+ ACCEPT out wan), swap jump
 #   exit_egress_remove <iptables|ip6tables>         undo (jumps + chains)
-# Callers must add their ACCEPT rules FIRST, then call exit_egress_apply.
 EGRESS_CHAINS=(GEMINA-EGRESS-A GEMINA-EGRESS-B GEMINA-EGRESS)   # last = legacy name
 
 exit_egress_v4_ranges() {
+  # 240.0.0.0/4 (reserved) also covers 255.255.255.255.
   printf '%s\n' 0.0.0.0/8 10.0.0.0/8 100.64.0.0/10 127.0.0.0/8 \
-    169.254.0.0/16 172.16.0.0/12 192.168.0.0/16 224.0.0.0/4
+    169.254.0.0/16 172.16.0.0/12 192.0.0.0/24 192.168.0.0/16 198.18.0.0/15 \
+    224.0.0.0/4 240.0.0.0/4
 }
 
 exit_egress_v6_ranges() {
   # fc00::/7 covers the fd00::/8 ULA space actually used (incl. cloud IPv6 metadata).
-  printf '%s\n' ::1/128 fc00::/7 fe80::/10 ff00::/8
+  # ::ffff:0:0/96 = IPv4-mapped (would bypass the v4 list).
+  printf '%s\n' ::/128 ::1/128 ::ffff:0:0/96 fc00::/7 fe80::/10 ff00::/8
 }
 
-# Print the egress chain DOCKER-USER currently jumps to (first match), if any.
+# Print the egress chain $HOOK_CHAIN currently jumps to (first match), if any.
+# awk reads all input (no early exit), so pipefail never sees a SIGPIPE, and a
+# missing chain yields empty output rather than aborting the caller under set -e.
 exit_egress_current() {
-  "$1" -S DOCKER-USER 2>/dev/null | sed -n 's/^.* -j \(GEMINA-EGRESS[A-Z-]*\)$/\1/p' | head -1
+  { "$1" -S "$HOOK_CHAIN" 2>/dev/null || true; } |
+    awk '!f && match($0, / -j GEMINA-EGRESS[A-Z-]*$/) { print substr($0, RSTART + 4); f = 1 }'
 }
 
-# Delete every jump from DOCKER-USER to an egress chain other than $2 (may be empty).
-exit_egress_unjump_except() {
-  local tool="$1" keep="${2:-}" line c
+# Delete every $HOOK_CHAIN rule matching ERE $2, except the exact `-S` line $3.
+exit_hook_prune() {
+  local tool="$1" re="$2" keep="${3:-}" line
   local -a rule
+  while IFS= read -r line; do
+    [[ -n "$line" && "$line" != "$keep" ]] || continue
+    read -ra rule <<<"$line"               # -A <chain> <spec...>
+    "$tool" -D "$HOOK_CHAIN" "${rule[@]:2}" || true
+  done < <({ "$tool" -S "$HOOK_CHAIN" 2>/dev/null || true; } | grep -E -- "$re" || true)
+}
+
+# Delete every jump from $HOOK_CHAIN to an egress chain other than $2 (may be empty).
+exit_egress_unjump_except() {
+  local tool="$1" keep="${2:-}" c
   for c in "${EGRESS_CHAINS[@]}"; do
     [[ "$c" == "$keep" ]] && continue
-    while line="$("$tool" -S DOCKER-USER 2>/dev/null | grep -m1 -e "-j $c\$")"; do
-      read -ra rule <<<"$line"             # -A DOCKER-USER <spec...>
-      "$tool" -D DOCKER-USER "${rule[@]:2}" || break
-    done
+    exit_hook_prune "$tool" " -j $c\$"
   done
 }
 
@@ -108,7 +137,7 @@ exit_egress_drop_chains_except() {
 }
 
 exit_egress_apply() {
-  local tool="$1" tun="$2" ranges cidr cur new
+  local tool="$1" tun="$2" wan="${3:-}" ranges cidr cur new
   if [[ "$tool" == ip6tables ]]; then ranges="$(exit_egress_v6_ranges)"; else ranges="$(exit_egress_v4_ranges)"; fi
   cur="$(exit_egress_current "$tool")"
   if [[ "$cur" == GEMINA-EGRESS-A ]]; then new=GEMINA-EGRESS-B; else new=GEMINA-EGRESS-A; fi
@@ -118,13 +147,17 @@ exit_egress_apply() {
   while IFS= read -r cidr; do
     "$tool" -A "$new" -d "$cidr" -j DROP
     # Stale per-range DROPs from the first (fail-open) design.
-    while "$tool" -D DOCKER-USER -i "$tun" -d "$cidr" -j DROP 2>/dev/null; do :; done
+    while "$tool" -D "$HOOK_CHAIN" -i "$tun" -d "$cidr" -j DROP 2>/dev/null; do :; done
   done <<<"$ranges"
+  # Forward to the WAN only AFTER every DROP; nothing else accepts TUN traffic.
+  [[ -z "$wan" ]] || "$tool" -A "$new" -o "$wan" -j ACCEPT
   "$tool" -A "$new" -j RETURN
   # Complete chain: make it live FIRST, then retire the old one.
-  "$tool" -I DOCKER-USER 1 -i "$tun" -j "$new"
+  "$tool" -I "$HOOK_CHAIN" 1 -i "$tun" -j "$new"
   exit_egress_unjump_except "$tool" "$new"
   exit_egress_drop_chains_except "$tool" "$new"
+  # Top-level TUN->any ACCEPTs from earlier designs (now inside the chain).
+  exit_hook_prune "$tool" "^-A $HOOK_CHAIN -i $tun -o [^ ]+ -j ACCEPT\$"
 }
 
 exit_egress_remove() {
@@ -135,6 +168,11 @@ exit_egress_remove() {
 
 # Tests source this file for the functions above only (scripts/test-exit-egress.sh).
 [[ -n "${GEMINA_SETUP_LIB_ONLY:-}" ]] && return 0
+
+die() { echo "error: $*" >&2; exit 1; }
+for id in "$CONTAINER_UID" "$CONTAINER_GID"; do
+  [[ "$id" =~ ^[0-9]+$ && "$id" -gt 0 ]] || die "RUN_AS/CONTAINER_UID must be a numeric non-root uid[:gid], got '$RUN_AS'"
+done
 
 if [[ $EUID -ne 0 ]]; then
   echo "error: run as root (needs sysctl, ip, and firewall changes)" >&2
@@ -147,22 +185,28 @@ if [[ -z "$WAN_IF" ]]; then
   echo "WAN_IF not set; defaulting to default-route interface: $WAN_IF"
 fi
 
-say "1/5 enable IPv4 forwarding"
+say "1/6 enable IPv4 forwarding"
 echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-gemina-exit.conf
 sysctl -q -w net.ipv4.ip_forward=1
 
-say "2/5 persistent TUN $TUN (owner uid $CONTAINER_UID)"
-if ! ip link show "$TUN" >/dev/null 2>&1; then
-  ip tuntap add dev "$TUN" mode tun user "$CONTAINER_UID"
-else
-  echo "  $TUN already exists; leaving it"
+say "2/6 persistent TUN $TUN (owner uid $CONTAINER_UID)"
+if ip link show "$TUN" >/dev/null 2>&1; then
+  # A persistent TUN keeps its owner; recreate it if RUN_AS changed since.
+  owner="$(cat "/sys/class/net/$TUN/owner" 2>/dev/null || true)"
+  if [[ "$owner" == "$CONTAINER_UID" ]]; then
+    echo "  $TUN already exists (owner $owner); leaving it"
+  else
+    echo "  $TUN owner is '${owner}', want $CONTAINER_UID; recreating"
+    ip link del "$TUN"
+  fi
 fi
+ip link show "$TUN" >/dev/null 2>&1 || ip tuntap add dev "$TUN" mode tun user "$CONTAINER_UID"
 
-say "3/5 address $GW_ADDR, mtu $TUN_MTU on $TUN + up"
+say "3/6 address $GW_ADDR, mtu $TUN_MTU on $TUN + up"
 ip addr replace "$GW_ADDR" dev "$TUN"
 ip link set "$TUN" mtu "$TUN_MTU" up
 
-say "4/5 MASQUERADE $POOL out $WAN_IF"
+say "4/6 MASQUERADE $POOL out $WAN_IF"
 if command -v nft >/dev/null 2>&1; then
   nft list table inet gemina >/dev/null 2>&1 || nft add table inet gemina
   nft 'list chain inet gemina postrouting' >/dev/null 2>&1 || \
@@ -176,30 +220,33 @@ else
     iptables -t nat -A POSTROUTING -s "$POOL" -o "$WAN_IF" -j MASQUERADE
 fi
 
-say "5/5 allow $TUN <-> $WAN_IF through Docker's FORWARD policy (DOCKER-USER)"
-if command -v iptables >/dev/null 2>&1 && iptables -n -L DOCKER-USER >/dev/null 2>&1; then
-  # -C tests for each rule first, so re-runs never stack duplicates. -I inserts
-  # at the top, ahead of any operator DROP rules later in the chain.
-  iptables -C DOCKER-USER -i "$TUN" -o "$WAN_IF" -j ACCEPT 2>/dev/null || \
-    iptables -I DOCKER-USER 1 -i "$TUN" -o "$WAN_IF" -j ACCEPT
-  iptables -C DOCKER-USER -i "$WAN_IF" -o "$TUN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || \
-    iptables -I DOCKER-USER 1 -i "$WAN_IF" -o "$TUN" -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-  # Deny metadata + private ranges BEFORE the ACCEPTs: jump inserted last, at the top.
-  exit_egress_apply iptables "$TUN"
-  if command -v ip6tables >/dev/null 2>&1 && ip6tables -n -L DOCKER-USER >/dev/null 2>&1; then
-    exit_egress_apply ip6tables "$TUN"
-  fi
-  iptables -S DOCKER-USER | sed 's/^/  /'
-else
-  # No Docker FORWARD chain yet: either Docker is not installed (FORWARD is not
-  # forced to DROP) or it has not started. The data unit orders itself
-  # After=docker.service, so under systemd the chain exists by now.
-  echo "  no DOCKER-USER chain (Docker not running?); skipping — re-run after Docker starts"
+say "5/6 egress deny list + $TUN <-> $WAN_IF forward accepts in $HOOK_CHAIN"
+# Fail closed: forwarding without the deny list would expose metadata + private ranges.
+command -v iptables >/dev/null 2>&1 || die "iptables not found; refusing to forward without the egress deny list"
+iptables -n -L "$HOOK_CHAIN" >/dev/null 2>&1 || \
+  die "no $HOOK_CHAIN chain (Docker not running?). Start Docker and re-run, or set HOOK_CHAIN=FORWARD on a host without Docker."
+# Return traffic only (conntrack); stale copies for a previous WAN_IF are pruned.
+ret=(-i "$WAN_IF" -o "$TUN" -m conntrack --ctstate "RELATED,ESTABLISHED" -j ACCEPT)
+iptables -C "$HOOK_CHAIN" "${ret[@]}" 2>/dev/null || iptables -I "$HOOK_CHAIN" 1 "${ret[@]}"
+exit_hook_prune iptables " -o $TUN .*RELATED,ESTABLISHED -j ACCEPT\$" "-A $HOOK_CHAIN ${ret[*]}"
+# DROPs then the TUN->WAN ACCEPT, in a chain swapped in atomically (see top).
+exit_egress_apply iptables "$TUN" "$WAN_IF"
+if command -v ip6tables >/dev/null 2>&1 && ip6tables -n -L "$HOOK_CHAIN" >/dev/null 2>&1; then
+  exit_egress_apply ip6tables "$TUN"   # deny only: the pool is IPv4
 fi
+iptables -S "$HOOK_CHAIN" | sed 's/^/  /'
 
-say "state dir $STATE_DIR (writable by uid $CONTAINER_UID for the Ed25519 identity)"
+say "6/6 drop tunnel traffic addressed to this host (INPUT)"
+# Clients reach the internet via FORWARD; nothing on the host is meant for them
+# (DNS defaults to a public resolver), so sshd/metrics/etc. stay unreachable.
+for tool in iptables ip6tables; do
+  command -v "$tool" >/dev/null 2>&1 || continue
+  "$tool" -C INPUT -i "$TUN" -j DROP 2>/dev/null || "$tool" -I INPUT 1 -i "$TUN" -j DROP
+done
+
+say "state dir $STATE_DIR (writable by $CONTAINER_UID:$CONTAINER_GID for the Ed25519 identity)"
 mkdir -p "$STATE_DIR"
-chown "$CONTAINER_UID:$CONTAINER_UID" "$STATE_DIR"
+chown "$CONTAINER_UID:$CONTAINER_GID" "$STATE_DIR"
 
 cat <<EOF
 
@@ -214,6 +261,7 @@ Next:
   3. Open ingress UDP 51820 in the cloud firewall (VCN/security group) too.
 
 To undo: ip link del $TUN ; nft delete table inet gemina (or the iptables NAT rule) ;
-         iptables -D DOCKER-USER <the $TUN ACCEPT rules and the GEMINA-EGRESS-A/-B jump> ;
-         iptables -F GEMINA-EGRESS-A/-B ; iptables -X GEMINA-EGRESS-A/-B (whichever exists; same for ip6tables) ; rm /etc/sysctl.d/99-gemina-exit.conf
+         iptables -D $HOOK_CHAIN <the $TUN return ACCEPT and the GEMINA-EGRESS-A/-B jump> ;
+         iptables -F GEMINA-EGRESS-A/-B ; iptables -X GEMINA-EGRESS-A/-B (whichever exists) ;
+         iptables -D INPUT -i $TUN -j DROP  (same three for ip6tables) ; rm /etc/sysctl.d/99-gemina-exit.conf
 EOF
