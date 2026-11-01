@@ -23,7 +23,7 @@ The project is **Go + Swift** (`go 1.26`, Xcode project in `apps/macos/`):
 
 2. **Commit style:** Conventional Commits (`type(scope): summary`). End every commit with the co-author trailer. Changelog auto-generated from commits via `cliff.toml`.
 
-3. **Decisions and ADRs:** Material choices go in `DECISIONS.md`; formal architecture records in `docs/adr/0*.md` (see `AGENTS.md` for the ADR-triggering scope).
+3. **Decisions and ADRs:** Material choices go in `DECISIONS.md`; formal architecture records in `docs/adr/0*.md` (indexed in `docs/adr/README.md`).
 
 4. **Tests first, TDD:** Table-driven Go tests, race-detector enabled (`go test -race ./...`). All new logic must be unit tested; benchmarks for performance-sensitive paths.
 
@@ -77,7 +77,7 @@ The project is **Go + Swift** (`go 1.26`, Xcode project in `apps/macos/`):
 
 4. **Two gateway modes:** `cmd/gateway` with `GEMINA_GATEWAY_MODE=probe` (Stage 1 UDP probes) and `GEMINA_GATEWAY_MODE=data` (Stage 2 data plane). Deploy units in `deploy/systemd/`: `gemina-gateway-data.service` (data+exit, least-privilege, validated on oracle 2026-09-25) is the live one; `gemina-gateway.service` (probe) conflicts with it on the same UDP port and is disabled when the data unit is deployed. Host provisioning + egress firewall = `scripts/setup-exit-host.sh` (ExecStartPre).
 
-5. **CI gating mostly enforced (2026-09-24):** `main` is protected by the GitHub ruleset "main protection" (https://github.com/joanmarcriera/Gemina/rules/18189694) — PR required, linear history, no deletion/force-push, and required status checks `test`/`lint`/`swift`/`licence`/`audit`. Still open: SwiftLint version pinning in `macos-ci.yml` (tracked in `TASKS.md` / https://familia.riera.co.uk/tasks/2574). Local `make ci` runs all gates.
+5. **CI gating mostly enforced (2026-09-24):** `main` is protected by the GitHub ruleset "main protection" (https://github.com/joanmarcriera/Gemina/rules/18189694) — PR required, linear history, no deletion/force-push, and required status checks `test`/`lint`/`swift`/`licence`/`audit`. SwiftLint is pinned to 0.65.1 with a checksum in `macos-ci.yml` (`1fb20f1`). Local `make ci` runs all gates.
 
 6. **Swift build needs `--disable-sandbox`:** SwiftPM `sandbox-exec` fails inside Codex sandbox. Use `--disable-sandbox` flag for local Swift commands.
 

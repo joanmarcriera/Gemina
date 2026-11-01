@@ -1,6 +1,6 @@
 # Tasks
 
-Last updated: 2026-09-24
+Last updated: 2026-09-25
 
 This file is the single ordered source of truth for outstanding work. Durable
 narrative history lives in `PROJECT_STATE.md` and Git; architectural choices live
@@ -302,8 +302,9 @@ evidence exist:
   https://familia.riera.co.uk/tasks/2569
 * [ ] Confirm PR-triggered path-filtered CI runs (push-triggered path-filtered CI
   has passed on `fcd6238` and `4a8afd4`).
-* [ ] Pin SwiftLint install in macOS CI instead of unpinned `brew install
-  swiftlint`. https://familia.riera.co.uk/tasks/2574
+* [x] Pin SwiftLint install in macOS CI instead of unpinned `brew install
+  swiftlint` (done: `1fb20f1`, SwiftLint 0.65.1 with checksum, merged in #21 on
+  2026-09-25). https://familia.riera.co.uk/tasks/2574
 * [ ] Decide whether to generate the Xcode project now or stay SwiftPM-only until
   signing details are known; add real XCTest/UI tests once decided.
 * [x] Run OpenTofu validation and SwiftLint in an environment that has `tofu` and
