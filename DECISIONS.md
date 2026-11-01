@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-06-19
+Last updated: 2026-09-25
 
 This file records material project decisions for continuity across Codex sessions. Formal ADRs still need to be created during Stage 0 where required by `docs/product/project-specification.md`.
 
