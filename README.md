@@ -32,7 +32,7 @@ rather not run their own server.
 git clone https://github.com/joanmarcriera/gemina.git
 cd gemina
 make bootstrap    # Prepare Go + Swift workspace
-make test         # Run Go race tests and Swift build check
+make test         # Run Go tests, Swift build check and docs check
 ```
 
 See [Build & test](#build--test) for the full test suite, lint checks, and available Make targets.
@@ -93,9 +93,12 @@ What is **proven**:
 
 What is **not yet done** (and is therefore not claimed):
 
-* Encryption and real VPN traffic — today's proof carries probe packets, not your
-  IP traffic.
-* The shipping macOS app data path (the `NEPacketTunnelProvider` integration).
+* Real VPN traffic verified end-to-end. The encrypted data plane (AES-256-GCM
+  with an X25519 key agreement, ADR-0006/ADR-0007) and the gateway's data/exit
+  mode exist in code; the Wi-Fi-only `NEPacketTunnelProvider` tunnel is
+  code-complete and its on-hardware verification (WS-F) is still open.
+* The dual-path data path inside the shipping macOS app (phone uplink in the
+  tunnel).
 * Accounts, payments and the hosted entitlement flow.
 
 Current state, decisions and the outstanding task list live in:
@@ -166,7 +169,7 @@ The repository bootstraps and tests with `make`:
 
 ```sh
 make bootstrap      # prepare the workspace
-make test           # Go + macOS + docs checks
+make test           # Go + macOS + docs checks (CI also runs go test -race)
 make lint           # formatting and static analysis
 make licence-check  # licence/provenance gate
 ```
