@@ -34,4 +34,23 @@ if find . -path './.git' -prune -o -path './.research-src' -prune -o -name '*.md
 	exit 1
 fi
 
+# Relative links in the root *.md files and docs/**/*.md must point at a file or
+# directory that exists. External (scheme:) and same-page (#anchor) links are
+# skipped; anchors themselves are not checked.
+broken=0
+for md in ./*.md $(find docs -name '*.md'); do
+	dir=$(dirname "$md")
+	for target in $(grep -o '](\([^)#[:space:]]*\)' "$md" | sed 's/^](//'); do
+		case "$target" in '' | *:*) continue ;; esac
+		if [ ! -e "$dir/$target" ]; then
+			echo "broken link in $md: $target" >&2
+			broken=1
+		fi
+	done
+done
+
+if [ "$broken" -ne 0 ]; then
+	exit 1
+fi
+
 echo "documentation structure ok"
