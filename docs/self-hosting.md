@@ -5,10 +5,13 @@ listens on one UDP port, deduplicates the copies of each packet that arrive over
 a client's two uplinks, and delivers the first valid copy. It holds no accounts
 and no database, so running your own is deliberately simple.
 
-> **Pre-release note.** Today's gateway is the Stage-1 probe gateway: it
-> deduplicates probe packets and logs each decision as redacted JSON. It does not
-> yet carry encrypted VPN traffic. See [`PROJECT_STATE.md`](../PROJECT_STATE.md)
-> for the current status.
+> **Pre-release note.** By default the gateway runs in probe mode: it
+> deduplicates Stage-1 probe packets and logs each decision as redacted JSON. A
+> data mode (`GEMINA_GATEWAY_MODE=data`) adds the authenticated handshake, the
+> encrypted data plane and an optional internet exit; it is what the reference
+> deployment in [`dev/gateway-deploy.md`](dev/gateway-deploy.md) runs, and it is
+> still pre-release. See [`PROJECT_STATE.md`](../PROJECT_STATE.md) for the
+> current status. The `docker run` below starts probe mode.
 
 ## What you need
 
@@ -44,6 +47,21 @@ The gateway is configured entirely through environment variables:
 | `GEMINA_GATEWAY_DEDUP_CAPACITY` | `8192` | Size of the in-memory deduplication window. |
 | `GEMINA_GATEWAY_READ_BUFFER` | `4 MiB` | Socket read buffer, for tolerating bursts. |
 | `GEMINA_GATEWAY_LOG_LEVEL` | `info` | Set to `debug` for per-packet decision logs. |
+| `GEMINA_GATEWAY_MODE` | `probe` | `data` runs the handshake + encrypted data plane instead of the probe server. |
+| `GEMINA_GATEWAY_METRICS_ADDR` | unset (off) | TCP address for a Prometheus `/metrics` endpoint, e.g. `:9090`. |
+
+Data mode only:
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `GEMINA_GATEWAY_IDENTITY` | `gateway-identity.key` | Path of the Ed25519 identity file clients pin; created if missing. Must be on a writable, persistent volume. |
+| `GEMINA_GATEWAY_TIER` | `open` | `hosted` requires an entitlement token signed with `GEMINA_GATEWAY_ENTITLEMENT_KEY`. |
+| `GEMINA_GATEWAY_ENTITLEMENT_KEY` | unset | Token-signing key; required when the tier is `hosted`. |
+| `GEMINA_GATEWAY_EXIT` | `off` | `on` forwards decrypted traffic to the internet through a TUN device (needs `CAP_NET_ADMIN` and host NAT). |
+| `GEMINA_GATEWAY_TUN` | `gemina0` | TUN device name for the exit path. |
+| `GEMINA_GATEWAY_TUN_MTU` | `1280` | TUN MTU for the exit path. |
+| `GEMINA_GATEWAY_POOL` | `10.99.0.0/16` | Prefix tunnel addresses are allocated from. |
+| `GEMINA_GATEWAY_RUN_AS` | `65532:65532` | uid:gid the process drops to after opening the socket and TUN. |
 
 The container runs non-root on a read-only root filesystem; keep it that way.
 
