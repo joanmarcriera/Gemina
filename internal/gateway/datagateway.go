@@ -176,13 +176,16 @@ func (g *DataGateway) handleHandshake(datagram []byte) ([]byte, DataRecord) {
 
 func (g *DataGateway) handleData(datagram []byte) DataRecord {
 	// Decode the session id first so callers (the Serve loop) can attribute the
-	// source endpoint even for a duplicate; a malformed datagram leaves it zero.
+	// source endpoint even for a duplicate; a malformed or rejected datagram leaves
+	// it zero.
 	id, _ := clientcore.SessionIDFromDatagram(datagram)
 
 	payload, decision, err := g.dataPlane.HandleClassified(datagram, dataPath)
 	if err != nil {
 		g.dataPackets.Inc("rejected")
-		return DataRecord{Kind: "data", SessionID: id}
+		// No SessionID: an unauthenticated datagram must never register its
+		// source as a return path, or one forged packet could steer a session.
+		return DataRecord{Kind: "data"}
 	}
 	switch decision {
 	case dedup.ReplayFirstCopy:
@@ -236,8 +239,9 @@ func (g *DataGateway) Serve(ctx context.Context, conn net.PacketConn) error {
 		}
 
 		if g.exit != nil && rec.Kind == "data" && !rec.SessionID.IsZero() {
-			// Record every arriving path (first copy or duplicate) so the return
-			// path duplicates across all of a client's active uplinks.
+			// Record every authenticated arriving path (first copy, duplicate or
+			// stale) so the return path duplicates across all of a client's active
+			// uplinks; handleData zeroes SessionID for rejected datagrams.
 			if ap, ok := udpAddrPort(src); ok {
 				g.exit.RecordPath(rec.SessionID, ap)
 			}
