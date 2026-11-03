@@ -170,16 +170,19 @@ exit_egress_remove() {
 # BEFORE reading the 0600 key, so a key left owned by a previous RUN_AS (or by root,
 # from a pre-privdrop deploy) would be unreadable and the gateway would exit. Contents
 # and mode are untouched; a symlink or non-regular key is refused rather than followed.
+# Every chown here is `chown -h` (never dereferences): once $dir belongs to uid, that uid
+# can swap the key for a symlink between the check and the chown (TOCTOU), and a
+# dereferencing root chown would then hand an arbitrary target to it.
 exit_state_dir_apply() {
   local dir="$1" uid="$2" gid="$3" key="$1/gateway-identity.key"
   mkdir -p "$dir"
-  chown "$uid:$gid" "$dir"
+  chown -h "$uid:$gid" "$dir"
   if [[ -L "$key" ]] || { [[ -e "$key" ]] && [[ ! -f "$key" ]]; }; then
     echo "error: $key is not a regular file; refusing to chown it" >&2
     return 1
   fi
   if [[ -f "$key" ]]; then
-    chown "$uid:$gid" "$key"
+    chown -h "$uid:$gid" "$key"
   fi
 }
 
