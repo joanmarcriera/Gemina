@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 
 	"github.com/joanmarcriera/gemina/internal/protocol"
@@ -87,5 +88,30 @@ func TestDataPlaneRejectsForgedPacket(t *testing.T) {
 	forged[len(forged)-1] ^= 0xFF
 	if _, _, err := dp.Handle(forged, "attacker"); err == nil {
 		t.Fatal("forged packet was accepted")
+	}
+}
+
+// TestForgetEvictsCachedSession: after Forget, a session's datagrams are refused
+// with ErrUnknownSession — neither the cached responder session nor the
+// resolver's key may keep decrypting for it (SEC7).
+func TestForgetEvictsCachedSession(t *testing.T) {
+	id := sessionID(0x44)
+	key := bytes.Repeat([]byte{0x5A}, 32)
+	store := NewSessionStore()
+	store.register(id, key)
+	dp := NewDataPlane(store, 64)
+	client, _ := clientcore.NewSession(id, key, clientcore.RoleInitiator, 64)
+
+	wire, _ := client.Outbound([]byte("before"))
+	if _, _, err := dp.Handle(wire, "wifi"); err != nil {
+		t.Fatalf("handle before forget: %v", err)
+	}
+	dp.Forget(id)
+	wire, _ = client.Outbound([]byte("after"))
+	if _, _, err := dp.Handle(wire, "wifi"); !errors.Is(err, ErrUnknownSession) {
+		t.Fatalf("handle after forget: err=%v, want ErrUnknownSession", err)
+	}
+	if _, ok := store.SessionKey(id); ok {
+		t.Fatal("forgotten session key still resolvable")
 	}
 }
