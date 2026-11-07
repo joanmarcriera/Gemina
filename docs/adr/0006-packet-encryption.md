@@ -62,6 +62,14 @@ authenticated data (AAD).
   forcing it to hold every session key on the hot path and decrypt duplicates.
   Keeping the (non-identifying) identity cleartext lets dedup run first.
 
+## Rationale
+
+The encryption rides on the identity the transport already has, so duplication,
+dedup-by-identity and failover behave exactly as before, with no extra handshake
+or round-trip on the data path and no second anti-replay scheme fighting the
+dedup window. It uses only standard-library AES-256-GCM, so no cryptography is
+invented.
+
 ## Consequences
 
 * The gateway must hold each session's key to decrypt and forward; key

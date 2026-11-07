@@ -41,6 +41,13 @@ decrypt past sessions.
 * **TLS to the gateway.** Heavier, stream-oriented, and awkward over the
   duplicated datagram paths.
 
+## Rationale
+
+X25519 + HKDF-SHA256 removes per-client key provisioning and gives forward
+secrecy using only the Go standard library, without changing the ADR-0006 packet
+format. It is the same primitive a Noise/WireGuard handshake uses, so moving to
+a full Noise pattern later stays open.
+
 ## Consequences
 
 * Gateway authentication is now provided (`handshake_auth.go`): the gateway holds

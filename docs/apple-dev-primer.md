@@ -65,8 +65,10 @@ it's why "is the membership active?" was the blocking question.
 
 - ✅ **Done:** membership active; app + Network Extension **built and code-signed**
   with your team; verified the NE permission is really baked in.
-- ⏭ **Phase 3 (next):** make the tunnel actually move packets (Wi-Fi + the phone's
-  USB uplink). Technical, not account/signing work.
+- ⏭ **Phase 3 (in progress):** make the tunnel actually move packets. The
+  Wi-Fi-only tunnel is code-complete (2026-06-28) and its on-hardware check
+  (WS-F) is still open; the phone's USB uplink comes after. Technical, not
+  account/signing work.
 - 🚢 **Release (later):** create the *Developer ID* cert, notarize and staple, then
   hand out a downloadable build. There's one known wrinkle for Network-Extension
   apps at this step that we'll check against Apple's docs when we get there.
