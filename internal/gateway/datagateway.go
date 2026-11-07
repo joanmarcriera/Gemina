@@ -163,13 +163,12 @@ func (g *DataGateway) handleHandshake(datagram []byte) ([]byte, DataRecord) {
 	g.handshakes.Inc("admitted")
 	g.activeSession.Set(int64(g.store.len()))
 
+	// With the exit path on, the admitter refuses a handshake whose lease failed
+	// (ErrLeaseFailed), so an admitted session always has a valid tunnelIP here;
+	// with it off, tunnelIP is the zero value.
 	rec := DataRecord{Kind: "client-hello", Admitted: true, SessionID: id}
 	if tunnelIP.IsValid() {
 		rec.TunnelIP = tunnelIP
-	} else if g.exit != nil && g.logger.Enabled(context.Background(), slog.LevelDebug) {
-		// Exit is on but no address was leased (e.g. pool exhausted): the session is
-		// still admitted, just without an assigned tunnel IP.
-		g.logger.Debug("tunnel lease unavailable", "session", "redacted")
 	}
 	return serverHello, rec
 }

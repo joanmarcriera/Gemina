@@ -3,6 +3,7 @@ package gateway
 import (
 	"crypto/ed25519"
 	"errors"
+	"fmt"
 	"net/netip"
 	"sync"
 	"time"
@@ -20,6 +21,16 @@ import (
 // is refused fail-closed, so a reused id can never be decrypted into a fresh
 // session. See docs/security/stage-2-session-security.md.
 var ErrSessionReused = errors.New("session id already admitted")
+
+// ErrLeaseFailed is returned by Handshake when the exit path is on but no tunnel
+// IP could be leased for the session (e.g. the pool is exhausted). The handshake
+// is refused and the session key unregistered, rather than admitting a client
+// with no address that could never route (SEC2).
+var ErrLeaseFailed = errors.New("tunnel ip lease failed")
+
+// ErrLeaseInvalid is wrapped into ErrLeaseFailed when a leaser reports success
+// but returns an address that is not IPv4.
+var ErrLeaseInvalid = errors.New("leased address is not ipv4")
 
 // SessionStore holds the keys of admitted sessions and resolves them for the
 // DataPlane. It implements KeyResolver, so the data plane only ever decrypts
@@ -101,7 +112,8 @@ func NewAdmitter(service *entitlement.Service, store *SessionStore) *Admitter {
 
 // SetLeaser wires the tunnel-IP leaser used during the handshake. The gateway
 // sets it to the exit router's Lease when the exit path is enabled; with no
-// leaser the handshake assigns no address (a zero AssignedIPv4).
+// leaser the handshake assigns no address (a zero AssignedIPv4). With a leaser
+// set, a lease failure refuses the handshake (ErrLeaseFailed).
 func (a *Admitter) SetLeaser(leaser func(protocol.SessionID) (netip.Addr, error)) {
 	a.leaser = leaser
 }
@@ -130,6 +142,7 @@ func (a *Admitter) Admit(token string, id protocol.SessionID, key []byte) (entit
 // admitted session id is returned so the caller can drive the exit path. The
 // returned tunnelIP is the gateway-leased address delivered to the client in-band
 // in the ServerHello; it is the zero (invalid) value when the exit path is off.
+// With the exit path on, a failed lease refuses the handshake (ErrLeaseFailed).
 func (a *Admitter) Handshake(clientHello []byte, identityPriv ed25519.PrivateKey, dedupCapacity int) (serverHello []byte, claims entitlement.Claims, id protocol.SessionID, tunnelIP netip.Addr, err error) {
 	id, timestamp, clientEph, token, err := clientcore.DecodeClientHello(clientHello)
 	if err != nil {
@@ -156,14 +169,21 @@ func (a *Admitter) Handshake(clientHello []byte, identityPriv ed25519.PrivateKey
 	}
 
 	// Reserve the tunnel IP (exit on) so it can be delivered in-band. A lease
-	// failure (e.g. pool exhausted) does not fail the handshake: the client is
-	// admitted with no address (zero AssignedIPv4) rather than being refused.
+	// failure (e.g. pool exhausted) refuses the handshake fail-closed: a client
+	// admitted with a zero AssignedIPv4 installs no routes and can never carry
+	// traffic (SEC2), so the registration is unwound and no ServerHello is sent.
 	var assignedIPv4 [4]byte
 	if a.leaser != nil {
-		if addr, leaseErr := a.leaser(id); leaseErr == nil {
-			assignedIPv4 = addr.As4()
-			tunnelIP = addr
+		addr, leaseErr := a.leaser(id)
+		if leaseErr == nil && !addr.Is4() {
+			leaseErr = ErrLeaseInvalid
 		}
+		if leaseErr != nil {
+			a.store.Forget(id)
+			return nil, entitlement.Claims{}, protocol.SessionID{}, netip.Addr{}, fmt.Errorf("%w: %w", ErrLeaseFailed, leaseErr)
+		}
+		assignedIPv4 = addr.As4()
+		tunnelIP = addr
 	}
 
 	sig := clientcore.SignHandshake(identityPriv, gatewayEphPub, id)
