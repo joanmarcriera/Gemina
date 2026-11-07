@@ -163,26 +163,28 @@ func (g *DataGateway) handleHandshake(datagram []byte) ([]byte, DataRecord) {
 	g.handshakes.Inc("admitted")
 	g.activeSession.Set(int64(g.store.len()))
 
+	// With the exit path on, the admitter refuses a handshake whose lease failed
+	// (ErrLeaseFailed), so an admitted session always has a valid tunnelIP here;
+	// with it off, tunnelIP is the zero value.
 	rec := DataRecord{Kind: "client-hello", Admitted: true, SessionID: id}
 	if tunnelIP.IsValid() {
 		rec.TunnelIP = tunnelIP
-	} else if g.exit != nil && g.logger.Enabled(context.Background(), slog.LevelDebug) {
-		// Exit is on but no address was leased (e.g. pool exhausted): the session is
-		// still admitted, just without an assigned tunnel IP.
-		g.logger.Debug("tunnel lease unavailable", "session", "redacted")
 	}
 	return serverHello, rec
 }
 
 func (g *DataGateway) handleData(datagram []byte) DataRecord {
 	// Decode the session id first so callers (the Serve loop) can attribute the
-	// source endpoint even for a duplicate; a malformed datagram leaves it zero.
+	// source endpoint even for a duplicate; a malformed or rejected datagram leaves
+	// it zero.
 	id, _ := clientcore.SessionIDFromDatagram(datagram)
 
 	payload, decision, err := g.dataPlane.HandleClassified(datagram, dataPath)
 	if err != nil {
 		g.dataPackets.Inc("rejected")
-		return DataRecord{Kind: "data", SessionID: id}
+		// No SessionID: an unauthenticated datagram must never register its
+		// source as a return path, or one forged packet could steer a session.
+		return DataRecord{Kind: "data"}
 	}
 	switch decision {
 	case dedup.ReplayFirstCopy:
@@ -236,8 +238,9 @@ func (g *DataGateway) Serve(ctx context.Context, conn net.PacketConn) error {
 		}
 
 		if g.exit != nil && rec.Kind == "data" && !rec.SessionID.IsZero() {
-			// Record every arriving path (first copy or duplicate) so the return
-			// path duplicates across all of a client's active uplinks.
+			// Record every authenticated arriving path (first copy, duplicate or
+			// stale) so the return path duplicates across all of a client's active
+			// uplinks; handleData zeroes SessionID for rejected datagrams.
 			if ap, ok := udpAddrPort(src); ok {
 				g.exit.RecordPath(rec.SessionID, ap)
 			}

@@ -85,6 +85,19 @@ func (d *DataPlane) FrameReturn(id protocol.SessionID, payload []byte) ([]byte, 
 	return session.Outbound(payload)
 }
 
+// Forget ends a session: it evicts the cached responder session and, when the
+// resolver can forget keys (SessionStore can), removes the key too, so the id is
+// neither still live nor resurrected with a fresh dedup window. Later datagrams
+// for id are refused with ErrUnknownSession.
+func (d *DataPlane) Forget(id protocol.SessionID) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if f, ok := d.resolver.(interface{ Forget(protocol.SessionID) }); ok {
+		f.Forget(id)
+	}
+	delete(d.sessions, id)
+}
+
 func (d *DataPlane) sessionFor(id protocol.SessionID) (*clientcore.Session, error) {
 	d.mu.Lock()
 	defer d.mu.Unlock()

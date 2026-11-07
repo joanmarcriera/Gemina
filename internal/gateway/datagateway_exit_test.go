@@ -171,3 +171,69 @@ func TestDataGatewayExitForwardsAndReturns(t *testing.T) {
 		t.Fatalf("return payload mismatch: got %d bytes, want %d", len(payload), len(ret))
 	}
 }
+
+// TestRejectedDatagramDoesNotRegisterPath: a forged datagram carrying an admitted
+// session id must not register its source as a return path (SEC3), otherwise one
+// spoofed packet steers the session's return traffic to an arbitrary address.
+func TestRejectedDatagramDoesNotRegisterPath(t *testing.T) {
+	idPriv, idPub, _ := clientcore.GenerateIdentity()
+	dg := NewDataGateway(idPriv, &entitlement.Service{Mode: entitlement.ModeOpen}, 64, nil)
+	alloc, _ := exit.NewAllocator(netip.MustParsePrefix("10.99.0.0/16"))
+	dev := newFakeDevice()
+	paths := exit.NewPathSet(time.Minute)
+	gwConn, err := net.ListenPacket("udp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("gateway listen: %v", err)
+	}
+	defer gwConn.Close()
+	dg.EnableExit(exit.NewRouter(alloc, paths, dev, dg, testSink{gwConn}, dg))
+	ctx, cancel := context.WithCancel(context.Background())
+	defer func() { cancel(); close(dev.inject) }()
+	go func() { _ = dg.Serve(ctx, gwConn) }()
+
+	var socks [2]net.PacketConn // client, attacker
+	for i := range socks {
+		if socks[i], err = net.ListenPacket("udp", "127.0.0.1:0"); err != nil {
+			t.Fatalf("listen: %v", err)
+		}
+		defer socks[i].Close()
+	}
+	hello, hs, _ := clientcore.BeginClientHandshake(idPub, "open")
+	_, _ = socks[0].WriteTo(hello, gwConn.LocalAddr())
+	rbuf := make([]byte, 2048)
+	_ = socks[0].SetReadDeadline(time.Now().Add(2 * time.Second))
+	n, _, err := socks[0].ReadFrom(rbuf)
+	if err != nil {
+		t.Fatalf("read ServerHello: %v", err)
+	}
+	session, err := hs.Complete(rbuf[:n], 64)
+	if err != nil {
+		t.Fatalf("complete handshake: %v", err)
+	}
+	id, _, _, _, _ := clientcore.DecodeClientHello(hello)
+	tunnelIP, _ := alloc.Allocate(id)
+	wire, _ := session.Outbound(craftIPv4(tunnelIP, netip.MustParseAddr("198.51.100.7"), []byte("x")))
+
+	// The attacker knows the session id but not the key: a tampered tag.
+	forged := append([]byte(nil), wire...)
+	forged[len(forged)-1] ^= 0xFF
+	_, _ = socks[1].WriteTo(forged, gwConn.LocalAddr())
+	// The genuine copy follows; Serve is sequential, so once it egresses the
+	// forged datagram has been handled.
+	_, _ = socks[0].WriteTo(wire, gwConn.LocalAddr())
+	select {
+	case <-dev.egress:
+	case <-time.After(2 * time.Second):
+		t.Fatal("genuine packet was not forwarded")
+	}
+
+	attacker := socks[1].LocalAddr().(*net.UDPAddr).AddrPort()
+	for _, p := range paths.Fresh(id) {
+		if p == attacker {
+			t.Fatalf("forged datagram registered return path %v", p)
+		}
+	}
+	if got := len(paths.Fresh(id)); got != 1 {
+		t.Fatalf("fresh paths = %d, want 1 (the genuine client)", got)
+	}
+}
