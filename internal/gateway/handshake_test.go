@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"bytes"
+	"errors"
 	"net/netip"
 	"testing"
 	"time"
@@ -157,3 +158,52 @@ func TestHandshakeClientRejectsWrongGatewayIdentity(t *testing.T) {
 		t.Fatal("client completed against a gateway it could not authenticate")
 	}
 }
+
+// With a leaser wired (exit on), a lease failure (e.g. pool exhausted) must
+// refuse the handshake rather than admit a client with a zero AssignedIPv4 that
+// can never route (SEC2). The key registered by admission is unwound, so the
+// DataPlane rejects the session's packets and no ServerHello is revealed.
+func TestLeaseFailureRefusesHandshake(t *testing.T) {
+	cases := []struct {
+		name  string
+		addr  netip.Addr
+		err   error
+		cause error
+	}{
+		{name: "pool exhausted", err: errPoolExhausted, cause: errPoolExhausted},
+		{name: "invalid address", addr: netip.Addr{}, cause: ErrLeaseInvalid},
+		{name: "ipv6 address", addr: netip.MustParseAddr("fd00::7"), cause: ErrLeaseInvalid},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			idPriv, idPub, _ := clientcore.GenerateIdentity()
+			service, key := hostedService(t)
+			store := NewSessionStore()
+			admitter := NewAdmitter(service, store)
+			admitter.SetLeaser(func(protocol.SessionID) (netip.Addr, error) { return tc.addr, tc.err })
+
+			hello, _, _ := clientcore.BeginClientHandshake(idPub, hostedToken(t, key))
+			serverHello, _, id, tunnelIP, err := admitter.Handshake(hello, idPriv, 64)
+			if err == nil {
+				t.Fatal("gateway admitted a client whose tunnel-IP lease failed")
+			}
+			if !errors.Is(err, ErrLeaseFailed) || !errors.Is(err, tc.cause) {
+				t.Fatalf("error %v: want ErrLeaseFailed wrapping %v", err, tc.cause)
+			}
+			if serverHello != nil {
+				t.Fatal("refused handshake still returned a ServerHello")
+			}
+			if tunnelIP.IsValid() {
+				t.Fatalf("refused handshake returned tunnel IP %v", tunnelIP)
+			}
+			if id != (protocol.SessionID{}) {
+				t.Fatalf("refused handshake returned session id %v", id)
+			}
+			if got := store.len(); got != 0 {
+				t.Fatalf("refused handshake left %d session key(s) registered", got)
+			}
+		})
+	}
+}
+
+var errPoolExhausted = errors.New("tunnel pool exhausted")

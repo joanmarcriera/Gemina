@@ -166,6 +166,26 @@ exit_egress_remove() {
   exit_egress_drop_chains_except "$tool" ""
 }
 
+# Own STATE_DIR and an existing identity key to uid:gid. The gateway drops to RUN_AS
+# BEFORE reading the 0600 key, so a key left owned by a previous RUN_AS (or by root,
+# from a pre-privdrop deploy) would be unreadable and the gateway would exit. Contents
+# and mode are untouched; a symlink or non-regular key is refused rather than followed.
+# Every chown here is `chown -h` (never dereferences): once $dir belongs to uid, that uid
+# can swap the key for a symlink between the check and the chown (TOCTOU), and a
+# dereferencing root chown would then hand an arbitrary target to it.
+exit_state_dir_apply() {
+  local dir="$1" uid="$2" gid="$3" key="$1/gateway-identity.key"
+  mkdir -p "$dir"
+  chown -h "$uid:$gid" "$dir"
+  if [[ -L "$key" ]] || { [[ -e "$key" ]] && [[ ! -f "$key" ]]; }; then
+    echo "error: $key is not a regular file; refusing to chown it" >&2
+    return 1
+  fi
+  if [[ -f "$key" ]]; then
+    chown -h "$uid:$gid" "$key"
+  fi
+}
+
 # Tests source this file for the functions above only (scripts/test-exit-egress.sh).
 [[ -n "${GEMINA_SETUP_LIB_ONLY:-}" ]] && return 0
 
@@ -246,8 +266,7 @@ for tool in iptables ip6tables; do
 done
 
 say "state dir $STATE_DIR (writable by $CONTAINER_UID:$CONTAINER_GID for the Ed25519 identity)"
-mkdir -p "$STATE_DIR"
-chown "$CONTAINER_UID:$CONTAINER_GID" "$STATE_DIR"
+exit_state_dir_apply "$STATE_DIR" "$CONTAINER_UID" "$CONTAINER_GID" || die "cannot prepare $STATE_DIR"
 
 cat <<EOF
 

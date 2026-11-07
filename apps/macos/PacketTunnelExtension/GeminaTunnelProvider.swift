@@ -88,6 +88,15 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
         []
     }
 
+    /// Whether an outbound inner IP packet read from the tunnel is relayed to the
+    /// gateway. The default relays everything; a subclass that captures a family
+    /// it cannot carry (the bootstrap's IPv6 sink route, SEC6) returns false so
+    /// the packet is dropped locally instead of being encrypted and duplicated
+    /// over every path only for the gateway to discard it.
+    open func shouldRelayOutbound(_ packet: Data) -> Bool {
+        true
+    }
+
     // MARK: - NEPacketTunnelProvider lifecycle
 
     open override func startTunnel(
@@ -175,7 +184,7 @@ open class GeminaTunnelProvider: NEPacketTunnelProvider, @unchecked Sendable {
             // currentPathStates / primaryUnstable are maintained from the NE path
             // monitor + the benchmark pings; the policy uses them to choose how
             // many paths to send each packet over (Duplicate / Failover / Smart).
-            for packet in packets {
+            for packet in packets where self.shouldRelayOutbound(packet) {
                 _ = try? currentRelay.sendOutbound(packet,
                                                    pathStates: snapshot.pathStates,
                                                    primaryUnstable: snapshot.primaryUnstable)
