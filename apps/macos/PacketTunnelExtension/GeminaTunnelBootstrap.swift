@@ -50,6 +50,12 @@ final class GeminaTunnelBootstrap: GeminaTunnelProvider, @unchecked Sendable {
     private static let tunnelMTU: NSNumber = 1380
     /// How long to wait for the handshake's ServerHello before giving up.
     private static let handshakeTimeout: TimeInterval = 5
+    /// IPv6 sink address for the tunnel interface (SEC6). The gateway exit is
+    /// IPv4-only, so IPv6 is captured by a default route and dropped rather than
+    /// left to bypass the tunnel on the physical interface. A ULA (RFC 4193,
+    /// randomly chosen global ID) keeps it unroutable, and an ULA-only source
+    /// makes RFC 6724 address selection prefer IPv4 for global destinations.
+    private static let ipv6SinkAddress = "fd9b:4df9:da40::1"
 
     // Set during makeRelay(), read while building network settings (both run on
     // the startTunnel thread); guarded so the @unchecked Sendable contract holds.
@@ -126,6 +132,11 @@ final class GeminaTunnelBootstrap: GeminaTunnelProvider, @unchecked Sendable {
         // no routing loop. Scope to included routes per footprint.md later.
         ipv4.includedRoutes = [NEIPv4Route.default()]
         settings.ipv4Settings = ipv4
+        // Capture all IPv6 too, or it leaks around the tunnel (SEC6). It is
+        // dropped in shouldRelayOutbound(_:) until the data plane carries IPv6.
+        let ipv6 = NEIPv6Settings(addresses: [Self.ipv6SinkAddress], networkPrefixLengths: [128])
+        ipv6.includedRoutes = [NEIPv6Route.default()]
+        settings.ipv6Settings = ipv6
         settings.mtu = Self.tunnelMTU
 
         let dns = dnsServers.withLock { $0 }
@@ -133,6 +144,14 @@ final class GeminaTunnelBootstrap: GeminaTunnelProvider, @unchecked Sendable {
             settings.dnsSettings = NEDNSSettings(servers: dns)
         }
         return settings
+    }
+
+    /// Drop IPv6 locally: the default IPv6 route above only exists so IPv6
+    /// cannot bypass the tunnel; the gateway exit cannot carry it. The IP version
+    /// is the high nibble of byte 0; an empty buffer is dropped too.
+    override func shouldRelayOutbound(_ packet: Data) -> Bool {
+        guard let first = packet.first else { return false }
+        return (first >> 4) == 4
     }
 
     override func stopTunnel(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
