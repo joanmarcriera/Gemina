@@ -736,6 +736,13 @@ Do not split the project into multiple repositories until there are independent 
 
 7.2 Proposed structure
 
+(Note, 2026-11-01: this is the Stage 0 proposal, not the current tree. Not
+created: cmd/entitlement-api, cmd/packet-generator, cmd/network-simulator,
+internal/{framing,replay,sessions,logging}, internal/platform/linux,
+pkg/{protocoltypes,testkit}, apps/macos/GeminaVPN.xcodeproj (XcodeGen generates
+Gemina.xcodeproj from apps/macos/project.yml). Added since: internal/{exit,bootstrap,
+diagnostics}, bridge/geminacore. Replay protection lives in internal/dedup.)
+
 gemina/
 ├── AGENTS.md
 ├── README.md
@@ -1456,7 +1463,7 @@ geminactl probe
 
 Server:
 
-gemina-gateway --probe-mode
+GEMINA_GATEWAY_MODE=probe gateway   (cmd/gateway; probe is the default mode, there is no --probe-mode flag)
 
 The client must:
 

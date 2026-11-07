@@ -1,4 +1,4 @@
-# ADR-0001: Gemina First
+# ADR-0001: Continuity First
 
 Date: 2026-06-17
 
