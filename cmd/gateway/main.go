@@ -45,7 +45,7 @@ func main() {
 
 	// "data" runs the real gateway (authenticated handshake + encrypted data plane
 	// + admission); "probe" (default) runs the Stage-1 dedup probe server.
-	if envOr("GEMINA_GATEWAY_MODE", "probe") == "data" {
+	if envChoice(logger, "GEMINA_GATEWAY_MODE", "probe", "data") == "data" {
 		runDataGateway(logger, addr, capacity, readBuffer)
 		return
 	}
@@ -62,13 +62,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Enlarge the socket receive buffer so bursts are not silently dropped under
-	// load. Non-fatal: the kernel may clamp to a lower maximum.
-	if udp, ok := conn.(*net.UDPConn); ok {
-		if err := udp.SetReadBuffer(readBuffer); err != nil {
-			logger.Warn("set read buffer", "bytes", readBuffer, "error", err.Error())
-		}
-	}
+	setReadBuffer(logger, conn, readBuffer)
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -93,6 +87,20 @@ func main() {
 	)
 }
 
+// setReadBuffer enlarges the UDP socket receive buffer so bursts are not
+// silently dropped under load. Non-fatal (the kernel may clamp to a lower
+// maximum), but a failure is logged so an undersized buffer is visible in both
+// gateway modes.
+func setReadBuffer(logger *slog.Logger, conn net.PacketConn, bytes int) {
+	udp, ok := conn.(*net.UDPConn)
+	if !ok {
+		return
+	}
+	if err := udp.SetReadBuffer(bytes); err != nil {
+		logger.Warn("set read buffer", "bytes", bytes, "error", err.Error())
+	}
+}
+
 // runDataGateway runs the real gateway: it loads (or creates) the Ed25519
 // identity clients pin, builds the entitlement service (open for self-host,
 // hosted for the paid tier), and serves the authenticated handshake + encrypted
@@ -108,14 +116,12 @@ func runDataGateway(logger *slog.Logger, addr string, capacity, readBuffer int) 
 		logger.Error("listen", "addr", addr, "error", err.Error())
 		os.Exit(1)
 	}
-	if udp, ok := conn.(*net.UDPConn); ok {
-		_ = udp.SetReadBuffer(readBuffer)
-	}
+	setReadBuffer(logger, conn, readBuffer)
 
 	// Optional internet exit path (Stage 2). Off by default so the data gateway
 	// stays a decrypt+dedup endpoint unless the operator provisions a TUN.
 	var exitDev *exitDevice
-	if envOr("GEMINA_GATEWAY_EXIT", "off") == "on" {
+	if envChoice(logger, "GEMINA_GATEWAY_EXIT", "off", "on") == "on" {
 		if exitDev, err = openExitDevice(logger); err != nil {
 			logger.Error("enable exit path", "error", err.Error())
 			os.Exit(1)
@@ -277,6 +283,24 @@ func envOr(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
 	}
+	return fallback
+}
+
+// envChoice returns key's value when it is fallback or one of allowed, and
+// fallback otherwise. An unrecognised value (a typo such as "Data" or "true") is
+// logged rather than silently treated as the default, so an operator who meant
+// to enable a mode can see that it is off.
+func envChoice(logger *slog.Logger, key, fallback string, allowed ...string) string {
+	v := os.Getenv(key)
+	if v == "" || v == fallback {
+		return fallback
+	}
+	for _, a := range allowed {
+		if v == a {
+			return v
+		}
+	}
+	logger.Warn("ignoring unrecognised env value; using default", "key", key, "value", v, "default", fallback)
 	return fallback
 }
 
