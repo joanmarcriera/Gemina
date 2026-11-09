@@ -63,7 +63,7 @@ func TestProviderErrorFormatAndUnwrap(t *testing.T) {
 		t.Fatal("errors.Is(err, cause) = false; Unwrap broken")
 	}
 	var pe *ProviderError
-	if !errors.As(err, &pe) || pe.Op != "checkout" || pe.Unwrap() != cause {
+	if !errors.As(err, &pe) || pe.Op != "checkout" || !errors.Is(pe.Unwrap(), cause) {
 		t.Fatalf("errors.As gave %#v", pe)
 	}
 	if errors.Is(err, ErrBadSignature) {
