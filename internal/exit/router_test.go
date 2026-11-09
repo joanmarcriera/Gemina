@@ -73,6 +73,8 @@ func (fakeFramer) FrameReturn(id protocol.SessionID, payload []byte) ([]byte, er
 type fakeSink struct {
 	mu   sync.Mutex
 	sent []sinkCall
+	// failTo makes SendTo return an error for these endpoints (after recording).
+	failTo map[netip.AddrPort]bool
 }
 
 type sinkCall struct {
@@ -85,7 +87,11 @@ func (s *fakeSink) SendTo(datagram []byte, dst netip.AddrPort) error {
 	copy(cp, datagram)
 	s.mu.Lock()
 	s.sent = append(s.sent, sinkCall{datagram: cp, dst: dst})
+	fail := s.failTo[dst]
 	s.mu.Unlock()
+	if fail {
+		return errors.New("fake send failure")
+	}
 	return nil
 }
 
@@ -314,6 +320,48 @@ func TestServeReturnDropsUnknownDst(t *testing.T) {
 	}
 	if !found {
 		t.Fatalf("Dropped reasons = %v, want to contain unknown-dst", reasons)
+	}
+}
+
+// TestServeReturnCountsSendFailures pins that a return-path send that fails is
+// recorded as a drop (symmetric with tun-write-error on egress) instead of being
+// silently discarded, while the healthy path still delivers and is counted.
+func TestServeReturnCountsSendFailures(t *testing.T) {
+	r, alloc, ps, dev, sink, met := newTestRouter(t, "10.0.0.0/24")
+	id := testSessionID(1)
+
+	leased, err := alloc.Allocate(id)
+	if err != nil {
+		t.Fatalf("Allocate: %v", err)
+	}
+	good := netip.MustParseAddrPort("192.0.2.1:51820")
+	bad := netip.MustParseAddrPort("198.51.100.1:4500")
+	ps.Record(id, good)
+	ps.Record(id, bad)
+	sink.failTo = map[netip.AddrPort]bool{bad: true}
+
+	pkt := buildIPv4(netip.MustParseAddr("203.0.113.1"), leased)
+	dev.inject(pkt)
+	dev.close()
+	_ = r.ServeReturn(context.Background())
+
+	if got := len(sink.calls()); got != 2 {
+		t.Fatalf("sink received %d calls, want 2 (one per path)", got)
+	}
+	var sendErrors int
+	for _, reason := range met.droppedReasons() {
+		if reason == "send-error" {
+			sendErrors++
+		}
+	}
+	if sendErrors != 1 {
+		t.Fatalf("send-error drops = %d (reasons %v), want 1", sendErrors, met.droppedReasons())
+	}
+	met.mu.Lock()
+	returned := met.returned
+	met.mu.Unlock()
+	if returned == 0 {
+		t.Fatal("healthy path was not counted as returned")
 	}
 }
 
