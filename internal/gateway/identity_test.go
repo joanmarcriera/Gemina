@@ -43,3 +43,32 @@ func TestLoadOrCreateIdentityRejectsCorruptFile(t *testing.T) {
 		t.Fatal("expected error for a wrong-size identity file")
 	}
 }
+
+func TestLoadOrCreateIdentityRefusesDanglingSymlink(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "elsewhere.key")
+	path := filepath.Join(dir, "identity.key")
+	if err := os.Symlink(target, path); err != nil {
+		t.Skipf("symlinks unsupported: %v", err)
+	}
+	if _, _, err := LoadOrCreateIdentity(path); err == nil {
+		t.Fatal("expected error creating identity through a dangling symlink")
+	}
+	if _, err := os.Lstat(target); !os.IsNotExist(err) {
+		t.Fatalf("symlink target must not be created, lstat err = %v", err)
+	}
+}
+
+func TestLoadOrCreateIdentityCreatesOwnerOnlyFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "identity.key")
+	if _, _, err := LoadOrCreateIdentity(path); err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if perm := info.Mode().Perm(); perm&0o077 != 0 {
+		t.Fatalf("identity mode = %o, want no group/other bits", perm)
+	}
+}
