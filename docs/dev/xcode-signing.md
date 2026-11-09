@@ -17,7 +17,12 @@ runnable, signed app. Do these in order.
 ## 1. Create the app + extension in Xcode
 
 The repo's `apps/macos` is a SwiftPM package (build-only); a signed app with a
-Network Extension needs a real Xcode project.
+Network Extension needs a real Xcode project. That project is now generated from
+the checked-in XcodeGen spec — `cd apps/macos && xcodegen generate` (full app +
+`GeminaTunnel` extension, `project.yml`) or `xcodegen generate --spec
+project-dev.yml` (menu-bar app only, for a free Personal Team) — and its
+extension target already runs the c-archive build of step 3. The manual steps
+below describe what that spec sets up, for reference or a hand-made project.
 
 1. New Xcode project → **macOS App** (SwiftUI). Set a bundle id, e.g.
    `com.<yourorg>.gemina`.
@@ -59,7 +64,8 @@ GOOS=darwin GOARCH=arm64 \
 ```
 
 The cgo bridge **already exists**: `bridge/geminacore` exports
-`cc_session_new / cc_outbound / cc_inbound / cc_session_free` (handle-based, no Go
+`cc_session_new / cc_handshake_begin / cc_handshake_complete /
+cc_handshake_cancel / cc_outbound / cc_inbound / cc_session_free` (handle-based, no Go
 pointer crosses the boundary), with the C header at
 `bridge/include/geminacore.h`. Build the archive and add the `.a` + that
 header to the extension target, importing it via a bridging header:
