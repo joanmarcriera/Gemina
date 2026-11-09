@@ -1,18 +1,31 @@
-# macOS Skeleton
+# macOS app
 
-This directory contains source directories created during Stage 0 and a Swift
-package used for compile-only validation.
+The Swift half of Gemina: the menu-bar app and the `NEPacketTunnelProvider`
+extension, linked to the Go transport core through the c-archive bridge
+(`bridge/geminacore`, header `bridge/include/geminacore.h`).
 
-An Xcode project was not generated during Stage 0 because NetworkExtension signing, team identifiers, entitlements and build settings require owner review.
+## Xcode project
 
-## Manual Xcode Creation Steps
+The Xcode project is generated with XcodeGen, not checked in:
 
-1. Create a macOS App target named `GeminaVPN`.
-2. Add a Packet Tunnel Extension target named `GeminaVPNPacketTunnelExtension`.
-3. Add a shared Swift framework or package target for code under `Shared/`.
-4. Link the app and extension to the shared target.
-5. Add NetworkExtension entitlements only after the Apple Developer Team ID and signing approach are approved.
-6. Add the Go bridge target only after ADR and threat-model updates for Swift/Go memory ownership.
+```sh
+cd apps/macos
+xcodegen generate                          # Gemina.xcodeproj: app + GeminaTunnel extension
+xcodegen generate --spec project-dev.yml   # GeminaDev.xcodeproj: menu-bar app only (free Personal Team)
+```
 
-The Swift package here remains a validation scaffold until an Xcode project and
-Apple signing details are approved.
+`project.yml` needs a paid Apple Developer Program membership for the Network
+Extension entitlement; its extension target builds the Go c-archive as a
+pre-build script. Signing and entitlements: `docs/dev/xcode-signing.md`.
+
+## Swift package
+
+`Package.swift` is the headless, Xcode-free build used by `make test-macos` and
+CI. Besides the library targets it carries self-checking executables that run
+with the plain toolchain:
+
+```sh
+swift run --package-path apps/macos --disable-sandbox GeminaVPNCoreCheck
+swift run --package-path apps/macos --disable-sandbox WiFiPathSenderCheck
+swift run --package-path apps/macos --disable-sandbox CoreTransportCheck
+```

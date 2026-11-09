@@ -142,7 +142,8 @@ ssh oracle 'sudo journalctl -u gemina-gateway-data.service | grep public_key | t
 (`Environment=WAN_IF=...`) if the host has several. Open ingress **UDP 51820** in
 the cloud firewall (VCN) as for probe mode. In open/self-host mode (the default)
 admission ignores the token, so the app only needs the gateway host + that base64
-public key. The two units `Conflicts=` each other; never run both on one port.
+public key. The data unit declares `Conflicts=gemina-gateway.service`, so
+starting either one stops the other; never run both on one port.
 
 To remove: `sudo systemctl disable --now gemina-gateway-data.service`, remove the
 unit and `/usr/local/sbin/gemina-setup-exit-host`, then undo the host setup

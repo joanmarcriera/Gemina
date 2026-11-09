@@ -158,10 +158,14 @@ See the community [`COMPATIBILITY.md`](COMPATIBILITY.md) catalogue, and run
 `geminactl preflight -share` to check your own setup and contribute a report.
 
 Run `geminactl preflight` to confirm a given Mac + Android combination is
-supported before you commit: it returns a plain verdict (for example *supported*,
-*connect your Android*, *connect to Wi-Fi*) and the one thing to change. Add
+supported before you commit: it returns a plain verdict (`supported`,
+`needs-android`, `needs-wifi`, `needs-both` or `unsupported-macos`) and the one
+thing to change. Add
 `-json` for the machine-readable report the app and website consume. The
-`geminactl darwin-evidence` diagnostic reports the underlying path evidence.
+`geminactl darwin-evidence` diagnostic reports the underlying path evidence, and
+`geminactl benchmark -to home:51820 -to hosted:51820` compares latency and loss
+to one or more gateways (`-count` pings per target, default 10; `-timeout`
+per ping, default 1s).
 
 ## Build & test
 

@@ -6,7 +6,7 @@
 
 ```bash
 make bootstrap      # Prepare Go workspace, Swift package cache, docs
-make test           # Go race tests + Swift build check + docs validation
+make test           # Go tests + Swift build check + docs validation (CI runs go test -race)
 make lint           # gofmt, golangci-lint (if installed), swiftlint (if installed)
 make ci             # Run all local CI gates in one shot
 ```
@@ -14,7 +14,7 @@ make ci             # Run all local CI gates in one shot
 The project is **Go + Swift** (`go 1.26`, Xcode project in `apps/macos/`):
 
 - **Go core:** `cmd/` (CLI + gateway), `internal/` (transport, dedup, diagnostics), `pkg/clientcore` (client/gateway core)
-- **Swift app:** `apps/macos/` (menu-bar + NetworkExtension packet tunnel, linked to Go via cgo c-archive bridge)
+- **Swift app:** `apps/macos/` (menu-bar + NetworkExtension packet tunnel, linked to Go via cgo c-archive bridge; Xcode project generated from `apps/macos/project.yml` with XcodeGen)
 - **Research only:** `.research-src/` (Git-ignored, pinned upstream sources for due diligence)
 
 ## Key conventions
@@ -27,7 +27,7 @@ The project is **Go + Swift** (`go 1.26`, Xcode project in `apps/macos/`):
 
 4. **Tests first, TDD:** Table-driven Go tests, race-detector enabled (`go test -race ./...`). All new logic must be unit tested; benchmarks for performance-sensitive paths.
 
-5. **Go formatting:** `gofmt` is enforced on every Edit/Write via `.claude/hooks/gofmt-on-edit.sh`; CI gates it with `go vet ./...`.
+5. **Go formatting:** `gofmt` is enforced on every Edit/Write via `.claude/hooks/gofmt-on-edit.sh`; CI gates it with a `gofmt -l` check alongside `go vet ./...`.
 
 6. **Dual-license:** AGPL-3.0 gateway (`cmd/gateway/`, `internal/gateway/`), Apache-2.0 client + core (`apps/macos/`, `pkg/`, `cmd/geminactl`, shared `internal/`).
 
@@ -38,14 +38,16 @@ The project is **Go + Swift** (`go 1.26`, Xcode project in `apps/macos/`):
 ```
 .
 ├── apps/macos/          # Swift app (menu-bar, NetworkExtension provider)
-├── bridge/geminacore    # cgo C-shared bridge (Go core → Swift ABI)
+├── bridge/geminacore    # cgo c-archive bridge (Go core → Swift ABI; header in bridge/include/)
 ├── cmd/
 │   ├── gateway/         # Server: dedup + exit node
-│   └── geminactl/       # CLI: probe, diagnostics (darwin-evidence), preflight
+│   └── geminactl/       # CLI: probe, diagnostics (darwin-evidence), preflight, benchmark
 ├── internal/
+│   ├── bootstrap/       # Component/stage banner printed by bare `geminactl`
 │   ├── dedup/           # FIFO ring (Stage 1 probes) + RFC 6479 sliding-window (data)
 │   ├── exit/            # Stage 2 exit node: TUN, IPv4 parse, router, reverse-path filter
 │   ├── gateway/         # Server: handshake, admission, DataPlane, metrics
+│   ├── metrics/         # Redacted Prometheus registry behind GEMINA_GATEWAY_METRICS_ADDR
 │   ├── paths/           # Path classification (Wi-Fi, Android USB, etc.)
 │   ├── platform/darwin/ # macOS USB, BSD interface, ioreg evidence collection
 │   ├── diagnostics/     # darwin-evidence JSON report (redacted, host-IPs never logged)
