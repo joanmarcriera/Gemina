@@ -55,6 +55,7 @@ type DataGateway struct {
 	handshakes    *metrics.CounterVec // gemina_handshakes_total{result}
 	dataPackets   *metrics.CounterVec // gemina_data_packets_total{decision}
 	activeSession *metrics.GaugeVec   // gemina_active_sessions
+	replyErrors   *metrics.CounterVec // gemina_reply_send_errors_total
 
 	exitForwarded      *metrics.CounterVec // gemina_exit_forwarded_total
 	exitForwardedBytes *metrics.CounterVec // gemina_exit_forwarded_bytes_total
@@ -85,6 +86,8 @@ func NewDataGateway(identityPriv ed25519.PrivateKey, service *entitlement.Servic
 		dataPackets:  reg.Counter("gemina_data_packets_total", "Data datagrams by decision.", "decision"),
 		activeSession: reg.Gauge("gemina_active_sessions",
 			"Sessions currently admitted on the gateway."),
+		replyErrors: reg.Counter("gemina_reply_send_errors_total",
+			"Handshake/ping replies the socket failed to send."),
 		exitForwarded:      reg.Counter("gemina_exit_forwarded_total", "Inner packets forwarded to the internet."),
 		exitForwardedBytes: reg.Counter("gemina_exit_forwarded_bytes_total", "Inner bytes forwarded to the internet."),
 		exitReturned:       reg.Counter("gemina_exit_returned_total", "Return datagrams sent back to clients."),
@@ -234,7 +237,11 @@ func (g *DataGateway) Serve(ctx context.Context, conn net.PacketConn) error {
 		}
 		reply, rec := g.HandleDatagram(buf[:n])
 		if reply != nil {
-			_, _ = conn.WriteTo(reply, src)
+			// A failed reply (e.g. a ServerHello for a just-admitted session) is
+			// counted, never logged with src, so it is not silently lost.
+			if _, err := conn.WriteTo(reply, src); err != nil {
+				g.replyErrors.Inc()
+			}
 		}
 
 		if g.exit != nil && rec.Kind == "data" && !rec.SessionID.IsZero() {
