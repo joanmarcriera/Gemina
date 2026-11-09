@@ -25,11 +25,33 @@ func LoadOrCreateIdentity(path string) (ed25519.PrivateKey, bool, error) {
 		if genErr != nil {
 			return nil, false, genErr
 		}
-		if writeErr := os.WriteFile(path, priv, 0o600); writeErr != nil {
+		if writeErr := writeNewKeyFile(path, priv); writeErr != nil {
 			return nil, false, writeErr
 		}
 		return priv, true, nil
 	default:
 		return nil, false, err
 	}
+}
+
+// writeNewKeyFile creates path exclusively (O_EXCL) with owner-only mode and
+// writes key to it. O_EXCL refuses to follow a symlink or clobber a file that
+// appeared after the not-exist check, closing the check-then-create race that
+// os.WriteFile (O_TRUNC, follows symlinks) would leave open. A partial write
+// removes the file so the next start regenerates rather than loading garbage.
+func writeNewKeyFile(path string, key []byte) error {
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+	if err != nil {
+		return err
+	}
+	if _, err := f.Write(key); err != nil {
+		_ = f.Close()
+		_ = os.Remove(path)
+		return err
+	}
+	if err := f.Close(); err != nil {
+		_ = os.Remove(path)
+		return err
+	}
+	return nil
 }

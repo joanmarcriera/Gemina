@@ -25,15 +25,17 @@ for path in docs/legal/upstream-licences.md docs/legal/code-provenance.md docs/l
 	fi
 done
 
-if grep -nE 'pin_status: pending|TODO-pin' "$manifest" >/tmp/gemina-pending-pins 2>/dev/null; then
+# Matches are captured in variables, not fixed /tmp paths: a predictable shared
+# temp file can be pre-created as a symlink by another local user.
+if pending=$(grep -nE 'pin_status: pending|TODO-pin' "$manifest" 2>/dev/null); then
 	echo "upstream manifest still contains pending pins:" >&2
-	cat /tmp/gemina-pending-pins >&2
+	printf '%s\n' "$pending" >&2
 	exit 1
 fi
 
-if grep -nE '^[[:space:]]*commit: [0-9a-f]{1,39}$|^[[:space:]]*commit: [0-9a-f]{41,}$|^[[:space:]]*commit: [0-9a-f]*[^0-9a-f[:space:]][^[:space:]]*' "$manifest" >/tmp/gemina-invalid-pins 2>/dev/null; then
+if invalid=$(grep -nE '^[[:space:]]*commit: [0-9a-f]{1,39}$|^[[:space:]]*commit: [0-9a-f]{41,}$|^[[:space:]]*commit: [0-9a-f]*[^0-9a-f[:space:]][^[:space:]]*' "$manifest" 2>/dev/null); then
 	echo "upstream manifest contains invalid commit pins:" >&2
-	cat /tmp/gemina-invalid-pins >&2
+	printf '%s\n' "$invalid" >&2
 	exit 1
 fi
 

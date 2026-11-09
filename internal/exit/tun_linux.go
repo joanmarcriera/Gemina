@@ -34,6 +34,9 @@ type TUN struct {
 // It uses the IFF_TUN|IFF_NO_PI flags: raw IP packets, no extra packet-info
 // header prepended by the kernel. The caller must have CAP_NET_ADMIN.
 func OpenTUN(name string, mtu int) (*TUN, error) {
+	if err := ValidateTUNName(name); err != nil {
+		return nil, err
+	}
 	f, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
 	if err != nil {
 		return nil, fmt.Errorf("open /dev/net/tun: %w", err)
