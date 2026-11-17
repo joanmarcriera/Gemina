@@ -92,6 +92,11 @@ What is **not** verified:
 There are no accounts, payments or hosted gateway in this repository. You run
 the gateway yourself.
 
+## Known issues in 0.1.0
+
+- **IPv6 can bypass the tunnel.** The macOS tunnel routes IPv4 only in this release, so IPv6 traffic may leave over the normal connection. Turn IPv6 off on the test interface, or treat 0.1.0 as IPv4-only. A fix exists and will be in the next release.
+- **Gateway sessions do not expire with their entitlement.** A session stays valid until the gateway restarts. Restart the gateway to clear sessions. Fixed in the next release.
+
 ## Requirements
 
 * A Mac running macOS 14 or later. Apple Silicon is the main target.
