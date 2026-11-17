@@ -186,9 +186,11 @@ Built this cycle (all unit/race tested):
   gateway exposes `gemina_packets_total{decision,path}` (the failover signal)
   and `gemina_rejected_total{reason}`, redaction-enforced, on an opt-in
   metrics address. Grafana/alerts/scrape assets + `observability/METRICS.md`.
-* Licence decided and applied: AGPL-3.0 gateway + Apache-2.0 client/core
-  (`docs/legal/licensing.md`). Xcode/signing owner-action guide in
-  `docs/dev/xcode-signing.md`.
+* Licence (changed for release 0.1.0): PolyForm Noncommercial 1.0.0 for the whole
+  repo; commercial use needs a paid licence (`COMMERCIAL.md`,
+  `docs/legal/licensing.md`). Earlier source stays under AGPL-3.0 (gateway) and
+  Apache-2.0 (client) for those who received it; texts in `LICENSES/pre-0.1.0/`.
+* Xcode/signing owner-action guide: `docs/dev/xcode-signing.md`.
 
 Go-to-market groundwork: the static landing page (`website/`) is SEO-hardened
 (OG/Twitter/JSON-LD, sitemap/robots, pricing) with draft privacy/terms pages;

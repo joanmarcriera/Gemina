@@ -1,14 +1,29 @@
+Required Notice: Copyright (c) 2026 Riera Technologies Ltd (https://github.com/joanmarcriera/Gemina)
+
 # Notices
 
-This repository currently contains original project code and documentation for
-the Stage 1 dual-path UDP probe. No production VPN transport or released
-product exists yet.
+Gemina is released under the PolyForm Noncommercial License 1.0.0. The full text
+is in `LICENSE`. Commercial use needs a paid licence: see `COMMERCIAL.md`.
 
-This project is dual-licensed (open-core): the gateway/server is
-`AGPL-3.0-only` and the client and shared core are `Apache-2.0`. The directory
-map and rationale are in `docs/legal/licensing.md`; the full licence texts are
-in `LICENSES/AGPL-3.0.txt` and `LICENSES/Apache-2.0.txt`.
+If you share this software, keep the `Required Notice:` line above and include
+the licence text or a link to it. The licence requires this.
 
-No third-party source files have been copied into product directories.
+The line `Required Notice: ...` at the top of this file is the attribution to
+Riera Technologies Ltd that the licence passes on to everyone who receives a
+copy.
 
-Upstream projects listed in `research/upstream-manifest.yaml` are tracked for due diligence and research intake. Their licences, notices and provenance must be verified before any source code is copied, vendored, forked or distributed.
+## Third-party code
+
+No third-party source files have been copied into product directories. The Go
+module uses only the Go standard library. The Swift package uses only Apple
+system frameworks and the Swift standard library.
+
+Upstream projects listed in `research/upstream-manifest.yaml` are tracked for
+due diligence and research only. Their licences, notices and provenance must be
+verified before any source code is copied, vendored, forked or distributed.
+
+## Earlier releases
+
+Source published before release 0.1.0 was licensed under AGPL-3.0-only (gateway)
+and Apache-2.0 (client and shared code). The texts are kept in
+`LICENSES/pre-0.1.0/` for people who received that earlier source.

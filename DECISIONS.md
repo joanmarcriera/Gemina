@@ -1,6 +1,6 @@
 # Decisions
 
-Last updated: 2026-09-25
+Last updated: 2026-11-17
 
 This file records material project decisions for continuity across Codex sessions. Formal ADRs still need to be created during Stage 0 where required by `docs/product/project-specification.md`.
 
@@ -768,3 +768,45 @@ Conditions for revisiting:
 
 Revisit when the paid-tier resolver picker is built, or if Families blocking
 causes false-positive complaints significant enough to change the free default.
+
+## 2026-11-17: Release 0.1.0 Under PolyForm Noncommercial, Free With Attribution
+
+Decision:
+
+The whole repository moves to the PolyForm Noncommercial License 1.0.0 for
+release 0.1.0. It is free for noncommercial use, with attribution to Riera
+Technologies Ltd carried by a `Required Notice:` line. Commercial use needs a
+paid licence, requested through a GitHub issue (`COMMERCIAL.md`). The earlier
+AGPL-3.0 (gateway) and Apache-2.0 (client) texts are kept in
+`LICENSES/pre-0.1.0/` for people who received that earlier source.
+
+Alternatives considered:
+
+* Keep AGPL-3.0 gateway + Apache-2.0 client. Rejected: Apache-2.0 lets anyone
+  sell the client, and the owner wants commercial users to pay.
+* Fully proprietary, no public source. Rejected: the repository is already
+  public and the owner wants it released free for noncommercial use.
+
+Rationale:
+
+The owner asked for a licence that requires attribution, or that asks for
+payment when someone uses the software for money. PolyForm Noncommercial does
+both. No dependency or vendored code limits the choice: the Go module is
+standard-library only, the Swift package has no dependencies, and all history
+is authored by the owner.
+
+Consequences:
+
+* Already published source stays under its old licences for those who received
+  it. That cannot be revoked.
+* The project is source-available, not OSI open source. Docs, the website and
+  marketing drafts that say "open source" or describe the AGPL/Apache split are
+  out of date and must be corrected before they are used.
+* A copyright holder note: the notice names Riera Technologies Ltd. Confirm the
+  company holds, or is licensed, the copyright before selling commercial
+  licences.
+
+Conditions for revisiting:
+
+Revisit if a third-party contribution, dependency or vendored file arrives that
+this licence cannot carry, or if a lawyer finds a gap in the commercial terms.
