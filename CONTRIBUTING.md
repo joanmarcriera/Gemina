@@ -1,14 +1,16 @@
 # Contributing
 
-This repository is pre-release; the current stage is recorded in `TASKS.md`. It is heading towards an
-open-core release: the client and the gateway are open source and self-hostable,
-with an optional paid hosted gateway as the commercial model. Contributions to the
-client and gateway are welcome under that model.
+Gemina is source-available under the PolyForm Noncommercial License 1.0.0. It is free
+for noncommercial use with attribution; commercial use needs a paid licence (see
+[`LICENSE`](LICENSE), [`COMMERCIAL.md`](COMMERCIAL.md), [`NOTICE`](NOTICE) and
+[`docs/legal/licensing.md`](docs/legal/licensing.md)).
 
-The project is dual-licensed: the gateway is AGPL-3.0-only and the client and
-shared core are Apache-2.0 — see [`LICENSE`](LICENSE), [`NOTICE`](NOTICE) and
-[`docs/legal/licensing.md`](docs/legal/licensing.md). A contribution is licensed
-under the licence of the directory it touches.
+This repository is pre-release; the current stage is recorded in `TASKS.md`.
+By sending a contribution you agree that it is licensed under the same terms and
+that Riera Technologies Ltd may also license it commercially.
+
+The most useful contribution today is a report from real hardware. See the
+README section "Report results from real hardware".
 
 Before making changes:
 

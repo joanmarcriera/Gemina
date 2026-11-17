@@ -190,24 +190,11 @@ set of targets.
 
 ## Licence
 
-This project is dual-licensed (open-core):
-
-* The **gateway/server** is **AGPL-3.0-only** — `cmd/gateway/`,
-  `internal/gateway/`, and gateway-only server assets under `deploy/`.
-* The **client and shared core** are **Apache-2.0** — `apps/macos/`, the `pkg/`
-  packages, `cmd/geminactl/`, and the shared `internal/` packages.
-
-The AGPL keeps the hosted gateway open; the client stays Apache-2.0 so it can
-ship on the Mac App Store, which cannot carry AGPL software. Apache-2.0 is
-one-way compatible into AGPL-3.0, so the gateway may include the core but the
-client must never include gateway code.
-
-Full texts: [`LICENSES/AGPL-3.0.txt`](LICENSES/AGPL-3.0.txt) and
-[`LICENSES/Apache-2.0.txt`](LICENSES/Apache-2.0.txt). The directory map and
-rationale are in [`docs/legal/licensing.md`](docs/legal/licensing.md); see also
-[`LICENSE`](LICENSE) and [`NOTICE`](NOTICE). Third-party material, if ever
-imported, retains its original licence and attribution as recorded under
-`docs/legal/`.
+Gemina is released under the [PolyForm Noncommercial License 1.0.0](LICENSE).
+It is free for noncommercial use, with attribution to Riera Technologies Ltd.
+Commercial use needs a paid licence: see [`COMMERCIAL.md`](COMMERCIAL.md).
+Source published before release 0.1.0 stays under its earlier licences
+(AGPL-3.0 and Apache-2.0); see [`LICENSES/pre-0.1.0/`](LICENSES/pre-0.1.0/).
 
 <!-- vikunja-tracking -->
 ## Tracking
