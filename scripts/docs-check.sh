@@ -53,4 +53,12 @@ if [ "$broken" -ne 0 ]; then
 	exit 1
 fi
 
+# No placeholder or third-party product domains in shipped files. geminavpn.example
+# was a placeholder and gemina.app belongs to someone else; the project has no
+# product domain yet.
+if grep -rnIE 'geminavpn|gemina\.app' README.md COMMERCIAL.md NOTICE docs website apps scripts TASKS.md 2>/dev/null | grep -v '^scripts/docs-check.sh'; then
+	echo "a placeholder or foreign product domain is referenced (see above)" >&2
+	exit 1
+fi
+
 echo "documentation structure ok"
