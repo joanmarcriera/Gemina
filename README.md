@@ -95,7 +95,7 @@ the gateway yourself.
 ## Known issues in 0.1.0
 
 - **IPv6 can bypass the tunnel.** The macOS tunnel routes IPv4 only in this release, so IPv6 traffic may leave over the normal connection. Turn IPv6 off on the test interface, or treat 0.1.0 as IPv4-only. A fix exists and will be in the next release.
-- **Gateway sessions do not expire with their entitlement.** A session stays valid until the gateway restarts. Restart the gateway to clear sessions. Fixed in the next release.
+- **Gateway sessions do not expire with their entitlement.** A session is not ended when its entitlement ends, and the session store has no size cap. Restart the gateway to clear sessions. Fixed in the next release.
 
 ## Requirements
 
