@@ -182,10 +182,13 @@ func (r *Router) ServeReturn(ctx context.Context) error {
 		dsts := r.paths.Fresh(id)
 		for _, ep := range dsts {
 			// Best-effort delivery to each fresh endpoint; one path failing
-			// must not block the others.
-			if err := r.sink.SendTo(framed, ep); err == nil {
-				r.metrics.Returned(len(framed))
+			// must not block the others, but the failure is counted so a dead
+			// return socket is visible in metrics rather than silent.
+			if err := r.sink.SendTo(framed, ep); err != nil {
+				r.metrics.Dropped("send-error")
+				continue
 			}
+			r.metrics.Returned(len(framed))
 		}
 	}
 }
