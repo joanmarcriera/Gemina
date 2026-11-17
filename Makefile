@@ -46,6 +46,7 @@ lint-swift:
 
 licence-check:
 	./scripts/licence-check.sh
+	./scripts/test-licence-check.sh
 
 audit:
 	bash scripts/prepare-public.sh
