@@ -117,7 +117,7 @@ and **go-to-market** (open-core + hosted gateway). Next, in priority order:
   demo video (https://REDACTED/tasks/2575). GTM groundwork done:
   SEO-hardened `website/` (+ privacy/terms pages), `docs/marketing/` (seo,
   video-script, launch-plan, press-kit). Known website gaps tracked in Vikunja:
-  OG/Twitter card image (2570), placeholder domain `geminavpn.example` (2571),
+  OG/Twitter card image (2570), placeholder domain `<your-domain>` (2571),
   waitlist form has no backend (2572).
 * [x] Make the `DataGateway` runnable (cmd wiring done): `cmd/gateway` selects
   `probe | data` via `GEMINA_GATEWAY_MODE`, the data path loads/persists an Ed25519

@@ -1,18 +1,3 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url>
-    <loc>https://geminavpn.example/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
-  <url>
-    <loc>https://geminavpn.example/privacy.html</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>https://geminavpn.example/terms.html</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.3</priority>
-  </url>
-</urlset>
+<!-- Not deployed: the project has no product domain. Add absolute URLs here only when one exists. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>

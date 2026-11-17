@@ -188,17 +188,17 @@ graphic with the tagline) at `website/og-image.png`, ideally 1200×630.
 <meta property="og:site_name" content="Gemina VPN">
 <meta property="og:title" content="Gemina VPN — seamless internet failover for macOS">
 <meta property="og:description" content="Sends your Mac's traffic over Wi-Fi and your Android phone's cellular at once, so if one link drops your call, SSH or VPN never notices. Open source, self-hostable. Pre-release.">
-<meta property="og:url" content="https://geminavpn.example/">
-<meta property="og:image" content="https://geminavpn.example/og-image.png">
+<meta property="og:url" content="https://<your-domain>/">
+<meta property="og:image" content="https://<your-domain>/og-image.png">
 <meta property="og:image:alt" content="Two input signal traces — Wi-Fi and phone — merging into one unbroken output line.">
 
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Gemina VPN — seamless internet failover for macOS">
 <meta name="twitter:description" content="Two links at once so one dropout never ends your call, SSH or VPN. Open source, self-hostable. Pre-release.">
-<meta name="twitter:image" content="https://geminavpn.example/og-image.png">
+<meta name="twitter:image" content="https://<your-domain>/og-image.png">
 ```
 
-Replace `geminavpn.example` with the real domain once chosen. Keep the OG
+Replace `<your-domain>` with the real domain once chosen. Keep the OG
 description honest: it includes "Pre-release."
 
 ### 3.5 JSON-LD structured data (`SoftwareApplication`)
@@ -217,7 +217,7 @@ real reviews and faking them is both dishonest and against schema guidelines.
   "applicationCategory": "UtilitiesApplication",
   "operatingSystem": "macOS",
   "description": "Open-source macOS reliability tool that sends your traffic over Wi-Fi and an Android phone's USB-tethered cellular link at the same time, delivering seamless failover so a dropped link never interrupts a call, SSH session or VPN. Pre-release: dual-path transport proven; encryption and the full app in development.",
-  "url": "https://geminavpn.example/",
+  "url": "https://<your-domain>/",
   "license": "https://www.gnu.org/licenses/agpl-3.0.html",
   "isAccessibleForFree": true,
   "softwareVersion": "pre-release",
@@ -278,7 +278,7 @@ Place at site root (`website/robots.txt`):
 ```
 User-agent: *
 Allow: /
-Sitemap: https://geminavpn.example/sitemap.xml
+Sitemap: https://<your-domain>/sitemap.xml
 ```
 
 Do not block the blog or docs once published. Do not add fake disallows.
@@ -291,7 +291,7 @@ Root-level (`website/sitemap.xml`). Start minimal and grow as content ships:
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemap.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://geminavpn.example/</loc>
+    <loc>https://<your-domain>/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -308,7 +308,7 @@ Add a self-referential canonical to every page to avoid duplicate-URL dilution (
 trailing-slash vs not, query strings):
 
 ```html
-<link rel="canonical" href="https://geminavpn.example/">
+<link rel="canonical" href="https://<your-domain>/">
 ```
 
 Pick one canonical host (www vs apex) and 301-redirect the other.
