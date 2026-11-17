@@ -29,7 +29,7 @@ The project is **Go + Swift** (`go 1.26`, Xcode project in `apps/macos/`):
 
 5. **Go formatting:** `gofmt` is enforced on every Edit/Write via `.claude/hooks/gofmt-on-edit.sh`; CI gates it with `go vet ./...`.
 
-6. **Dual-license:** AGPL-3.0 gateway (`cmd/gateway/`, `internal/gateway/`), Apache-2.0 client + core (`apps/macos/`, `pkg/`, `cmd/geminactl`, shared `internal/`).
+6. **Licence:** PolyForm Noncommercial 1.0.0 for the whole repo from release 0.1.0 (free for noncommercial use with attribution; commercial needs a paid licence, see `COMMERCIAL.md`). Earlier source was AGPL-3.0 gateway + Apache-2.0 client; texts in `LICENSES/pre-0.1.0/`. Keep the client free of gateway imports (CI enforces it).
 
 7. **No GPL code in product:** `scripts/fetch-research-sources.sh` clones upstream (Engarde, OpenMPTCProuter, WireGuard) to `.research-src/` **only**. WireGuard Apple and wireguard-go are permitted as foundations; do not copy GPL into product directories.
 

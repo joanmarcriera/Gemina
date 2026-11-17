@@ -1,0 +1,78 @@
+name: Hardware report
+description: Tell us what happened when you ran Gemina on a real Mac with two real links
+title: "Hardware report: "
+labels: ["hardware-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gemina is not yet validated on real dual-uplink hardware. Your result is the most useful thing you can send.
+        Remove public IP addresses, MAC addresses, serial numbers and keys before you post. Do not attach packet captures.
+  - type: input
+    id: mac
+    attributes:
+      label: Mac model and macOS version
+      placeholder: "MacBook Air M2, macOS 15.x"
+    validations:
+      required: true
+  - type: input
+    id: links
+    attributes:
+      label: The two links
+      description: Type and interface name of each (Wi-Fi, iPhone tether, Android tether and phone model, second broadband, dongle).
+      placeholder: "Link 1: Wi-Fi en0. Link 2: Pixel 8 USB tether en5"
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Gemina version (release tag or commit)
+    validations:
+      required: true
+  - type: input
+    id: gateway
+    attributes:
+      label: Where the gateway ran
+      description: Provider type and region are enough. No address.
+      placeholder: "Small cloud server, Europe, Linux arm64"
+  - type: textarea
+    id: preflight
+    attributes:
+      label: Output of `geminactl preflight -share`
+      render: text
+  - type: textarea
+    id: command
+    attributes:
+      label: The exact probe command you ran (addresses removed)
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: What the gateway log showed
+      description: Counts of first-copy and duplicate. What happened when you unplugged one link.
+    validations:
+      required: true
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Outcome
+      options:
+        - Worked as described
+        - Partly worked
+        - Did not work
+    validations:
+      required: true
+  - type: textarea
+    id: problems
+    attributes:
+      label: Errors or problems (exact text)
+      render: text
+  - type: checkboxes
+    id: redacted
+    attributes:
+      label: Check before you submit
+      options:
+        - label: I removed public IP addresses, MAC addresses, serial numbers and keys.
+          required: true

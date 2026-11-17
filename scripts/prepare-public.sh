@@ -112,8 +112,9 @@ check_licence_files() {
 	local -a required=(
 		"LICENSE"
 		"NOTICE"
-		"LICENSES/AGPL-3.0.txt"
-		"LICENSES/Apache-2.0.txt"
+		"COMMERCIAL.md"
+		"LICENSES/pre-0.1.0/AGPL-3.0.txt"
+		"LICENSES/pre-0.1.0/Apache-2.0.txt"
 	)
 	local f any=0
 	for f in "${required[@]}"; do
@@ -124,6 +125,16 @@ check_licence_files() {
 			any=1
 		fi
 	done
+	# Content checks: the licence in force must be PolyForm Noncommercial 1.0.0
+	# and must carry the Required Notice line that the licence passes on.
+	if ! grep -q '^# PolyForm Noncommercial License 1.0.0' LICENSE 2>/dev/null; then
+		fail "LICENSE is not the PolyForm Noncommercial License 1.0.0"
+		any=1
+	fi
+	if ! grep -q '^Required Notice: Copyright' LICENSE 2>/dev/null; then
+		fail "LICENSE has no 'Required Notice: Copyright ...' line"
+		any=1
+	fi
 	[[ $any -eq 0 ]] || record_fail
 }
 

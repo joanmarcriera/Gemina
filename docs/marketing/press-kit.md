@@ -1,3 +1,5 @@
+> **Pre-release draft. Not for use.** Placeholders such as `<site>` and `<waitlist>` are unfilled, there is no product domain, and the licence text below may be out of date (see `../../COMMERCIAL.md`).
+
 # Gemina VPN — press kit
 
 > **Status: pre-release.** The dual-path transport is proven end-to-end; encryption and

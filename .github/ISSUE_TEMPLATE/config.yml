@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Commercial licence request
+    url: https://github.com/joanmarcriera/Gemina/blob/main/COMMERCIAL.md
+    about: Read COMMERCIAL.md, then open an issue titled "Commercial licence request".

@@ -1,3 +1,5 @@
+> **Pre-release draft. Not for use.** There is no product domain and no waitlist. Licence and pricing statements here may be out of date (see `../../COMMERCIAL.md`).
+
 # Go-to-market launch plan — Gemina VPN
 
 > **Status: pre-release.** This plan governs the public launch of an open-source
@@ -410,7 +412,7 @@ clean, audited state. Cross-references: [`scripts/prepare-public.sh`](../../scri
       implementation code in product directories.
 - [ ] Replace placeholder URLs: `github.com/example/...` and
       `ghcr.io/example/gemina-gateway` in README/site/docs with the real repo/image;
-      `geminavpn.example` with the real domain.
+      `<your-domain>` with the real domain.
 - [ ] Verify the licence invariant in CI: **the client never imports gateway packages**
       (per `repository-strategy.md`).
 - [ ] Repo hygiene: README's honest first paragraph intact; topics/description set

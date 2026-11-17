@@ -6,7 +6,7 @@
 # Phase 2 (this file): the Network Extension (packet tunnel) linking the Go core.
 #
 # Change the bundle id prefix below to your own namespace (a domain you own
-# reversed, e.g. app.geminavpn — or keep this if you have no domain yet).
+# reversed, e.g. com.example.gemina — or keep this if you have no domain yet).
 
 name: Gemina
 

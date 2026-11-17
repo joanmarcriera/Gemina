@@ -1,103 +1,64 @@
 # Licensing
 
-This project uses an **open-core dual licence**. Two licences apply, chosen per
-directory:
+From release 0.1.0 the whole repository is under one licence: the
+**PolyForm Noncommercial License 1.0.0** (SPDX identifier
+`PolyForm-Noncommercial-1.0.0`).
 
-- The **gateway** (the server) is licensed under the **GNU Affero General Public
-  License, version 3 only** — SPDX identifier `AGPL-3.0-only`.
-- The **client** and the **shared core** are licensed under the **Apache
-  License, version 2.0** — SPDX identifier `Apache-2.0`.
+* Licence text: [`LICENSE`](../../LICENSE). It starts with a `Required Notice:`
+  line that credits Riera Technologies Ltd.
+* Plain-words summary and how to get a commercial licence:
+  [`COMMERCIAL.md`](../../COMMERCIAL.md).
+* Notices: [`NOTICE`](../../NOTICE).
 
-The full, verbatim licence texts live in
-[`LICENSES/AGPL-3.0.txt`](../../LICENSES/AGPL-3.0.txt) and
-[`LICENSES/Apache-2.0.txt`](../../LICENSES/Apache-2.0.txt). The root
-[`LICENSE`](../../LICENSE) file carries a short summary and the directory map.
+This is not legal advice. Have a lawyer read the licence and
+[`COMMERCIAL.md`](../../COMMERCIAL.md) before you sell a commercial licence.
 
-## Why this split
+## What the licence means
 
-- **AGPL on the gateway** stops a competitor from taking the server, running it
-  as a hosted service, and never contributing their changes back. The AGPL's
-  network-use clause means anyone who offers the gateway to users over a network
-  must offer those users the corresponding source. That protects the hosted
-  service we intend to operate.
-- **Apache-2.0 on the client** is required because AGPL software cannot be
-  distributed on the Mac App Store; App Store distribution terms are
-  incompatible with the AGPL's conditions. Apache-2.0 is App-Store-friendly and,
-  unlike a bare permissive licence such as MIT, it carries an **express patent
-  grant**, which matters for a product that ships networking and transport code.
+* Free for noncommercial use: personal, research, hobby, and use by charities,
+  schools, public bodies and the like.
+* Anyone who shares the software must keep the licence text (or link) and the
+  `Required Notice:` line. That is the attribution.
+* Commercial use needs a paid licence from Riera Technologies Ltd.
+* The project is source-available. It is not OSI "open source", because it
+  limits commercial use. Do not call it open source.
 
-## Directory to licence map
+## Earlier releases
 
-This map is authoritative. When in doubt about a file, locate it under one of
-these prefixes.
+Before release 0.1.0 the repository carried a split licence: AGPL-3.0-only for
+the gateway and Apache-2.0 for the client and shared code. That source was
+already public. People who received it keep the rights those licences gave them
+for that source, and nobody can take those rights back. The texts are in
+[`LICENSES/pre-0.1.0/`](../../LICENSES/pre-0.1.0/).
 
-### `AGPL-3.0-only`
+The old split was chosen so the client could ship on the Mac App Store, which
+cannot carry AGPL code. That reason no longer applies to new work, because the
+copyright holder can distribute its own code on the Mac App Store under any
+licence it chooses. The code boundary (the client must not import gateway code)
+stays, as an architecture rule enforced by CI.
 
-- `cmd/gateway/`
-- `internal/gateway/`
-- Gateway-only assets under `deploy/` that contain gateway **server logic**
-  (for example, the gateway service definition and its container/build assets).
+## Who holds the copyright
 
-### `Apache-2.0`
-
-Everything the client ships or links, plus the shared core and tooling:
-
-- `apps/macos/`
-- `pkg/clientcore/`
-- `pkg/protocoltypes/`
-- `pkg/testkit/`
-- `internal/protocol/`
-- `internal/dedup/`
-- `internal/transport/`
-- `internal/paths/`
-- `internal/platform/`
-- `internal/diagnostics/`
-- `internal/bootstrap/`
-- `cmd/geminactl/`
-- the rest of the shared core and tooling
-
-## Compatibility: Apache-2.0 into AGPL-3.0
-
-Apache-2.0 is **one-way compatible** into AGPL-3.0. This means:
-
-- The **AGPL gateway may include the Apache-2.0 core.** Combining Apache-2.0
-  code into an AGPL-3.0 work is permitted; the combined gateway is then governed
-  as a whole by the AGPL.
-- The **client must never include AGPL code.** The flow does not run the other
-  way: you cannot pull AGPL gateway code into the Apache-2.0 client without
-  relicensing the client, which would break App Store distribution.
-
-This holds in practice today because **the client never imports the gateway
-packages.** The client depends only on the shared core; it has no build or
-import path into `cmd/gateway/` or `internal/gateway/`.
+The `Required Notice:` names Riera Technologies Ltd. Every commit in the
+history so far was authored by the project owner. No third-party source is
+copied into the tree, and the Go and Swift code have no third-party
+dependencies (see [`dependency-inventory.md`](dependency-inventory.md)), so no
+dependency licence limits the choice. If the code was written by the owner
+personally, a written assignment or licence to the company should exist before
+commercial licences are sold.
 
 ## What a contributor needs to know
 
-- **Know which side you are editing.** Use the directory map above. Code under
-  the gateway prefixes is AGPL-3.0-only; everything else the client ships or
-  links is Apache-2.0.
-- **Never let AGPL code reach the client.** Do not add an import from any
-  Apache-2.0 client/core package to a gateway package. The client must stay
-  AGPL-free so it remains distributable on the Mac App Store.
-- **Apache core can flow into the gateway**, not the reverse. If you need shared
-  logic in both, it belongs in the Apache-2.0 core, and the gateway consumes it.
-- **By contributing, you license your contribution under the licence that
-  applies to the directory you are editing** (`AGPL-3.0-only` for the gateway,
-  `Apache-2.0` elsewhere).
-- **Third-party code** is governed separately. Nothing third-party is copied
-  into product directories today; if that ever changes it must retain its
-  original licence and attribution and be recorded in
+* By sending a contribution you agree that it is licensed under the same terms,
+  and that Riera Technologies Ltd may also license it commercially.
+* Do not add third-party code without recording it in
   [`code-provenance.md`](code-provenance.md),
-  [`upstream-licences.md`](upstream-licences.md) and the root `NOTICE`.
+  [`upstream-licences.md`](upstream-licences.md) and `NOTICE`. A dependency
+  under a licence that forbids this project's terms (strong copyleft such as GPL
+  or AGPL) must not be linked into the product.
+* Keep the `Required Notice:` line in `LICENSE` and `NOTICE`.
 
-## SPDX identifiers
+## SPDX identifier
 
-Use these exact SPDX licence identifiers:
-
-- Gateway: `AGPL-3.0-only`
-- Client and shared core: `Apache-2.0`
-
-Per-file SPDX headers (for example, `// SPDX-License-Identifier: Apache-2.0`)
-are **not yet present** in the source files. They will be added across the tree
-in a follow-up change. Until then, this document and the directory map are the
-authoritative record of which licence applies to which file.
+Use `PolyForm-Noncommercial-1.0.0`. Per-file SPDX headers are not present in the
+source files. `LICENSE` is authoritative for every file.
